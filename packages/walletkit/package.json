@@ -10,10 +10,22 @@
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --max-warnings 0 --fix"
   },
-  "keywords": ["ton", "wallet", "connect", "tonconnect"],
+  "keywords": [
+    "ton",
+    "wallet",
+    "connect",
+    "tonconnect"
+  ],
   "author": "",
   "license": "ISC",
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "@tonconnect/protocol": "^2.3.0",
+    "bridge-sdk": "link:..\\..\\..\\bridge-sdk"
+  },
+  "devDependencies": {
+    "eslint": "^9.33.0"
+  }
 }

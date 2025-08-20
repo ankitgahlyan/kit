@@ -1,0 +1,62 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+import { useAuthStore, useWalletStore } from '../stores';
+import { ProtectedRoute } from './ProtectedRoute';
+import { SetupPassword, UnlockWallet, SetupWallet, WalletDashboard, SendTransaction } from '../pages';
+
+export const AppRouter: React.FC = () => {
+    const { isPasswordSet, isUnlocked } = useAuthStore();
+    const { hasWallet } = useWalletStore();
+
+    const getInitialRoute = () => {
+        if (!isPasswordSet) return '/setup-password';
+        if (!isUnlocked) return '/unlock';
+        if (!hasWallet) return '/setup-wallet';
+        return '/wallet';
+    };
+
+    return (
+        <BrowserRouter>
+            <Routes>
+                {/* Public routes */}
+                <Route path="/setup-password" element={<SetupPassword />} />
+                <Route path="/unlock" element={<UnlockWallet />} />
+
+                {/* Protected routes - require authentication */}
+                <Route
+                    path="/setup-wallet"
+                    element={
+                        <ProtectedRoute>
+                            <SetupWallet />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Protected routes - require wallet */}
+                <Route
+                    path="/wallet"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <WalletDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/send"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <SendTransaction />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Redirect root to appropriate route */}
+                <Route path="/" element={<Navigate to={getInitialRoute()} replace />} />
+
+                {/* Catch all - redirect to root */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </BrowserRouter>
+    );
+};

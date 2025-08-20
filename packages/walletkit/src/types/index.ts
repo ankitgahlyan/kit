@@ -1,0 +1,37 @@
+// Type definitions module exports
+
+// Wallet types
+export type { TonNetwork, WalletInterface, WalletMetadata, WalletStatus } from './wallet';
+
+// Transaction types (from validation module)
+export type { HumanReadableTx } from '../validation/transaction';
+
+// Event types
+export type {
+    EventConnectRequest,
+    EventTransactionRequest,
+    EventSignDataRequest,
+    EventDisconnect,
+    ConnectPreview,
+    TransactionRequest,
+    TransactionPreview,
+    SignDataPreview,
+} from './events';
+
+// Configuration types
+export type { TonWalletKitOptions, RuntimeConfig } from './config';
+
+// Main kit interface
+export type { TonWalletKit, SessionInfo, KitStatus } from './kit';
+
+// Internal types (re-export from internal.ts)
+export type {
+    SessionData,
+    BridgeConfig,
+    EventCallback,
+    RequestContext,
+    ValidationResult,
+    RawBridgeEvent,
+    EventType,
+    EventHandler,
+} from './internal';
