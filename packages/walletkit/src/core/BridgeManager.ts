@@ -124,35 +124,35 @@ export class BridgeManager {
      * Connect to TON Connect bridge
      */
     private async connectToBridge(): Promise<void> {
-        try {
-            // Prepare clients array for existing sessions
-            const clients = Array.from(this.sessions.entries()).map(([clientId, session]) => ({
-                session,
-                clientId,
-            }));
-            this.bridgeProvider = await BridgeProvider.open<WalletConsumer>({
-                bridgeUrl: this.config.bridgeUrl,
-                clients,
-                listener: this.handleBridgeEvent.bind(this),
-                options: {
-                    heartbeatReconnectIntervalMs: this.config.reconnectInterval,
-                },
-            });
-            this.isConnected = true;
-            this.reconnectAttempts = 0;
-            logger.info('Bridge connected successfully');
-        } catch (error) {
-            logger.error('Bridge connection failed', { error });
-            // Attempt reconnection if not at max attempts
-            if (this.reconnectAttempts < (this.config.maxReconnectAttempts || 5)) {
-                this.reconnectAttempts++;
-                logger.info('Bridge reconnection attempt', { attempt: this.reconnectAttempts });
-                setTimeout(() => {
-                    this.connectToBridge().catch((error) => logger.error('Bridge reconnection failed', { error }));
-                }, this.config.reconnectInterval);
-            }
-            throw error;
-        }
+        // try {
+        //     // Prepare clients array for existing sessions
+        //     const clients = Array.from(this.sessions.entries()).map(([clientId, session]) => ({
+        //         session,
+        //         clientId,
+        //     }));
+        //     this.bridgeProvider = await BridgeProvider.open<WalletConsumer>({
+        //         bridgeUrl: this.config.bridgeUrl,
+        //         clients,
+        //         listener: this.handleBridgeEvent.bind(this),
+        //         options: {
+        //             heartbeatReconnectIntervalMs: this.config.reconnectInterval,
+        //         },
+        //     });
+        //     this.isConnected = true;
+        //     this.reconnectAttempts = 0;
+        //     logger.info('Bridge connected successfully');
+        // } catch (error) {
+        //     logger.error('Bridge connection failed', { error });
+        //     // Attempt reconnection if not at max attempts
+        //     if (this.reconnectAttempts < (this.config.maxReconnectAttempts || 5)) {
+        //         this.reconnectAttempts++;
+        //         logger.info('Bridge reconnection attempt', { attempt: this.reconnectAttempts });
+        //         setTimeout(() => {
+        //             this.connectToBridge().catch((error) => logger.error('Bridge reconnection failed', { error }));
+        //         }, this.config.reconnectInterval);
+        //     }
+        //     throw error;
+        // }
     }
 
     /**

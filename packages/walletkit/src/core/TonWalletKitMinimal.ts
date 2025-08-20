@@ -189,6 +189,116 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
+    // === URL Processing API ===
+
+    /**
+     * Handle pasted TON Connect URL/link
+     * Parses the URL and creates a connect request event
+     */
+    async handleTonConnectUrl(url: string): Promise<void> {
+        await this.ensureInitialized();
+
+        try {
+            // Parse and validate the TON Connect URL
+            const parsedUrl = this.parseTonConnectUrl(url);
+            if (!parsedUrl) {
+                throw new Error('Invalid TON Connect URL format');
+            }
+
+            // Create a bridge event from the parsed URL
+            const bridgeEvent = this.createBridgeEventFromUrl(parsedUrl);
+
+            // Route the event through the normal event system
+            const wallet = this.walletManager.getWallets()[0]; // Use first available wallet
+            await this.eventRouter.routeEvent(bridgeEvent, wallet);
+        } catch (error) {
+            logger.error('Failed to handle TON Connect URL', { error, url });
+            throw error;
+        }
+    }
+
+    /**
+     * Parse TON Connect URL to extract connection parameters
+     */
+    private parseTonConnectUrl(url: string): {
+        version: string;
+        clientId: string;
+        requestId: string;
+        returnStrategy: string;
+        r: string;
+        [key: string]: string;
+    } | null {
+        try {
+            let parsedUrl: URL;
+
+            parsedUrl = new URL(url);
+
+            // Handle different URL schemes
+            // if (url.startsWith('tc://')) {
+            //     // Convert tc:// to https:// for parsing
+            //     parsedUrl = new URL(url.replace('tc://', 'https://'));
+            // } else if (url.startsWith('ton://')) {
+            //     // Convert ton:// to https:// for parsing
+            //     parsedUrl = new URL(url.replace('ton://', 'https://'));
+            // } else if (url.startsWith('https://') || url.startsWith('http://')) {
+            //     parsedUrl = new URL(url);
+            // } else {
+            //     return null;
+            // }
+
+            // Extract query parameters
+            const params: { [key: string]: string } = {};
+            for (const [key, value] of parsedUrl.searchParams.entries()) {
+                params[key] = value;
+            }
+
+            // Validate required parameters
+            if (!params.v || !params.id || !params.r) {
+                logger.warn('Missing required TON Connect URL parameters');
+                return null;
+            }
+
+            return {
+                version: params.v,
+                clientId: params.id,
+                requestId: params.id,
+                returnStrategy: params.ret || 'back',
+                r: params.r,
+                ...params,
+            };
+        } catch (error) {
+            logger.error('Failed to parse TON Connect URL', { error, url });
+            return null;
+        }
+    }
+
+    /**
+     * Create bridge event from parsed URL parameters
+     */
+    private createBridgeEventFromUrl(params: {
+        version: string;
+        clientId: string;
+        requestId: string;
+        returnStrategy: string;
+        r: string;
+        [key: string]: string;
+    }) {
+        return {
+            id: params.requestId,
+            method: 'tonconnect_connect',
+            params: {
+                manifest: {
+                    url: params.r,
+                },
+                items: [{ name: 'ton_addr' }, { name: 'ton_proof', payload: params.requestId }],
+                clientId: params.clientId,
+                returnStrategy: params.returnStrategy,
+            },
+            sessionId: params.clientId,
+            timestamp: Date.now(),
+        };
+    }
+
     // === Request Processing API (Delegated) ===
 
     async approveConnectRequest(event: EventConnectRequest): Promise<void> {

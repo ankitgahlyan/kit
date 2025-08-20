@@ -11,11 +11,13 @@ export class ConnectHandler implements EventHandler<EventConnectRequest> {
 
     async handle(event: RawBridgeEvent, context: RequestContext): Promise<EventConnectRequest> {
         const connectEvent: EventConnectRequest = {
-            id: event.id,
-            dAppName: this.extractDAppName(event),
-            manifestUrl: this.extractManifestUrl(event),
-            preview: this.createPreview(event),
-            wallet: context.wallet || this.createPlaceholderWallet(),
+            manifestUrl: '',
+            items: [],
+            // id: event.id,
+            // dAppName: this.extractDAppName(event),
+            // manifestUrl: this.extractManifestUrl(event),
+            // preview: this.createPreview(event),
+            // wallet: context.wallet || this.createPlaceholderWallet(),
         };
 
         return connectEvent;

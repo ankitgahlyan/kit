@@ -18,20 +18,18 @@ export class RequestProcessor {
      * Process connect request approval
      */
     async approveConnectRequest(event: EventConnectRequest): Promise<void> {
-        try {
-            // Create session for this connection
-            await this.sessionManager.createSession(event.id, event.dAppName, event.wallet);
-
-            // Create bridge session
-            await this.bridgeManager.createSession(event.id);
-
-            // Send approval response
-            const response = await this.createConnectApprovalResponse(event);
-            await this.bridgeManager.sendResponse(event.id, event.id, response);
-        } catch (error) {
-            logger.error('Failed to approve connect request', { error });
-            throw error;
-        }
+        // try {
+        //     // Create session for this connection
+        //     await this.sessionManager.createSession(event.id, event.dAppName, event.wallet);
+        //     // Create bridge session
+        //     await this.bridgeManager.createSession(event.id);
+        //     // Send approval response
+        //     const response = await this.createConnectApprovalResponse(event);
+        //     await this.bridgeManager.sendResponse(event.id, event.id, response);
+        // } catch (error) {
+        //     logger.error('Failed to approve connect request', { error });
+        //     throw error;
+        // }
     }
 
     /**
@@ -44,7 +42,7 @@ export class RequestProcessor {
                 reason: reason || 'User rejected connection',
             };
 
-            await this.bridgeManager.sendResponse(event.id, event.id, response);
+            // await this.bridgeManager.sendResponse(event.id, event.id, response);
         } catch (error) {
             logger.error('Failed to reject connect request', { error });
             throw error;
@@ -133,14 +131,14 @@ export class RequestProcessor {
      * Create connect approval response
      */
     private async createConnectApprovalResponse(event: EventConnectRequest) {
-        const wallet = event.wallet;
+        // const wallet = event.wallet;
 
         return {
             result: {
-                address: await wallet.getAddress(),
-                publicKey: wallet.publicKey,
-                version: wallet.version,
-                network: 'mainnet', // TODO: Make this configurable
+                // address: await wallet.getAddress(),
+                // publicKey: wallet.publicKey,
+                // version: wallet.version,
+                // network: 'mainnet', // TODO: Make this configurable
             },
         };
     }

@@ -1,6 +1,6 @@
 // Main TonWalletKit interface definition
 
-import type { WalletInterface } from './wallet';
+import type { WalletInterface, WalletInitConfig } from './wallet';
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest, EventDisconnect } from './events';
 
 /**
@@ -16,7 +16,7 @@ export interface TonWalletKit {
     getWallets(): WalletInterface[];
 
     /** Add a new wallet */
-    addWallet(wallet: WalletInterface): Promise<void>;
+    addWallet(walletConfig: WalletInitConfig): Promise<void>;
 
     /** Remove a wallet */
     removeWallet(wallet: WalletInterface): Promise<void>;
@@ -31,6 +31,11 @@ export interface TonWalletKit {
 
     /** List all active sessions */
     listSessions(): Promise<SessionInfo[]>;
+
+    // === URL Processing ===
+
+    /** Handle pasted TON Connect URL/link */
+    handleTonConnectUrl(url: string): Promise<void>;
 
     // === Request Processing ===
 

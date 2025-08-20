@@ -18,6 +18,16 @@ const walletKit = new TonWalletKit({
     wallets: [],
 });
 
+// Set up connect request listener
+walletKit.onConnectRequest((event) => {
+    console.log('Connect request received:', event);
+    // TODO: Show connect request UI to user
+    // For now, we'll automatically approve (should be user choice)
+    walletKit.approveConnectRequest(event).catch((error) => {
+        console.error('Failed to approve connect request:', error);
+    });
+});
+
 interface WalletStore extends WalletState {
     // Transaction history
     transactions: Transaction[];
@@ -32,6 +42,9 @@ interface WalletStore extends WalletState {
     clearWallet: () => void;
     updateBalance: () => Promise<void>;
     addTransaction: (transaction: Transaction) => void;
+
+    // TON Connect actions
+    handleTonConnectUrl: (url: string) => Promise<void>;
 
     // Getters
     getDecryptedMnemonic: () => Promise<string[] | null>;
@@ -270,6 +283,17 @@ export const useWalletStore = create<WalletStore>()(
                 set((state) => ({
                     transactions: [transaction, ...state.transactions],
                 }));
+            },
+
+            // TON Connect URL handling
+            handleTonConnectUrl: async (url: string) => {
+                try {
+                    console.log('Handling TON Connect URL:', url);
+                    await walletKit.handleTonConnectUrl(url);
+                } catch (error) {
+                    console.error('Failed to handle TON Connect URL:', error);
+                    throw new Error('Failed to process TON Connect link');
+                }
             },
         }),
         {
