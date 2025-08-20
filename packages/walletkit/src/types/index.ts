@@ -1,7 +1,16 @@
 // Type definitions module exports
 
 // Wallet types
-export type { TonNetwork, WalletInterface, WalletMetadata, WalletStatus } from './wallet';
+export type {
+    TonNetwork,
+    WalletInterface,
+    WalletMetadata,
+    WalletStatus,
+    WalletVersion,
+    WalletInitConfig,
+} from './wallet';
+
+export { WalletInitConfigMnemonic, WalletInitConfigPrivateKey } from './wallet';
 
 // Transaction types (from validation module)
 export type { HumanReadableTx } from '../validation/transaction';

@@ -2,6 +2,7 @@
 
 import type { WalletInterface } from '../types';
 import type { SessionData, StorageAdapter } from '../types/internal';
+import { logger } from './Logger';
 
 export class SessionManager {
     private sessions: Map<string, SessionData> = new Map();
@@ -173,10 +174,10 @@ export class SessionManager {
                 // TODO: Implement session reconstruction from stored data
                 // This is challenging because sessions contain wallet references
                 // You'd need to coordinate with WalletManager to reconstruct properly
-                console.log('Loaded session metadata:', sessionData.length);
+                logger.debug('Loaded session metadata', { count: sessionData.length });
             }
         } catch (error) {
-            console.warn('Failed to load sessions from storage:', error);
+            logger.warn('Failed to load sessions from storage', { error });
         }
     }
 
@@ -196,7 +197,7 @@ export class SessionManager {
 
             await this.storageAdapter.set(this.storageKey, sessionMetadata);
         } catch (error) {
-            console.warn('Failed to persist sessions to storage:', error);
+            logger.warn('Failed to persist sessions to storage', { error });
         }
     }
 }

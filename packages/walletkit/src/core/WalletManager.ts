@@ -3,6 +3,7 @@
 import type { WalletInterface } from '../types';
 import type { StorageAdapter } from '../types/internal';
 import { validateWallet } from '../validation';
+import { logger } from './Logger';
 
 export class WalletManager {
     private wallets: Map<string, WalletInterface> = new Map();
@@ -43,17 +44,17 @@ export class WalletManager {
             throw new Error(`Invalid wallet: ${validation.errors.join(', ')}`);
         }
 
-        this.wallets.set(wallet.publicKey, wallet);
+        this.wallets.set(wallet.getAddress(), wallet);
         await this.persistWallets();
     }
 
     /**
      * Remove wallet by public key
      */
-    async removeWallet(publicKeyOrWallet: string | WalletInterface): Promise<boolean> {
-        const publicKey = typeof publicKeyOrWallet === 'string' ? publicKeyOrWallet : publicKeyOrWallet.publicKey;
+    async removeWallet(addressOrWallet: string | WalletInterface): Promise<boolean> {
+        const address = typeof addressOrWallet === 'string' ? addressOrWallet : addressOrWallet.getAddress();
 
-        const removed = this.wallets.delete(publicKey);
+        const removed = this.wallets.delete(address);
         if (removed) {
             await this.persistWallets();
         }
@@ -65,8 +66,8 @@ export class WalletManager {
      * Update existing wallet
      */
     async updateWallet(wallet: WalletInterface): Promise<void> {
-        if (!this.wallets.has(wallet.publicKey)) {
-            throw new Error(`Wallet with public key ${wallet.publicKey} not found`);
+        if (!this.wallets.has(wallet.getAddress())) {
+            throw new Error(`Wallet with address ${wallet.getAddress()} not found`);
         }
 
         const validation = validateWallet(wallet);
@@ -74,7 +75,7 @@ export class WalletManager {
             throw new Error(`Invalid wallet: ${validation.errors.join(', ')}`);
         }
 
-        this.wallets.set(wallet.publicKey, wallet);
+        this.wallets.set(wallet.getAddress(), wallet);
         await this.persistWallets();
     }
 
@@ -92,12 +93,12 @@ export class WalletManager {
     async findWalletByAddress(address: string): Promise<WalletInterface | null> {
         for (const wallet of this.wallets.values()) {
             try {
-                const walletAddress = await wallet.getAddress();
+                const walletAddress = wallet.getAddress();
                 if (walletAddress === address) {
                     return wallet;
                 }
             } catch (error) {
-                console.warn(`Failed to get address for wallet ${wallet.publicKey}:`, error);
+                logger.warn('Failed to get address for wallet', { publicKey: wallet.publicKey, error });
             }
         }
         return null;
@@ -130,10 +131,10 @@ export class WalletManager {
 
             if (walletData && Array.isArray(walletData)) {
                 // TODO: Implement wallet reconstruction from stored metadata
-                console.log('Loaded wallet metadata:', walletData.length);
+                logger.debug('Loaded wallet metadata', { count: walletData.length });
             }
         } catch (error) {
-            console.warn('Failed to load wallets from storage:', error);
+            logger.warn('Failed to load wallets from storage', { error });
         }
     }
 
@@ -151,7 +152,7 @@ export class WalletManager {
 
             await this.storageAdapter.set(this.storageKey, walletMetadata);
         } catch (error) {
-            console.warn('Failed to persist wallets to storage:', error);
+            logger.warn('Failed to persist wallets to storage', { error });
         }
     }
 }

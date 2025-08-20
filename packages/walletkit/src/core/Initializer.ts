@@ -1,6 +1,14 @@
 // Initialization and setup logic
 
-import type { TonWalletKitOptions, WalletInterface } from '../types';
+import { TonClient } from '@ton/ton';
+
+import {
+    TonWalletKitOptions,
+    WalletInterface,
+    WalletInitConfig,
+    WalletInitConfigMnemonic,
+    WalletInitConfigPrivateKey,
+} from '../types';
 import type { StorageAdapter } from '../storage';
 import { createStorageAdapter } from '../storage';
 import { validateWallet } from '../validation';
@@ -10,6 +18,8 @@ import { BridgeManager } from './BridgeManager';
 import { EventRouter } from './EventRouter';
 import { RequestProcessor } from './RequestProcessor';
 import { ResponseHandler } from './ResponseHandler';
+import { logger } from './Logger';
+import { createWalletV5R1 } from '../contracts/w5/WalletV5R1Adapter';
 
 /**
  * Initialization configuration
@@ -31,6 +41,7 @@ export interface InitializationResult {
     requestProcessor: RequestProcessor;
     responseHandler: ResponseHandler;
     storageAdapter: StorageAdapter;
+    tonClient: TonClient;
 }
 
 /**
@@ -38,6 +49,7 @@ export interface InitializationResult {
  */
 export class Initializer {
     private config: InitializationConfig;
+    private tonClient!: TonClient;
 
     constructor(config: InitializationConfig = {}) {
         this.config = {
@@ -46,6 +58,8 @@ export class Initializer {
             timeoutMs: 10000,
             ...config,
         };
+
+        // TonClient and wallet initializers will be created in initialize() with proper options
     }
 
     /**
@@ -53,29 +67,35 @@ export class Initializer {
      */
     async initialize(options: TonWalletKitOptions): Promise<InitializationResult> {
         try {
-            console.log('Initializing TonWalletKit...');
+            logger.info('Initializing TonWalletKit...');
 
-            // 1. Initialize storage adapter
+            // 1. Initialize TON client first (single provider for all downstream classes)
+            this.tonClient = this.initializeTonClient(options);
+
+            // 2. Initialize storage adapter
             const storageAdapter = this.initializeStorage(options);
 
-            // 2. Initialize core managers
+            // 3. Initialize core managers
             const { walletManager, sessionManager, bridgeManager, eventRouter } = await this.initializeManagers(
                 options,
                 storageAdapter,
             );
 
-            // 3. Initialize processors
-            const { requestProcessor, responseHandler } = this.initializeProcessors(sessionManager, bridgeManager);
-
-            // 4. Configure event routing
-            this.configureEventRouting(bridgeManager, eventRouter);
-
-            // 5. Initialize with provided wallets
+            // 4. Initialize with provided wallets
             if (options.wallets && options.wallets.length > 0) {
-                await this.initializeWallets(walletManager, options.wallets);
+                await this.initializeWallets(walletManager, {
+                    ...options,
+                    wallets: options.wallets,
+                });
             }
 
-            console.log('TonWalletKit initialized successfully');
+            // 5. Initialize processors
+            const { requestProcessor, responseHandler } = this.initializeProcessors(sessionManager, bridgeManager);
+
+            // 6. Configure event routing
+            this.configureEventRouting(bridgeManager, eventRouter);
+
+            logger.info('TonWalletKit initialized successfully');
 
             return {
                 walletManager,
@@ -85,11 +105,31 @@ export class Initializer {
                 requestProcessor,
                 responseHandler,
                 storageAdapter,
+                tonClient: this.tonClient,
             };
         } catch (error) {
-            console.error('Failed to initialize TonWalletKit:', error);
+            logger.error('Failed to initialize TonWalletKit', { error });
             throw error;
         }
+    }
+
+    /**
+     * Initialize TON client (single provider for all downstream classes)
+     */
+    private initializeTonClient(options: TonWalletKitOptions): TonClient {
+        // Use provided API URL or default to mainnet
+        const endpoint = options.apiUrl || 'https://toncenter.com/api/v2/jsonRPC';
+
+        const clientConfig: ConstructorParameters<typeof TonClient>[0] = {
+            endpoint,
+        };
+
+        // Add API key if provided
+        if (options.apiKey) {
+            clientConfig.apiKey = options.apiKey;
+        }
+
+        return new TonClient(clientConfig);
     }
 
     /**
@@ -97,7 +137,7 @@ export class Initializer {
      */
     private initializeStorage(options: TonWalletKitOptions): StorageAdapter {
         if (options.storage) {
-            return this.adaptLegacyStorage(options.storage);
+            return options.storage;
         }
 
         return createStorageAdapter({
@@ -158,34 +198,92 @@ export class Initializer {
     /**
      * Configure event routing from bridge to router
      */
-    private configureEventRouting(bridgeManager: BridgeManager, eventRouter: EventRouter): void {
+    private configureEventRouting(bridgeManager: BridgeManager, _eventRouter: EventRouter): void {
         bridgeManager.setEventCallback(async (event) => {
             // The event routing will be handled by the main TonWalletKit class
             // This is just setting up the bridge callback
-            console.log('Bridge event received:', event.method);
+            logger.debug('Bridge event received', { method: event.method });
         });
     }
 
     /**
      * Initialize with provided wallets
      */
-    private async initializeWallets(walletManager: WalletManager, wallets: WalletInterface[]): Promise<void> {
+    private async initializeWallets(
+        walletManager: WalletManager,
+        options: TonWalletKitOptions & Required<Pick<TonWalletKitOptions, 'wallets'>>,
+    ): Promise<void> {
         const results = await Promise.allSettled(
-            wallets.map(async (wallet) => {
-                const validation = validateWallet(wallet);
-                if (!validation.isValid) {
-                    console.warn(`Invalid wallet ${wallet.publicKey}:`, validation.errors);
-                    return;
-                }
+            options.wallets.map(async (walletConfig) => {
+                try {
+                    const wallet = await this.createWalletFromConfig(walletConfig);
 
-                await walletManager.addWallet(wallet);
+                    const validation = validateWallet(wallet);
+                    if (!validation.isValid) {
+                        logger.warn('Invalid wallet detected', {
+                            publicKey: wallet.publicKey,
+                            errors: validation.errors,
+                        });
+                        return;
+                    }
+
+                    await walletManager.addWallet(wallet);
+                } catch (error) {
+                    logger.error('Failed to create wallet from config', { error });
+                    throw error;
+                }
             }),
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled').length;
         const failed = results.filter((r) => r.status === 'rejected').length;
 
-        console.log(`Initialized ${successful} wallets, ${failed} failed`);
+        logger.info('Wallet initialization complete', { successful, failed });
+    }
+
+    /**
+     * Create a WalletInterface from various configuration types
+     */
+    private async createWalletFromConfig(config: WalletInitConfig): Promise<WalletInterface> {
+        // Handle mnemonic configuration
+        if (config instanceof WalletInitConfigMnemonic) {
+            if (config.version === 'v5r1') {
+                return createWalletV5R1(config, {
+                    tonClient: this.tonClient!,
+                });
+            }
+            throw new Error(`Unsupported wallet version for mnemonic: ${config.version}`);
+        }
+
+        // Handle private key configuration - check for publicKey but not mnemonic
+        if (config instanceof WalletInitConfigPrivateKey) {
+            if (config.version === 'v5r1') {
+                return createWalletV5R1(config, {
+                    tonClient: this.tonClient!,
+                });
+            }
+            throw new Error(`Unsupported wallet version for private key: ${config.version}`);
+        }
+
+        // If it's already a WalletInterface, return as-is
+        if (Initializer.isWalletInterface(config)) {
+            return config as WalletInterface;
+        }
+
+        throw new Error('Unsupported wallet configuration format');
+    }
+
+    private static isWalletInterface(config: unknown): config is WalletInterface {
+        return (
+            typeof config === 'object' &&
+            config !== null &&
+            'publicKey' in config &&
+            'version' in config &&
+            typeof (config as WalletInterface)?.sign === 'function' &&
+            typeof (config as WalletInterface)?.getAddress === 'function' &&
+            typeof (config as WalletInterface)?.getBalance === 'function' &&
+            typeof (config as WalletInterface)?.getStateInit === 'function'
+        );
     }
 
     /**
@@ -193,7 +291,7 @@ export class Initializer {
      */
     async cleanup(components: Partial<InitializationResult>): Promise<void> {
         try {
-            console.log('Cleaning up TonWalletKit components...');
+            logger.info('Cleaning up TonWalletKit components...');
 
             if (components.bridgeManager) {
                 await components.bridgeManager.close();
@@ -203,9 +301,9 @@ export class Initializer {
                 components.eventRouter.clearCallbacks();
             }
 
-            console.log('TonWalletKit cleanup completed');
+            logger.info('TonWalletKit cleanup completed');
         } catch (error) {
-            console.error('Error during cleanup:', error);
+            logger.error('Error during cleanup', { error });
         }
     }
 }

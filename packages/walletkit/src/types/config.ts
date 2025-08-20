@@ -1,6 +1,6 @@
 // Configuration type definitions
 
-import type { WalletInterface } from './wallet';
+import type { WalletInitConfig } from './wallet';
 import type { StorageAdapter } from '../storage';
 
 /**
@@ -17,10 +17,13 @@ export interface TonWalletKitOptions {
     apiKey?: string;
 
     /** Initial wallets to add to the kit */
-    wallets?: WalletInterface[];
+    wallets?: Array<WalletInitConfig>;
 
     /** Storage adapter for persistence (defaults to localStorage) */
     storage?: StorageAdapter;
+
+    /** Network */
+    network?: 'mainnet' | 'testnet';
 
     /** Optional configuration overrides */
     config?: {

@@ -1,6 +1,7 @@
 // Storage adapter implementations
 
 import type { StorageAdapter, StorageConfig } from './types';
+import { logger } from '../core/Logger';
 
 /**
  * localStorage adapter for web environments
@@ -149,13 +150,11 @@ export function createStorageAdapter(config: StorageConfig = {}): StorageAdapter
         try {
             return new LocalStorageAdapter(config);
         } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn('Failed to create LocalStorageAdapter, falling back to memory:', error);
+            logger.warn('Failed to create LocalStorageAdapter, falling back to memory', { error });
         }
     }
 
     // Fallback to memory storage
-    // eslint-disable-next-line no-console
-    console.warn('Using MemoryStorageAdapter - data will not persist across sessions');
+    logger.warn('Using MemoryStorageAdapter - data will not persist across sessions');
     return new MemoryStorageAdapter(config);
 }

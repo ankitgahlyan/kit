@@ -135,11 +135,11 @@ const kit = new TonWalletKit({
 ### Wallet Validation
 
 ```typescript
-import { validateWallet } from '@ton/walletkit';
+import { validateWallet, logger } from '@ton/walletkit';
 
 const validation = validateWallet(wallet);
 if (!validation.isValid) {
-  console.error('Invalid wallet:', validation.errors);
+  logger.error('Invalid wallet', { errors: validation.errors });
 }
 ```
 

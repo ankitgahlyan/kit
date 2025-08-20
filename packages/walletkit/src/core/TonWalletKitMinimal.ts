@@ -1,5 +1,7 @@
 // Minimal TonWalletKit - Pure orchestration layer
 
+import type { TonClient } from '@ton/ton';
+
 import type {
     TonWalletKit as ITonWalletKit,
     TonWalletKitOptions,
@@ -10,6 +12,7 @@ import type {
     EventDisconnect,
 } from '../types';
 import { Initializer, type InitializationResult } from './Initializer';
+import { logger } from './Logger';
 import type { WalletManager } from './WalletManager';
 import type { SessionManager } from './SessionManager';
 import type { EventRouter } from './EventRouter';
@@ -34,6 +37,7 @@ export class TonWalletKit implements ITonWalletKit {
     private eventRouter!: EventRouter;
     private requestProcessor!: RequestProcessor;
     private responseHandler!: ResponseHandler;
+    private tonClient!: TonClient;
     private initializer: Initializer;
 
     // State
@@ -61,7 +65,7 @@ export class TonWalletKit implements ITonWalletKit {
             this.setupEventRouting();
             this.isInitialized = true;
         } catch (error) {
-            console.error('TonWalletKit initialization failed:', error);
+            logger.error('TonWalletKit initialization failed', { error });
             throw error;
         }
     }
@@ -75,6 +79,7 @@ export class TonWalletKit implements ITonWalletKit {
         this.eventRouter = components.eventRouter;
         this.requestProcessor = components.requestProcessor;
         this.responseHandler = components.responseHandler;
+        this.tonClient = components.tonClient;
     }
 
     /**
@@ -98,7 +103,7 @@ export class TonWalletKit implements ITonWalletKit {
 
     getWallets(): WalletInterface[] {
         if (!this.isInitialized) {
-            console.warn('TonWalletKit not yet initialized, returning empty array');
+            logger.warn('TonWalletKit not yet initialized, returning empty array');
             return [];
         }
         return this.walletManager.getWallets();
@@ -214,6 +219,18 @@ export class TonWalletKit implements ITonWalletKit {
         await this.requestProcessor.rejectSignDataRequest(event, reason);
     }
 
+    // === TON Client Access ===
+
+    /**
+     * Get the shared TON client instance
+     */
+    getTonClient(): TonClient {
+        if (!this.isInitialized) {
+            throw new Error('TonWalletKit not yet initialized');
+        }
+        return this.tonClient;
+    }
+
     // === Lifecycle Management ===
 
     /**
@@ -251,6 +268,7 @@ export class TonWalletKit implements ITonWalletKit {
                 eventRouter: this.eventRouter,
                 requestProcessor: this.requestProcessor,
                 responseHandler: this.responseHandler,
+                tonClient: this.tonClient,
             });
         }
 

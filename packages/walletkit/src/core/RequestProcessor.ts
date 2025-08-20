@@ -3,6 +3,7 @@
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest } from '../types';
 import type { SessionManager } from './SessionManager';
 import type { BridgeManager } from './BridgeManager';
+import { logger } from './Logger';
 
 /**
  * Handles approval and rejection of various request types
@@ -28,7 +29,7 @@ export class RequestProcessor {
             const response = await this.createConnectApprovalResponse(event);
             await this.bridgeManager.sendResponse(event.id, event.id, response);
         } catch (error) {
-            console.error('Failed to approve connect request:', error);
+            logger.error('Failed to approve connect request', { error });
             throw error;
         }
     }
@@ -45,7 +46,7 @@ export class RequestProcessor {
 
             await this.bridgeManager.sendResponse(event.id, event.id, response);
         } catch (error) {
-            console.error('Failed to reject connect request:', error);
+            logger.error('Failed to reject connect request', { error });
             throw error;
         }
     }
@@ -67,7 +68,7 @@ export class RequestProcessor {
 
             return { signedBoc };
         } catch (error) {
-            console.error('Failed to approve transaction request:', error);
+            logger.error('Failed to approve transaction request', { error });
             throw error;
         }
     }
@@ -84,7 +85,7 @@ export class RequestProcessor {
 
             await this.bridgeManager.sendResponse(event.id, event.id, response);
         } catch (error) {
-            console.error('Failed to reject transaction request:', error);
+            logger.error('Failed to reject transaction request', { error });
             throw error;
         }
     }
@@ -106,7 +107,7 @@ export class RequestProcessor {
 
             return { signature };
         } catch (error) {
-            console.error('Failed to approve sign data request:', error);
+            logger.error('Failed to approve sign data request', { error });
             throw error;
         }
     }
@@ -123,7 +124,7 @@ export class RequestProcessor {
 
             await this.bridgeManager.sendResponse(event.id, event.id, response);
         } catch (error) {
-            console.error('Failed to reject sign data request:', error);
+            logger.error('Failed to reject sign data request', { error });
             throw error;
         }
     }
@@ -155,9 +156,9 @@ export class RequestProcessor {
         // 3. Signing with the wallet's private key
         // 4. Encoding the result to BOC format
 
-        console.log('Signing transaction:', {
+        logger.debug('Signing transaction', {
             id: event.id,
-            messages: event.request.messages.length,
+            messagesCount: event.request.messages.length,
             from: event.request.from,
             validUntil: event.request.validUntil,
         });

@@ -13,6 +13,7 @@ import { TransactionHandler } from '../handlers/TransactionHandler';
 import { SignDataHandler } from '../handlers/SignDataHandler';
 import { DisconnectHandler } from '../handlers/DisconnectHandler';
 import { validateBridgeEvent } from '../validation/events';
+import { logger } from './Logger';
 
 export class EventRouter {
     private handlers: EventHandler[] = [];
@@ -34,7 +35,7 @@ export class EventRouter {
         // Validate event structure
         const validation = validateBridgeEvent(event);
         if (!validation.isValid) {
-            console.error('Invalid bridge event:', validation.errors);
+            logger.error('Invalid bridge event', { errors: validation.errors });
             return;
         }
 
@@ -51,7 +52,7 @@ export class EventRouter {
             const handler = this.handlers.find((h) => h.canHandle(event));
 
             if (!handler) {
-                console.warn('No handler found for event:', event.method);
+                logger.warn('No handler found for event', { method: event.method });
                 return;
             }
 
@@ -70,7 +71,7 @@ export class EventRouter {
                 this.notifyDisconnectCallbacks(disconnectEvent);
             }
         } catch (error) {
-            console.error('Error routing event:', error);
+            logger.error('Error routing event', { error });
             // TODO: Could emit error event or call error callback
         }
     }
@@ -155,7 +156,7 @@ export class EventRouter {
             try {
                 callback(event);
             } catch (error) {
-                console.error('Error in connect request callback:', error);
+                logger.error('Error in connect request callback', { error });
             }
         });
     }
@@ -168,7 +169,7 @@ export class EventRouter {
             try {
                 callback(event);
             } catch (error) {
-                console.error('Error in transaction request callback:', error);
+                logger.error('Error in transaction request callback', { error });
             }
         });
     }
@@ -181,7 +182,7 @@ export class EventRouter {
             try {
                 callback(event);
             } catch (error) {
-                console.error('Error in sign data request callback:', error);
+                logger.error('Error in sign data request callback', { error });
             }
         });
     }
@@ -194,7 +195,7 @@ export class EventRouter {
             try {
                 callback(event);
             } catch (error) {
-                console.error('Error in disconnect callback:', error);
+                logger.error('Error in disconnect callback', { error });
             }
         });
     }

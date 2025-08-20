@@ -3,6 +3,7 @@
 import type { WalletInterface, EventTransactionRequest, HumanReadableTx, TonNetwork } from '../types';
 import type { RawBridgeEvent, RequestContext, EventHandler } from '../types/internal';
 import { isValidNanotonAmount, validateTransactionMessages } from '../validation/transaction';
+import { logger } from '../core/Logger';
 
 export class TransactionHandler implements EventHandler<EventTransactionRequest> {
     canHandle(event: RawBridgeEvent): boolean {
@@ -144,8 +145,7 @@ export class TransactionHandler implements EventHandler<EventTransactionRequest>
 
             return parsed;
         } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn(`Failed to parse message ${index}:`, error);
+            logger.warn('Failed to parse message', { index, error });
 
             // Fallback to raw display
             return {
@@ -171,9 +171,9 @@ export class TransactionHandler implements EventHandler<EventTransactionRequest>
         let balanceBefore = '0';
         if (wallet) {
             try {
-                balanceBefore = await wallet.getBalance();
+                balanceBefore = (await wallet.getBalance()).toString();
             } catch (error) {
-                console.warn('Failed to get wallet balance:', error);
+                logger.warn('Failed to get wallet balance', { error });
             }
         }
 
@@ -198,7 +198,7 @@ export class TransactionHandler implements EventHandler<EventTransactionRequest>
     private encodeMessageToBoc(message: any): string {
         // TODO: Implement proper message encoding to BOC
         // This is a placeholder
-        console.warn('Message encoding not implemented, using placeholder BOC');
+        logger.warn('Message encoding not implemented, using placeholder BOC');
         return 'te6ccgECFAEAAtQAART/APSkE/S88sgLAQIBYgIDAgLNBAUE';
     }
 
@@ -207,11 +207,12 @@ export class TransactionHandler implements EventHandler<EventTransactionRequest>
      */
     private createPlaceholderWallet(): WalletInterface {
         return {
-            publicKey: '',
+            publicKey: new Uint8Array(0),
             version: '',
             sign: async () => new Uint8Array(0),
-            getAddress: async () => '',
-            getBalance: async () => '0',
+            getAddress: () => '',
+            getBalance: async () => BigInt(0),
+            getStateInit: async () => '',
         };
     }
 }

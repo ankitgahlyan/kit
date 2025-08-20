@@ -4,6 +4,7 @@ import { SessionCrypto } from '@tonconnect/protocol';
 import { BridgeProvider, WalletConsumer } from 'bridge-sdk';
 
 import type { BridgeConfig, RawBridgeEvent, EventCallback } from '../types/internal';
+import { logger } from './Logger';
 
 export class BridgeManager {
     private config: BridgeConfig;
@@ -34,14 +35,14 @@ export class BridgeManager {
      */
     async initialize(): Promise<void> {
         if (this.bridgeProvider) {
-            console.warn('Bridge already initialized');
+            logger.warn('Bridge already initialized');
             return;
         }
 
         try {
             await this.connectToBridge();
         } catch (error) {
-            console.error('Failed to initialize bridge:', error);
+            logger.error('Failed to initialize bridge', { error });
             throw error;
         }
     }
@@ -74,7 +75,7 @@ export class BridgeManager {
 
         // TODO: Remove client from bridge if possible
         // The bridge-sdk might not support removing individual clients
-        console.log('Session removed:', appSessionId);
+        logger.debug('Session removed', { appSessionId });
     }
 
     /**
@@ -88,7 +89,7 @@ export class BridgeManager {
 
         // TODO: Implement response sending via bridge
         // This depends on the bridge-sdk API for sending responses
-        console.log('Sending response:', { sessionId, requestId, response });
+        logger.debug('Sending response', { sessionId, requestId, response });
     }
 
     /**
@@ -141,17 +142,17 @@ export class BridgeManager {
 
             this.isConnected = true;
             this.reconnectAttempts = 0;
-            console.log('Bridge connected successfully');
+            logger.info('Bridge connected successfully');
         } catch (error) {
-            console.error('Bridge connection failed:', error);
+            logger.error('Bridge connection failed', { error });
 
             // Attempt reconnection if not at max attempts
             if (this.reconnectAttempts < (this.config.maxReconnectAttempts || 5)) {
                 this.reconnectAttempts++;
-                console.log(`Reconnection attempt ${this.reconnectAttempts}`);
+                logger.info('Bridge reconnection attempt', { attempt: this.reconnectAttempts });
 
                 setTimeout(() => {
-                    this.connectToBridge().catch(console.error);
+                    this.connectToBridge().catch((error) => logger.error('Bridge reconnection failed', { error }));
                 }, this.config.reconnectInterval);
             }
 
@@ -165,7 +166,7 @@ export class BridgeManager {
     private async addClientToBridge(session: SessionCrypto, clientId: string): Promise<void> {
         // TODO: The bridge-sdk might not support adding clients dynamically
         // This would require closing and reopening the bridge with updated clients
-        console.log('Adding client to bridge:', clientId);
+        logger.debug('Adding client to bridge', { clientId });
     }
 
     /**
@@ -188,7 +189,7 @@ export class BridgeManager {
                 this.eventCallback(rawEvent);
             }
         } catch (error) {
-            console.error('Error handling bridge event:', error);
+            logger.error('Error handling bridge event', { error });
         }
     }
 }
