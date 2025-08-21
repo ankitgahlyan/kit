@@ -151,7 +151,6 @@ componentLog.debug('Component mounted');
 
 // Runtime log level control (useful for debugging)
 import { setLogLevel, getLogLevel } from './utils/logger';
-console.log('Current log level:', getLogLevel());
 setLogLevel(5); // Enable debug logging
 
 // Log levels:

@@ -1,8 +1,12 @@
 import { TonWalletKit, WalletInitConfigMnemonic, type WalletInterface, type EventConnectRequest } from '@ton/walletkit';
 
 import { SimpleEncryption } from '../../utils';
+import { createComponentLogger } from '../../utils/logger';
 import type { Transaction } from '../../types/wallet';
 import type { SetState, WalletSliceCreator } from '../../types/store';
+
+// Create logger for wallet slice
+const log = createComponentLogger('WalletSlice');
 
 // Initialize WalletKit
 const walletKit = new TonWalletKit({
@@ -72,7 +76,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
                 state.wallet.currentWallet = wallet;
             });
         } catch (error) {
-            console.error('Error creating wallet:', error);
+            log.error('Error creating wallet:', error);
             throw new Error('Failed to create wallet');
         }
     },
@@ -134,7 +138,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
                 state.wallet.currentWallet = wallet;
             });
         } catch (error) {
-            console.error('Error loading wallet:', error);
+            log.error('Error loading wallet:', error);
             set((state) => {
                 state.wallet.hasWallet = false;
                 state.wallet.isAuthenticated = false;
@@ -147,14 +151,14 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
 
         // Debug: Check if we have current password
         if (!state.auth.currentPassword) {
-            console.error('No current password available');
+            log.error('No current password available');
             return null;
         }
 
         try {
             // Debug: Check if we have encrypted data in state
             if (!state.wallet.encryptedMnemonic) {
-                console.error('No encrypted mnemonic found in state');
+                log.error('No encrypted mnemonic found in state');
                 return null;
             }
 
@@ -168,13 +172,13 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
 
             // Debug: Check result
             if (!mnemonic || mnemonic.length === 0) {
-                console.error('Decrypted mnemonic is empty');
+                log.error('Decrypted mnemonic is empty');
                 return null;
             }
 
             return mnemonic;
         } catch (error) {
-            console.error('Error decrypting mnemonic:', error);
+            log.error('Error decrypting mnemonic:', error);
             return null;
         }
     },
@@ -196,7 +200,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
     updateBalance: async () => {
         const state = get();
         if (!state.wallet.currentWallet) {
-            console.warn('No wallet available to update balance');
+            log.warn('No wallet available to update balance');
             return;
         }
 
@@ -210,7 +214,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
                 state.wallet.balance = balanceString;
             });
         } catch (error) {
-            console.error('Error updating balance:', error);
+            log.error('Error updating balance:', error);
             throw new Error('Failed to update balance');
         }
     },
@@ -224,10 +228,10 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
     // TON Connect URL handling
     handleTonConnectUrl: async (url: string) => {
         try {
-            console.log('Handling TON Connect URL:', url);
+            log.info('Handling TON Connect URL:', url);
             await walletKit.handleTonConnectUrl(url);
         } catch (error) {
-            console.error('Failed to handle TON Connect URL:', error);
+            log.error('Failed to handle TON Connect URL:', error);
             throw new Error('Failed to process TON Connect link');
         }
     },
@@ -243,7 +247,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
     approveConnectRequest: async (selectedWallet: WalletInterface) => {
         const state = get();
         if (!state.wallet.pendingConnectRequest) {
-            console.error('No pending connect request to approve');
+            log.error('No pending connect request to approve');
             return;
         }
 
@@ -263,7 +267,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
                 state.wallet.isConnectModalOpen = false;
             });
         } catch (error) {
-            console.error('Failed to approve connect request:', error);
+            log.error('Failed to approve connect request:', error);
             throw error;
         }
     },
@@ -271,7 +275,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
     rejectConnectRequest: async (reason?: string) => {
         const state = get();
         if (!state.wallet.pendingConnectRequest) {
-            console.error('No pending connect request to reject');
+            log.error('No pending connect request to reject');
             return;
         }
 
@@ -284,7 +288,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
                 state.wallet.isConnectModalOpen = false;
             });
         } catch (error) {
-            console.error('Failed to reject connect request:', error);
+            log.error('Failed to reject connect request:', error);
             throw error;
         }
     },
@@ -305,7 +309,7 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
 // Set up connect request listener - this will be called from the appStore
 export const setupWalletKitListeners = (showConnectRequest: (request: EventConnectRequest) => void) => {
     walletKit.onConnectRequest((event) => {
-        console.log('Connect request received:', event);
+        log.info('Connect request received:', event);
         showConnectRequest(event);
     });
 };

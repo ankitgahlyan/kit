@@ -5,14 +5,18 @@ import { immer } from 'zustand/middleware/immer';
 
 import { createAuthSlice } from './slices/authSlice';
 import { createWalletSlice, setupWalletKitListeners } from './slices/walletSlice';
+import { createComponentLogger } from '../utils/logger';
 import type { AppState } from '../types/store';
+
+// Create logger for app store
+const log = createComponentLogger('AppStore');
 
 // Current store version for migrations
 const STORE_VERSION = 1;
 
 // Migration function
 const migrate = (persistedState: unknown, fromVersion: number): unknown => {
-    console.log('Migrating store from version', fromVersion, 'to', STORE_VERSION);
+    log.info('Migrating store from version', fromVersion, 'to', STORE_VERSION);
 
     // Handle migrations based on version
     if (fromVersion < 1) {
@@ -80,9 +84,9 @@ export const useStore = create<AppState>()(
                     }),
                     onRehydrateStorage: () => (state, error) => {
                         if (error) {
-                            console.error('Store rehydration error:', error);
+                            log.error('Store rehydration error:', error);
                         } else if (state) {
-                            console.log('Store rehydrated successfully');
+                            log.info('Store rehydrated successfully');
                             // Set up wallet kit listeners after rehydration
                             // setupWalletKitListeners(state.showConnectRequest);
                         }

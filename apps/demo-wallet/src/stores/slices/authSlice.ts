@@ -1,4 +1,8 @@
 import type { AuthSliceCreator, SetState } from '../../types/store';
+import { createComponentLogger } from '../../utils/logger';
+
+// Create logger for auth slice
+const log = createComponentLogger('AuthSlice');
 
 export const createAuthSlice: AuthSliceCreator = (set: SetState, get) => ({
     // Initial state
@@ -27,7 +31,7 @@ export const createAuthSlice: AuthSliceCreator = (set: SetState, get) => ({
                 state.auth.passwordHash = passwordHash;
             });
         } catch (error) {
-            console.error('Error setting password:', error);
+            log.error('Error setting password:', error);
             throw new Error('Failed to set password');
         }
     },
@@ -56,7 +60,7 @@ export const createAuthSlice: AuthSliceCreator = (set: SetState, get) => ({
 
             return false;
         } catch (error) {
-            console.error('Error unlocking wallet:', error);
+            log.error('Error unlocking wallet:', error);
             return false;
         }
     },

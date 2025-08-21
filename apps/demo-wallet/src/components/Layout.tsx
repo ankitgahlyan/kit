@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 
 import { useAuth, useWallet } from '../stores';
 import { MnemonicDisplay } from './MnemonicDisplay';
+import { createComponentLogger } from '../utils/logger';
+
+// Create logger for layout component
+const log = createComponentLogger('Layout');
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -46,7 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title = 'TON Wallet', 
             }
         } catch (error) {
             setMnemonicError('Failed to decrypt recovery phrase. Please try again.');
-            console.error('Error retrieving mnemonic:', error);
+            log.error('Error retrieving mnemonic:', error);
         } finally {
             setIsLoadingMnemonic(false);
         }

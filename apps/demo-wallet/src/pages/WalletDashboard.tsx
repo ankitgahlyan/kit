@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Layout, Button, Card, ConnectRequestModal } from '../components';
 import { useWallet, useTonConnect } from '../stores';
 import { useTonWallet } from '../hooks';
+import { createComponentLogger } from '../utils/logger';
+
+// Create logger for wallet dashboard
+const log = createComponentLogger('WalletDashboard');
 
 export const WalletDashboard: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -27,7 +31,7 @@ export const WalletDashboard: React.FC = () => {
         try {
             await getBalance();
         } catch (err) {
-            console.error('Error refreshing balance:', err);
+            log.error('Error refreshing balance:', err);
         } finally {
             setIsRefreshing(false);
         }
@@ -41,7 +45,7 @@ export const WalletDashboard: React.FC = () => {
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
-            console.error('Failed to copy address:', err);
+            log.error('Failed to copy address:', err);
         }
     }, [address]);
 
@@ -53,7 +57,7 @@ export const WalletDashboard: React.FC = () => {
             await handleTonConnectUrl(tonConnectUrl.trim());
             setTonConnectUrl('');
         } catch (err) {
-            console.error('Failed to connect to dApp:', err);
+            log.error('Failed to connect to dApp:', err);
             // TODO: Show error message to user
         } finally {
             setIsConnecting(false);

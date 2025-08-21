@@ -2,6 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { mnemonicNew } from '@ton/crypto';
 
 import { useWallet, useAuth } from '../stores';
+import { createComponentLogger } from '../utils/logger';
+
+// Create logger for TON wallet hook
+const log = createComponentLogger('useTonWallet');
 
 // Mock TON Kit type for demo purposes
 interface MockTonKit {
@@ -47,7 +51,7 @@ export const useTonWallet = (): UseTonWalletReturn => {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Unknown error';
             setError(errorMessage);
-            console.error('Error initializing TON wallet:', err);
+            log.error('Error initializing TON wallet:', err);
         }
     }, [walletStore, authStore.isUnlocked]);
 

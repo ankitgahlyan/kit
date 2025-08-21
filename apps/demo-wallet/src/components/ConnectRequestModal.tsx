@@ -3,6 +3,10 @@ import type { EventConnectRequest, WalletInterface } from '@ton/walletkit';
 
 import { Button } from './Button';
 import { Card } from './Card';
+import { createComponentLogger } from '../utils/logger';
+
+// Create logger for connect request modal
+const log = createComponentLogger('ConnectRequestModal');
 
 interface ConnectRequestModalProps {
     request: EventConnectRequest;
@@ -29,7 +33,7 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         try {
             await onApprove(selectedWallet);
         } catch (error) {
-            console.error('Failed to approve connection:', error);
+            log.error('Failed to approve connection:', error);
         } finally {
             setIsLoading(false);
         }
