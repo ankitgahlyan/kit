@@ -8,7 +8,7 @@ import { logger } from './Logger';
 export class WalletManager {
     private wallets: Map<string, WalletInterface> = new Map();
     private storageAdapter: StorageAdapter;
-    private storageKey = 'wallets';
+    // private storageKey = 'wallets';
 
     constructor(storageAdapter: StorageAdapter) {
         this.storageAdapter = storageAdapter;
@@ -18,7 +18,7 @@ export class WalletManager {
      * Initialize manager and load persisted wallets
      */
     async initialize(): Promise<void> {
-        await this.loadWallets();
+        // await this.loadWallets();
     }
 
     /**
@@ -45,7 +45,7 @@ export class WalletManager {
         }
 
         this.wallets.set(wallet.getAddress(), wallet);
-        await this.persistWallets();
+        // await this.persistWallets();
     }
 
     /**
@@ -55,9 +55,9 @@ export class WalletManager {
         const address = typeof addressOrWallet === 'string' ? addressOrWallet : addressOrWallet.getAddress();
 
         const removed = this.wallets.delete(address);
-        if (removed) {
-            await this.persistWallets();
-        }
+        // if (removed) {
+        //     await this.persistWallets();
+        // }
 
         return removed;
     }
@@ -76,7 +76,7 @@ export class WalletManager {
         }
 
         this.wallets.set(wallet.getAddress(), wallet);
-        await this.persistWallets();
+        // await this.persistWallets();
     }
 
     /**
@@ -84,7 +84,7 @@ export class WalletManager {
      */
     async clearWallets(): Promise<void> {
         this.wallets.clear();
-        await this.persistWallets();
+        // await this.persistWallets();
     }
 
     /**
@@ -121,38 +121,38 @@ export class WalletManager {
     /**
      * Load wallets from storage
      */
-    private async loadWallets(): Promise<void> {
-        try {
-            // Note: We can't persist actual WalletInterface instances since they contain functions
-            // This is a placeholder for wallet metadata storage
-            // In practice, you'd store wallet identifiers and reconstruct WalletInterface instances
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const walletData = await this.storageAdapter.get<any[]>(this.storageKey);
+    // private async loadWallets(): Promise<void> {
+    //     try {
+    //         // Note: We can't persist actual WalletInterface instances since they contain functions
+    //         // This is a placeholder for wallet metadata storage
+    //         // In practice, you'd store wallet identifiers and reconstruct WalletInterface instances
+    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         const walletData = await this.storageAdapter.get<any[]>(this.storageKey);
 
-            if (walletData && Array.isArray(walletData)) {
-                // TODO: Implement wallet reconstruction from stored metadata
-                logger.debug('Loaded wallet metadata', { count: walletData.length });
-            }
-        } catch (error) {
-            logger.warn('Failed to load wallets from storage', { error });
-        }
-    }
+    //         if (walletData && Array.isArray(walletData)) {
+    //             // TODO: Implement wallet reconstruction from stored metadata
+    //             logger.debug('Loaded wallet metadata', { count: walletData.length });
+    //         }
+    //     } catch (error) {
+    //         logger.warn('Failed to load wallets from storage', { error });
+    //     }
+    // }
 
     /**
      * Persist wallet metadata to storage
      */
-    private async persistWallets(): Promise<void> {
-        try {
-            // Store wallet metadata (not the actual functions)
-            const walletMetadata = this.getWallets().map((wallet) => ({
-                publicKey: wallet.publicKey,
-                version: wallet.version,
-                // Add other serializable properties as needed
-            }));
+    // private async persistWallets(): Promise<void> {
+    //     try {
+    //         // Store wallet metadata (not the actual functions)
+    //         const walletMetadata = this.getWallets().map((wallet) => ({
+    //             publicKey: wallet.publicKey,
+    //             version: wallet.version,
+    //             // Add other serializable properties as needed
+    //         }));
 
-            await this.storageAdapter.set(this.storageKey, walletMetadata);
-        } catch (error) {
-            logger.warn('Failed to persist wallets to storage', { error });
-        }
-    }
+    //         await this.storageAdapter.set(this.storageKey, walletMetadata);
+    //     } catch (error) {
+    //         logger.warn('Failed to persist wallets to storage', { error });
+    //     }
+    // }
 }

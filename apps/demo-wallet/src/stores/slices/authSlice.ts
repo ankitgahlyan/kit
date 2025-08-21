@@ -51,6 +51,7 @@ export const createAuthSlice: AuthSliceCreator = (set, get) => ({
             if (isValid) {
                 set({
                     auth: {
+                        ...state.auth,
                         isUnlocked: true,
                         currentPassword: password,
                     },
@@ -66,8 +67,10 @@ export const createAuthSlice: AuthSliceCreator = (set, get) => ({
     },
 
     lock: () => {
+        const state = get();
         set({
             auth: {
+                ...state.auth,
                 isUnlocked: false,
                 currentPassword: undefined,
             },
@@ -75,12 +78,14 @@ export const createAuthSlice: AuthSliceCreator = (set, get) => ({
     },
 
     reset: () => {
+        const state = get();
         set({
             auth: {
+                ...state.auth,
                 isPasswordSet: false,
                 isUnlocked: false,
-                currentPassword: undefined,
-                passwordHash: undefined,
+                currentPassword: undefined, // Clear password
+                passwordHash: undefined, // Clear password hash
             },
         });
     },
