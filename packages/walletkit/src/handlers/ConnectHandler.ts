@@ -6,32 +6,45 @@ import { sanitizeString } from '../validation/sanitization';
 
 export class ConnectHandler implements EventHandler<EventConnectRequest> {
     canHandle(event: RawBridgeEvent): boolean {
-        return (
-            event.method === 'start_connect' ||
-            event.method === 'tonconnect_connect' ||
-            event.method === 'wallet_connect'
-        );
+        return event.method === 'startConnect';
     }
 
     async handle(event: RawBridgeEventConnect, context: RequestContext): Promise<EventConnectRequest> {
+        // Extract manifest information
+        const manifestUrl = this.extractManifestUrl(event);
+        let manifest = null;
+
+        // Try to fetch manifest if URL is available
+        if (manifestUrl) {
+            try {
+                manifest = await this.fetchManifest(manifestUrl);
+            } catch (error) {
+                console.warn('Failed to fetch manifest:', error);
+            }
+        }
+
         const connectEvent: EventConnectRequest = {
-            // manifestUrl: '',
-            // items: [],
-            // id: event.id,
-            // dAppName: this.extractDAppName(event),
-            // manifestUrl: this.extractManifestUrl(event),
-            // preview: this.createPreview(event),
-            // wallet: context.wallet || this.createPlaceholderWallet(),
-        } as any;
+            id: event.id,
+            dAppName: this.extractDAppName(event, manifest),
+            manifestUrl,
+            preview: this.createPreview(event, manifest),
+            wallet: context.wallet, // Don't assign a wallet yet - user will select one
+        };
 
         return connectEvent;
     }
 
     /**
-     * Extract dApp name from bridge event
+     * Extract dApp name from bridge event or manifest
      */
-    private extractDAppName(event: RawBridgeEvent): string {
-        const name = event.params?.manifest?.name || event.params?.dAppName || event.params?.name || 'Unknown dApp';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private extractDAppName(event: RawBridgeEvent, manifest?: any): string {
+        const name =
+            manifest?.name ||
+            event.params?.manifest?.name ||
+            // event.params?.dAppName ||
+            // event.params?.name ||
+            'Unknown dApp';
 
         return sanitizeString(name);
     }
@@ -39,8 +52,8 @@ export class ConnectHandler implements EventHandler<EventConnectRequest> {
     /**
      * Extract manifest URL from bridge event
      */
-    private extractManifestUrl(event: RawBridgeEvent): string {
-        const url = event.params?.manifestUrl || event.params?.manifest?.url || '';
+    private extractManifestUrl(event: RawBridgeEventConnect): string {
+        const url = event.params?.manifest?.url || '';
 
         return sanitizeString(url);
     }
@@ -49,20 +62,34 @@ export class ConnectHandler implements EventHandler<EventConnectRequest> {
      * Create preview object for connect request
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private createPreview(event: RawBridgeEventConnect): any {
-        const manifest = event.params?.manifest;
+    private createPreview(event: RawBridgeEventConnect, fetchedManifest?: any): any {
+        const eventManifest = event.params?.manifest;
+        const manifest = fetchedManifest || eventManifest;
 
         const sanitizedManifest = manifest && {
-            name: sanitizeString(manifest.name || ''), //123
+            name: sanitizeString(manifest.name || ''),
             description: sanitizeString(manifest.description || ''),
             url: sanitizeString(manifest.url || ''),
             iconUrl: sanitizeString(manifest.iconUrl || ''),
         };
+
         return {
             manifest: manifest ? sanitizedManifest : null,
             requestedItems: event.params?.items || [],
-            permissions: event.params?.permissions || [],
+            // permissions: event.params?.permissions || [],
         };
+    }
+
+    /**
+     * Fetch manifest from URL
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private async fetchManifest(manifestUrl: string): Promise<any> {
+        const response = await fetch(manifestUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch manifest: ${response.statusText}`);
+        }
+        return response.json();
     }
 
     /**

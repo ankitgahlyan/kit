@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 // import { TonClient } from '@ton/ton';
-import { TonWalletKit, WalletInitConfigMnemonic, createWalletV5R1, type WalletInterface } from '@ton/walletkit';
+import { TonWalletKit, WalletInitConfigMnemonic, type WalletInterface, type EventConnectRequest } from '@ton/walletkit';
 
 import { storage, STORAGE_KEYS, SimpleEncryption } from '../utils';
 import { useAuthStore } from './authStore';
@@ -18,22 +18,16 @@ const walletKit = new TonWalletKit({
     wallets: [],
 });
 
-// Set up connect request listener
-walletKit.onConnectRequest((event) => {
-    console.log('Connect request received:', event);
-    // TODO: Show connect request UI to user
-    // For now, we'll automatically approve (should be user choice)
-    walletKit.approveConnectRequest(event).catch((error) => {
-        console.error('Failed to approve connect request:', error);
-    });
-});
-
 interface WalletStore extends WalletState {
     // Transaction history
     transactions: Transaction[];
 
     // Walletkit instance and current wallet
     currentWallet?: WalletInterface;
+
+    // Connect request state
+    pendingConnectRequest?: EventConnectRequest;
+    isConnectModalOpen: boolean;
 
     // Actions
     createWallet: (mnemonic: string[]) => Promise<void>;
@@ -45,9 +39,14 @@ interface WalletStore extends WalletState {
 
     // TON Connect actions
     handleTonConnectUrl: (url: string) => Promise<void>;
+    showConnectRequest: (request: EventConnectRequest) => void;
+    approveConnectRequest: (selectedWallet: WalletInterface) => Promise<void>;
+    rejectConnectRequest: (reason?: string) => Promise<void>;
+    closeConnectModal: () => void;
 
     // Getters
     getDecryptedMnemonic: () => Promise<string[] | null>;
+    getAvailableWallets: () => WalletInterface[];
 }
 
 export const useWalletStore = create<WalletStore>()(
@@ -58,6 +57,8 @@ export const useWalletStore = create<WalletStore>()(
             hasWallet: false,
             transactions: [],
             currentWallet: undefined,
+            pendingConnectRequest: undefined,
+            isConnectModalOpen: false,
 
             // Actions
             createWallet: async (mnemonic: string[]) => {
@@ -295,6 +296,75 @@ export const useWalletStore = create<WalletStore>()(
                     throw new Error('Failed to process TON Connect link');
                 }
             },
+
+            // Connect request handling
+            showConnectRequest: (request: EventConnectRequest) => {
+                set({
+                    pendingConnectRequest: request,
+                    isConnectModalOpen: true,
+                });
+            },
+
+            approveConnectRequest: async (selectedWallet: WalletInterface) => {
+                const state = get();
+                if (!state.pendingConnectRequest) {
+                    console.error('No pending connect request to approve');
+                    return;
+                }
+
+                try {
+                    // Set the wallet on the connect event as per user requirements
+                    const updatedRequest = {
+                        ...state.pendingConnectRequest,
+                        wallet: selectedWallet,
+                    };
+
+                    // Approve the connect request with the selected wallet
+                    await walletKit.approveConnectRequest(updatedRequest);
+
+                    // Close the modal and clear pending request
+                    set({
+                        pendingConnectRequest: undefined,
+                        isConnectModalOpen: false,
+                    });
+                } catch (error) {
+                    console.error('Failed to approve connect request:', error);
+                    throw error;
+                }
+            },
+
+            rejectConnectRequest: async (reason?: string) => {
+                const state = get();
+                if (!state.pendingConnectRequest) {
+                    console.error('No pending connect request to reject');
+                    return;
+                }
+
+                try {
+                    await walletKit.rejectConnectRequest(state.pendingConnectRequest, reason);
+
+                    // Close the modal and clear pending request
+                    set({
+                        pendingConnectRequest: undefined,
+                        isConnectModalOpen: false,
+                    });
+                } catch (error) {
+                    console.error('Failed to reject connect request:', error);
+                    throw error;
+                }
+            },
+
+            closeConnectModal: () => {
+                set({
+                    isConnectModalOpen: false,
+                    pendingConnectRequest: undefined,
+                });
+            },
+
+            // Getters
+            getAvailableWallets: () => {
+                return walletKit.getWallets();
+            },
         }),
         {
             name: STORAGE_KEYS.WALLET_STATE + '_persist',
@@ -307,3 +377,12 @@ export const useWalletStore = create<WalletStore>()(
         },
     ),
 );
+
+// Set up connect request listener after store creation
+walletKit.onConnectRequest((event) => {
+    console.log('Connect request received:', event);
+
+    // Show the connect request modal to the user
+    const walletStore = useWalletStore.getState();
+    walletStore.showConnectRequest(event);
+});

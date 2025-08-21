@@ -301,12 +301,12 @@ export class TonWalletKit implements ITonWalletKit {
         }
         return {
             id: params.requestId,
-            method: 'start_connect',
+            method: 'startConnect',
             params: {
                 manifest: {
                     url: r.manifestUrl,
                 },
-                items: [{ name: 'ton_addr' }, { name: 'ton_proof', payload: params.requestId }],
+                items: r.items,
                 returnStrategy: params.returnStrategy,
             },
             sessionId: params.clientId,

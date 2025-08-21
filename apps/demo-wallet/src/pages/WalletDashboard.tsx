@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Layout, Button, Card } from '../components';
+import { Layout, Button, Card, ConnectRequestModal } from '../components';
 import { useWalletStore } from '../stores';
 import { useTonWallet } from '../hooks';
 
@@ -12,7 +12,18 @@ export const WalletDashboard: React.FC = () => {
     const [isConnecting, setIsConnecting] = useState(false);
     const navigate = useNavigate();
 
-    const { balance, address, transactions, handleTonConnectUrl } = useWalletStore();
+    const {
+        balance,
+        address,
+        transactions,
+        handleTonConnectUrl,
+        pendingConnectRequest,
+        isConnectModalOpen,
+        approveConnectRequest,
+        rejectConnectRequest,
+        closeConnectModal,
+        getAvailableWallets,
+    } = useWalletStore();
     const { getBalance, error } = useTonWallet();
 
     const handleRefreshBalance = useCallback(async () => {
@@ -329,6 +340,17 @@ export const WalletDashboard: React.FC = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Connect Request Modal */}
+            {pendingConnectRequest && (
+                <ConnectRequestModal
+                    request={pendingConnectRequest}
+                    availableWallets={getAvailableWallets()}
+                    isOpen={isConnectModalOpen}
+                    onApprove={approveConnectRequest}
+                    onReject={rejectConnectRequest}
+                />
+            )}
         </Layout>
     );
 };

@@ -7,7 +7,13 @@ import type {
     EventSignDataRequest,
     EventDisconnect,
 } from '../types';
-import type { RawBridgeEvent, RequestContext, EventHandler, EventCallback } from '../types/internal';
+import type {
+    RawBridgeEvent,
+    RequestContext,
+    EventHandler,
+    EventCallback,
+    RawBridgeEventConnect,
+} from '../types/internal';
 import { ConnectHandler } from '../handlers/ConnectHandler';
 import { TransactionHandler } from '../handlers/TransactionHandler';
 import { SignDataHandler } from '../handlers/SignDataHandler';
@@ -58,7 +64,7 @@ export class EventRouter {
 
             // Handle the event based on its type
             if (handler instanceof ConnectHandler) {
-                const connectEvent = await handler.handle(event, context);
+                const connectEvent = await handler.handle(event as RawBridgeEventConnect, context);
                 this.notifyConnectRequestCallbacks(connectEvent);
             } else if (handler instanceof TransactionHandler) {
                 const txEvent = await handler.handle(event, context);
