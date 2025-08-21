@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-import { useAuthStore, useWalletStore } from '../stores';
+import { useAuth, useWallet } from '../stores';
 import { MnemonicDisplay } from './MnemonicDisplay';
 
 interface LayoutProps {
@@ -10,8 +10,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, title = 'TON Wallet', showLogout = false }) => {
-    const { lock, reset } = useAuthStore();
-    const { getDecryptedMnemonic } = useWalletStore();
+    const { lock, reset } = useAuth();
+    const { getDecryptedMnemonic } = useWallet();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showMnemonicModal, setShowMnemonicModal] = useState(false);
     const [mnemonic, setMnemonic] = useState<string[]>([]);

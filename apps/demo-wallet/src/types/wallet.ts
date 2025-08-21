@@ -1,15 +1,36 @@
+import type { EventConnectRequest, WalletInterface } from '@ton/walletkit';
+
 export interface WalletState {
-    isAuthenticated: boolean;
-    hasWallet: boolean;
-    address?: string;
-    balance?: string;
-    mnemonic?: string[];
-    publicKey?: string;
+    wallet: {
+        isAuthenticated: boolean;
+        hasWallet: boolean;
+        address?: string;
+        balance?: string;
+        mnemonic?: string[];
+        publicKey?: string;
+
+        // Transaction history
+        transactions: Transaction[];
+
+        // Walletkit instance and current wallet
+        currentWallet?: WalletInterface;
+
+        // Connect request state
+        pendingConnectRequest?: EventConnectRequest;
+        isConnectModalOpen: boolean;
+
+        // Encrypted mnemonic stored in state
+        encryptedMnemonic?: string;
+    };
 }
 
 export interface AuthState {
-    isPasswordSet: boolean;
-    isUnlocked: boolean;
+    auth: {
+        currentPassword?: string;
+        passwordHash?: number[]; // Store password hash in state
+        isPasswordSet?: boolean;
+        isUnlocked?: boolean;
+    };
 }
 
 export interface Transaction {

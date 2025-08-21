@@ -1,13 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import { useAuthStore, useWalletStore } from '../stores';
+import { useAuth, useStore, useWallet } from '../stores';
 import { ProtectedRoute } from './ProtectedRoute';
 import { SetupPassword, UnlockWallet, SetupWallet, WalletDashboard, SendTransaction } from '../pages';
 
 export const AppRouter: React.FC = () => {
-    const { isPasswordSet, isUnlocked } = useAuthStore();
-    const { hasWallet } = useWalletStore();
+    // const { isPasswordSet, isUnlocked } = useAuth();
+    const isPasswordSet = useStore((state) => state.auth.isPasswordSet);
+    const isUnlocked = useStore((state) => state.auth.isUnlocked);
+    const { hasWallet } = useWallet();
 
     const getInitialRoute = () => {
         if (!isPasswordSet) return '/setup-password';

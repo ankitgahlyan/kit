@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useAuthStore } from '../stores';
+import { useAuth } from '../stores';
 import { Layout, Button, Input, Card } from '../components';
 
 export const SetupPassword: React.FC = () => {
@@ -11,7 +11,7 @@ export const SetupPassword: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
-    const { setPassword: setStorePassword } = useAuthStore();
+    const { setPassword: setStorePassword } = useAuth();
 
     const validatePassword = (pwd: string): string[] => {
         const errors = [];

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useAuthStore, useWalletStore } from '../stores';
+import { useAuth, useWallet } from '../stores';
 import { Layout, Button, Input, Card } from '../components';
 
 export const UnlockWallet: React.FC = () => {
@@ -10,8 +10,8 @@ export const UnlockWallet: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
-    const { unlock, reset } = useAuthStore();
-    const { loadWallet } = useWalletStore();
+    const { unlock, reset } = useAuth();
+    const { loadWallet } = useWallet();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

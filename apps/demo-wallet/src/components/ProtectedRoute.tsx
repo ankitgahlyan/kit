@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-import { useAuthStore, useWalletStore } from '../stores';
+import { useAuth, useWallet } from '../stores';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -9,8 +9,8 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiresWallet = false }) => {
-    const { isPasswordSet, isUnlocked } = useAuthStore();
-    const { hasWallet } = useWalletStore();
+    const { isPasswordSet, isUnlocked } = useAuth();
+    const { hasWallet } = useWallet();
 
     // If no password is set, redirect to password setup
     if (!isPasswordSet) {

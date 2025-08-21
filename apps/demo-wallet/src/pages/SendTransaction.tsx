@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Layout, Button, Input, Card } from '../components';
-import { useWalletStore } from '../stores';
+import { useWallet } from '../stores';
 import { useTonWallet } from '../hooks';
 
 export const SendTransaction: React.FC = () => {
@@ -12,7 +12,7 @@ export const SendTransaction: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
-    const { balance } = useWalletStore();
+    const { balance } = useWallet();
     const { sendTransaction } = useTonWallet();
 
     const formatTonAmount = (amount: string): string => {

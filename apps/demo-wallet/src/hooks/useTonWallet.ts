@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { mnemonicNew } from '@ton/crypto';
 
-import { useWalletStore, useAuthStore } from '../stores';
+import { useWallet, useAuth } from '../stores';
 
 // Mock TON Kit type for demo purposes
 interface MockTonKit {
@@ -24,8 +24,8 @@ export const useTonWallet = (): UseTonWalletReturn => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const walletStore = useWalletStore();
-    const authStore = useAuthStore();
+    const walletStore = useWallet();
+    const authStore = useAuth();
 
     const initializeWallet = useCallback(async () => {
         try {

@@ -1,0 +1,146 @@
+import { create } from 'zustand';
+import { devtools, persist, createJSONStorage, subscribeWithSelector } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
+
+import { createAuthSlice } from './slices/authSlice';
+import { createWalletSlice, setupWalletKitListeners } from './slices/walletSlice';
+import type { AppState } from '../types/store';
+
+// Current store version for migrations
+const STORE_VERSION = 1;
+
+// Migration function
+const migrate = (persistedState: unknown, fromVersion: number): unknown => {
+    console.log('Migrating store from version', fromVersion, 'to', STORE_VERSION);
+
+    // Handle migrations based on version
+    if (fromVersion < 1) {
+        // Migration from v0 (separate stores) to v1 (combined store)
+        // This handles the case where users might have old separate persisted data
+        const state = persistedState as Record<string, unknown>;
+        const migratedState = {
+            auth: {
+                isPasswordSet: (state.isPasswordSet as boolean) || false,
+                passwordHash: state.passwordHash as number[],
+                isUnlocked: false, // Never persist unlocked state
+            },
+            wallet: {
+                hasWallet: (state.hasWallet as boolean) || false,
+                isAuthenticated: false, // Never persist authentication
+                transactions: (state.transactions as unknown[]) || [],
+                encryptedMnemonic: state.encryptedMnemonic as string, // Migrate encrypted mnemonic
+            },
+        };
+
+        return migratedState;
+    }
+
+    return persistedState;
+};
+
+// Create the root store
+export const useStore = create<AppState>()(
+    devtools(
+        subscribeWithSelector(
+            persist(
+                (...a) => ({
+                    // Combine both slices
+                    ...createAuthSlice(...a),
+                    ...createWalletSlice(...a),
+                }),
+                {
+                    name: 'demo-wallet-app-store', // ✅ one clean key
+                    storage: createJSONStorage(() => localStorage),
+                    version: STORE_VERSION,
+                    migrate,
+                    // Only persist long-lived data organized by slices:
+                    partialize: (state) => ({
+                        auth: {
+                            isPasswordSet: state.auth.isPasswordSet,
+                            passwordHash: state.auth.passwordHash,
+                            // isUnlocked: omit - never persist unlocked state for security
+                        },
+                        wallet: {
+                            hasWallet: state.wallet.hasWallet,
+                            transactions: state.wallet.transactions,
+                            encryptedMnemonic: state.wallet.encryptedMnemonic,
+                        },
+                        // isAuthenticated: omit - never persist authentication for security
+                        // },
+                        // Never persist these sensitive/runtime values:
+                        // - currentPassword (security)
+                        // - currentWallet (contains methods and client instances)
+                        // - pendingConnectRequest (runtime state)
+                        // - isConnectModalOpen (UI state)
+                    }),
+                    onRehydrateStorage: () => (state, error) => {
+                        if (error) {
+                            console.error('Store rehydration error:', error);
+                        } else if (state) {
+                            console.log('Store rehydrated successfully');
+                            // Set up wallet kit listeners after rehydration
+                            // setupWalletKitListeners(state.showConnectRequest);
+                        }
+                    },
+                },
+            ),
+        ),
+    ),
+);
+
+// Initialize wallet kit listeners on first load
+if (typeof window !== 'undefined') {
+    // Set up wallet kit listeners with the store's showConnectRequest method
+    const store = useStore.getState();
+    setupWalletKitListeners(store.showConnectRequest);
+}
+
+// Helper hooks for accessing specific parts of the store
+export const useAuth = () =>
+    useStore(
+        useShallow((state) => ({
+            isPasswordSet: state.auth.isPasswordSet,
+            isUnlocked: state.auth.isUnlocked,
+            setPassword: state.setPassword,
+            unlock: state.unlock,
+            lock: state.lock,
+            reset: state.reset,
+        })),
+    );
+
+export const useWallet = () =>
+    useStore(
+        useShallow((state) => ({
+            isAuthenticated: state.wallet.isAuthenticated,
+            hasWallet: state.wallet.hasWallet,
+            address: state.wallet.address,
+            balance: state.wallet.balance,
+            publicKey: state.wallet.publicKey,
+            transactions: state.wallet.transactions,
+            currentWallet: state.wallet.currentWallet,
+            createWallet: state.createWallet,
+            importWallet: state.importWallet,
+            loadWallet: state.loadWallet,
+            clearWallet: state.clearWallet,
+            updateBalance: state.updateBalance,
+            addTransaction: state.addTransaction,
+            getDecryptedMnemonic: state.getDecryptedMnemonic,
+            getAvailableWallets: state.getAvailableWallets,
+        })),
+    );
+
+export const useTonConnect = () =>
+    useStore(
+        useShallow((state) => ({
+            pendingConnectRequest: state.wallet.pendingConnectRequest,
+            isConnectModalOpen: state.wallet.isConnectModalOpen,
+            handleTonConnectUrl: state.handleTonConnectUrl,
+            showConnectRequest: state.showConnectRequest,
+            approveConnectRequest: state.approveConnectRequest,
+            rejectConnectRequest: state.rejectConnectRequest,
+            closeConnectModal: state.closeConnectModal,
+        })),
+    );
+
+// Export the main store as useAppStore for backward compatibility
+export const useAppStore = useStore;
