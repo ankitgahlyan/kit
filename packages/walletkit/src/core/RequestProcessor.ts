@@ -1,7 +1,12 @@
 // Request approval and rejection processing
 
 import { Address } from '@ton/core';
-import { CHAIN, SendTransactionRpcResponseSuccess } from '@tonconnect/protocol';
+import {
+    CHAIN,
+    SEND_TRANSACTION_ERROR_CODES,
+    SendTransactionRpcResponseError,
+    SendTransactionRpcResponseSuccess,
+} from '@tonconnect/protocol';
 import { TonClient } from '@ton/ton';
 
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest } from '../types';
@@ -146,12 +151,15 @@ export class RequestProcessor {
      */
     async rejectTransactionRequest(event: EventTransactionRequest, reason?: string): Promise<void> {
         try {
-            const response = {
-                error: 'USER_REJECTED',
-                reason: reason || 'User rejected transaction',
+            const response: SendTransactionRpcResponseError = {
+                error: {
+                    code: SEND_TRANSACTION_ERROR_CODES.USER_REJECTS_ERROR,
+                    message: reason || 'User rejected transaction',
+                },
+                id: event.id,
             };
 
-            await this.bridgeManager.sendResponse(event.id, event.id, response);
+            await this.bridgeManager.sendResponse(event.from, event.id, response);
         } catch (error) {
             log.error('Failed to reject transaction request', { error });
             throw error;
