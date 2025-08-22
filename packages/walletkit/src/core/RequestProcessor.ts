@@ -6,6 +6,7 @@ import {
     SEND_TRANSACTION_ERROR_CODES,
     SendTransactionRpcResponseError,
     SendTransactionRpcResponseSuccess,
+    SignDataRpcResponseSuccess,
 } from '@tonconnect/protocol';
 import { TonClient } from '@ton/ton';
 
@@ -15,6 +16,7 @@ import type { BridgeManager } from './BridgeManager';
 import { globalLogger } from './Logger';
 import { CreateTonProofMessageBytes, createTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
+import { PrepareTonConnectData } from '../utils/signData/sign';
 
 const log = globalLogger.createChild('RequestProcessor');
 
@@ -172,14 +174,26 @@ export class RequestProcessor {
     async approveSignDataRequest(event: EventSignDataRequest): Promise<{ signature: Uint8Array }> {
         try {
             // Sign data with wallet
-            const signature = await event.wallet.sign(event.data);
+            const signData = PrepareTonConnectData({
+                payload: event.data,
+                domain: 'localhost:3000',
+                address: event.wallet.getAddress().toString(),
+            });
+            const signature = await event.wallet.sign(signData.hash);
 
             // Send approval response
-            const response = {
-                result: Array.from(signature), // Convert to array for JSON serialization
+            const response: SignDataRpcResponseSuccess = {
+                id: event.id,
+                result: {
+                    signature: Buffer.from(signature).toString('base64'),
+                    address: signData.address,
+                    timestamp: signData.timestamp,
+                    domain: signData.domain,
+                    payload: signData.payload,
+                },
             };
 
-            await this.bridgeManager.sendResponse(event.id, event.id, response);
+            await this.bridgeManager.sendResponse(event.from, event.id, response);
 
             return { signature };
         } catch (error) {

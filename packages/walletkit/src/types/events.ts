@@ -1,6 +1,6 @@
 // Event type definitions for TON Connect protocol
 
-import type { ConnectRequest } from '@tonconnect/protocol';
+import type { ConnectRequest, SignDataPayload } from '@tonconnect/protocol';
 
 import type { WalletInterface, TonNetwork } from './wallet';
 import { ConnectTransactionParamContent, RawBridgeEventTransaction } from './internal';
@@ -115,11 +115,12 @@ export interface TransactionPreview {
  * Sign data request event from dApp
  */
 export interface EventSignDataRequest {
+    from: string;
     /** Unique request identifier */
     id: string;
 
     /** Raw data to be signed */
-    data: Uint8Array;
+    data: SignDataPayload;
 
     /** Human-readable preview for UI display */
     preview: SignDataPreview;
@@ -128,23 +129,21 @@ export interface EventSignDataRequest {
     wallet: WalletInterface;
 }
 
-/**
- * Sign data preview information
- */
-export interface SignDataPreview {
-    /** Content type for display */
-    kind: 'text' | 'json' | 'bytes';
-
-    /** Human-readable content */
+export type SignDataPreviewText = {
+    kind: 'text';
     content: string;
-
-    /** Additional metadata */
-    metadata?: {
-        size: number;
-        hash: string;
-        encoding: string;
-    };
-}
+};
+export type SignDataPreviewBinary = {
+    kind: 'binary';
+    content: string;
+};
+export type SignDataPreviewCell = {
+    kind: 'cell';
+    content: string;
+    schema?: string;
+    parsed?: Record<string, unknown>;
+};
+export type SignDataPreview = SignDataPreviewText | SignDataPreviewBinary | SignDataPreviewCell;
 
 /**
  * Disconnect event

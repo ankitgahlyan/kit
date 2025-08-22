@@ -1,0 +1,54 @@
+import { Address } from '@ton/core';
+import { SignDataPayload } from '@tonconnect/protocol';
+
+import { createTextBinaryHash, createCellHash } from './hash';
+
+export interface SignDataParams {
+    payload: SignDataPayload;
+    domain: string;
+    // privateKey: Buffer;
+    address: string;
+}
+
+export interface PrepareSignDataResult {
+    address: string;
+    timestamp: number;
+    domain: string;
+    payload: SignDataPayload;
+    hash: Uint8Array;
+}
+
+export type SignDataResult = PrepareSignDataResult & {
+    signature: string;
+};
+
+/**
+ * Signs data according to TON Connect sign-data protocol.
+ *
+ * Supports three payload types:
+ * 1. text - for text messages
+ * 2. binary - for arbitrary binary data
+ * 3. cell - for TON Cell with TL-B schema
+ *
+ * @param params Signing parameters
+ * @returns Signed data with base64 signature
+ */
+export function PrepareTonConnectData(params: SignDataParams): PrepareSignDataResult {
+    const { payload, domain, address } = params;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const parsedAddr = Address.parse(address);
+
+    // Create hash based on payload type
+    const finalHash =
+        payload.type === 'cell'
+            ? createCellHash(payload, parsedAddr, domain, timestamp)
+            : createTextBinaryHash(payload, parsedAddr, domain, timestamp);
+
+    return {
+        address,
+        timestamp,
+        domain,
+        payload,
+        hash: new Uint8Array(finalHash),
+    };
+}
