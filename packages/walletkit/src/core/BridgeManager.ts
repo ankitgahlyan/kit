@@ -1,7 +1,7 @@
 // Bridge connection and communication management
 
 import { SessionCrypto } from '@tonconnect/protocol';
-import { BridgeProvider, ClientConnection, WalletConsumer } from 'bridge-sdk';
+import { BridgeProvider, ClientConnection, WalletConsumer } from '@tonconnect/bridge-sdk';
 
 import type { BridgeConfig, RawBridgeEvent, StorageAdapter } from '../types/internal';
 import type { EventStore, DurableEventsConfig } from '../types/durableEvents';
@@ -108,8 +108,6 @@ export class BridgeManager {
         if (this.bridgeProvider && this.isConnected) {
             await this.updateClients();
         }
-        // TODO: Remove client from bridge if possible
-        // The bridge-sdk might not support removing individual clients
         log.debug('Session removed', { appSessionId });
     }
 
@@ -226,8 +224,6 @@ export class BridgeManager {
      * Add client to existing bridge connection
      */
     private async updateClients(): Promise<void> {
-        // TODO: The bridge-sdk might not support adding clients dynamically
-        // This would require closing and reopening the bridge with updated clients
         log.debug('Updating clients');
         if (this.bridgeProvider) {
             const clients = await this.getClients();

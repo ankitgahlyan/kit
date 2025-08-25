@@ -101,36 +101,36 @@ export class StorageEventProcessor implements IEventProcessor {
             }
 
             // Try to acquire lock on the first event
-            const event = events[0];
-            const lockAcquired = await this.eventStore.acquireLock(event.id, walletAddress);
+            const eventToUse = events[0];
+            const acquiredEvent = await this.eventStore.acquireLock(eventToUse.id, walletAddress);
 
-            if (!lockAcquired) {
-                log.debug('Failed to acquire lock on event', { eventId: event.id, walletAddress });
+            if (!acquiredEvent) {
+                log.debug('Failed to acquire lock on event', { eventId: eventToUse.id, walletAddress });
                 return false;
             }
 
             log.info('Processing event', {
-                eventId: event.id,
-                eventType: event.eventType,
+                eventId: acquiredEvent.id,
+                eventType: acquiredEvent.eventType,
                 walletAddress,
-                sessionId: event.sessionId,
+                sessionId: acquiredEvent.sessionId,
             });
 
             // Process the event through existing EventRouter
             try {
                 await this.eventRouter.routeEvent({
-                    ...event.rawEvent,
+                    ...acquiredEvent.rawEvent,
                     wallet: this.walletManager.getWallet(walletAddress),
                 });
 
                 // Mark as completed
-                await this.eventStore.updateEventStatus(event.id, 'completed');
+                await this.eventStore.updateEventStatus(acquiredEvent.id, 'completed');
 
-                log.info('Event processing completed', { eventId: event.id });
+                log.info('Event processing completed', { eventId: acquiredEvent.id });
                 return true;
             } catch (error) {
                 log.error('Error processing event', {
-                    eventId: event.id,
+                    eventId: acquiredEvent.id,
                     error: (error as Error).message,
                 });
 

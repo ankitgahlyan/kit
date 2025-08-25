@@ -47,7 +47,6 @@ export class EventRouter {
             }
         } catch (error) {
             log.error('Error routing event', { error });
-            // TODO: Could emit error event or call error callback
         }
     }
 

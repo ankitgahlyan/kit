@@ -1,4 +1,4 @@
-// Transaction validation logic
+import { Cell } from '@ton/core';
 
 import type { ValidationResult } from './types';
 import { validateTonAddress } from './address';
@@ -209,26 +209,7 @@ export function isValidNanotonAmount(amount: any): boolean {
  */
 function isValidBOC(bocString: string): boolean {
     try {
-        // BOCs are base64 encoded, typically start with specific prefixes
-        if (!bocString.match(/^[A-Za-z0-9+/]+(={0,2})?$/)) {
-            return false;
-        }
-
-        // Try to decode as base64
-        if (typeof atob !== 'undefined') {
-            atob(bocString);
-        } else {
-            // For environments without atob, do basic format validation
-            const base64Pattern = /^[A-Za-z0-9+/]+(={0,2})?$/;
-            if (!base64Pattern.test(bocString)) {
-                return false;
-            }
-        }
-
-        // TODO: Add more specific BOC validation
-        // - Check magic bytes (b5ee9c72 for standard BOC)
-        // - Validate cell structure
-        // - Check references and data consistency
+        Cell.fromBase64(bocString);
 
         return true;
     } catch {

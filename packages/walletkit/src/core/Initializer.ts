@@ -1,6 +1,7 @@
 // Initialization and setup logic
 
 import { TonClient } from '@ton/ton';
+import { CHAIN } from '@tonconnect/protocol';
 
 import {
     TonWalletKitOptions,
@@ -33,6 +34,7 @@ export interface InitializationConfig {
     retryAttempts?: number;
     retryDelay?: number;
     timeoutMs?: number;
+    network?: CHAIN;
 }
 
 /**
@@ -54,20 +56,20 @@ export interface InitializationResult {
  * Handles initialization of all TonWalletKit components
  */
 export class Initializer {
-    private config: InitializationConfig;
+    // private config: InitializationConfig;
     private tonClient!: TonClient;
     private eventEmitter: EventEmitter;
+    private network: CHAIN;
+    private retryAttempts: number;
+    private retryDelay: number;
+    private timeoutMs: number;
 
     constructor(config: InitializationConfig = {}, eventEmitter: EventEmitter) {
-        this.config = {
-            retryAttempts: 3,
-            retryDelay: 1000,
-            timeoutMs: 10000,
-            ...config,
-        };
+        this.network = config.network ?? CHAIN.MAINNET;
+        this.retryAttempts = config.retryAttempts ?? 3;
+        this.retryDelay = config.retryDelay ?? 1000;
+        this.timeoutMs = config.timeoutMs ?? 10000;
         this.eventEmitter = eventEmitter;
-
-        // TonClient and wallet initializers will be created in initialize() with proper options
     }
 
     /**
@@ -226,7 +228,7 @@ export class Initializer {
         requestProcessor: RequestProcessor;
         responseHandler: ResponseHandler;
     } {
-        const requestProcessor = new RequestProcessor(sessionManager, bridgeManager, this.tonClient);
+        const requestProcessor = new RequestProcessor(sessionManager, bridgeManager, this.tonClient, this.network);
         const responseHandler = new ResponseHandler(bridgeManager, sessionManager);
 
         return {

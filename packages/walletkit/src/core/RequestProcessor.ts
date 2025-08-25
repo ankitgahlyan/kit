@@ -82,6 +82,7 @@ export class RequestProcessor {
         private sessionManager: SessionManager,
         private bridgeManager: BridgeManager,
         private client: TonClient,
+        private network: CHAIN,
     ) {}
 
     /**
@@ -239,9 +240,6 @@ export class RequestProcessor {
         // Get wallet address
         const address = wallet.getAddress();
 
-        // Determine network (default to mainnet - TODO: make configurable)
-        const network = CHAIN.MAINNET;
-
         // Create base response data
         const connectResponse: ConnectEventSuccess = {
             event: 'connect',
@@ -268,7 +266,7 @@ export class RequestProcessor {
                     {
                         name: 'ton_addr',
                         address: Address.parse(address).toRawString(),
-                        network,
+                        network: this.network,
                         walletStateInit,
                         publicKey,
                     },
