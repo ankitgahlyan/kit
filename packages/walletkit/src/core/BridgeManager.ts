@@ -3,7 +3,9 @@
 import { SessionCrypto } from '@tonconnect/protocol';
 import { BridgeProvider, ClientConnection, WalletConsumer } from 'bridge-sdk';
 
-import type { BridgeConfig, RawBridgeEvent, EventCallback, StorageAdapter } from '../types/internal';
+import type { BridgeConfig, RawBridgeEvent, StorageAdapter } from '../types/internal';
+import type { EventStore, DurableEventsConfig } from '../types/durableEvents';
+import type { EventEmitter } from './EventEmitter';
 import { globalLogger } from './Logger';
 import { SessionManager } from './SessionManager';
 
@@ -16,11 +18,22 @@ export class BridgeManager {
     private storageAdapter: StorageAdapter;
     private isConnected = false;
     private reconnectAttempts = 0;
-    private eventCallback?: EventCallback<RawBridgeEvent>;
     private lastEventId?: string;
     private storageKey = 'bridge_last_event_id';
 
-    constructor(config: BridgeConfig, sessionManager: SessionManager, storageAdapter: StorageAdapter) {
+    // Durable events support
+    private eventStore: EventStore;
+    private durableEventsConfig?: DurableEventsConfig;
+    private eventEmitter?: EventEmitter;
+
+    constructor(
+        config: BridgeConfig,
+        sessionManager: SessionManager,
+        storageAdapter: StorageAdapter,
+        eventStore: EventStore,
+        durableEventsConfig?: DurableEventsConfig,
+        eventEmitter?: EventEmitter,
+    ) {
         this.config = {
             heartbeatInterval: 5000,
             reconnectInterval: 15000,
@@ -29,13 +42,9 @@ export class BridgeManager {
         };
         this.sessionManager = sessionManager;
         this.storageAdapter = storageAdapter;
-    }
-
-    /**
-     * Set event callback for incoming bridge events
-     */
-    setEventCallback(callback: EventCallback<RawBridgeEvent>): void {
-        this.eventCallback = callback;
+        this.eventStore = eventStore;
+        this.durableEventsConfig = durableEventsConfig;
+        this.eventEmitter = eventEmitter;
     }
 
     /**
@@ -242,7 +251,7 @@ export class BridgeManager {
                 id: event.id || crypto.randomUUID(),
                 method: event.method || 'unknown',
                 params: event.params || event,
-                sessionId: event.sessionId,
+                // sessionId: event.from,
                 timestamp: Date.now(),
                 from: event?.from,
                 domain: '',
@@ -256,9 +265,26 @@ export class BridgeManager {
                 }
             }
 
-            // Forward to event callback
-            if (this.eventCallback) {
-                this.eventCallback(rawEvent);
+            // Store event durably if enabled
+            if (!this.eventStore) {
+                throw new Error('Event store is not initialized');
+            }
+            try {
+                await this.eventStore.storeEvent(rawEvent);
+
+                // Notify that bridge storage was updated
+                if (this.eventEmitter) {
+                    this.eventEmitter.emit('bridge-storage-updated');
+                }
+
+                log.info('Event stored durably', { eventId: rawEvent.id, method: rawEvent.method });
+            } catch (error) {
+                log.error('Failed to store event durably', {
+                    eventId: rawEvent.id,
+                    error: (error as Error).message,
+                });
+
+                throw error;
             }
 
             log.info('Bridge event processed', { rawEvent });

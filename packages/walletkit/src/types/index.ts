@@ -43,3 +43,8 @@ export type {
     EventType,
     EventHandler,
 } from './internal';
+
+// Durable events types
+export type { EventStatus, StoredEvent, DurableEventsConfig, EventStore, EventProcessor } from './durableEvents';
+
+export { DEFAULT_DURABLE_EVENTS_CONFIG } from './durableEvents';

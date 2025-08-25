@@ -51,7 +51,11 @@ export interface ValidationResult {
     errors: string[];
 }
 
-type BridgeEventBase = { from: string; wallet?: WalletInterface; domain: string };
+type BridgeEventBase = {
+    from: string;
+    wallet?: WalletInterface;
+    domain: string;
+};
 
 // Bridge event types (raw from bridge)
 export interface RawBridgeEventGeneric extends BridgeEventBase {
@@ -59,7 +63,6 @@ export interface RawBridgeEventGeneric extends BridgeEventBase {
     method: 'none';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params: Record<string, any>;
-    sessionId?: string;
     timestamp?: number;
 }
 
@@ -73,7 +76,6 @@ export interface RawBridgeEventConnect extends BridgeEventBase {
         items: ConnectItem[];
         returnStrategy?: string;
     };
-    sessionId?: string;
     timestamp?: number;
 }
 
@@ -103,7 +105,6 @@ export interface RawBridgeEventDisconnect extends BridgeEventBase {
     params: {
         reason?: string;
     };
-    sessionId?: string;
     timestamp?: number;
 }
 

@@ -1,7 +1,7 @@
 // Event routing and handler coordination
 
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest, EventDisconnect } from '../types';
-import type { RawBridgeEvent, EventHandler, EventCallback } from '../types/internal';
+import type { RawBridgeEvent, EventHandler, EventCallback, EventType } from '../types/internal';
 import { ConnectHandler } from '../handlers/ConnectHandler';
 import { TransactionHandler } from '../handlers/TransactionHandler';
 import { SignDataHandler } from '../handlers/SignDataHandler';
@@ -173,5 +173,29 @@ export class EventRouter {
                 log.error('Error in disconnect callback', { error });
             }
         });
+    }
+
+    /**
+     * Get enabled event types based on registered callbacks
+     * Used by durable event processor to filter events
+     * TODO - on change, trigger wallet processing restart
+     */
+    getEnabledEventTypes(): EventType[] {
+        const enabledTypes: EventType[] = [];
+
+        if (this.connectRequestCallbacks.length > 0) {
+            enabledTypes.push('startConnect');
+        }
+        if (this.transactionRequestCallbacks.length > 0) {
+            enabledTypes.push('sendTransaction');
+        }
+        if (this.signDataRequestCallbacks.length > 0) {
+            enabledTypes.push('signData');
+        }
+        if (this.disconnectCallbacks.length > 0) {
+            enabledTypes.push('disconnect');
+        }
+
+        return enabledTypes;
     }
 }

@@ -18,6 +18,10 @@ export { JettonsManager, type JettonInfo } from './core/JettonsManager';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener } from './core/EventEmitter';
 
+// Re-export durable events components
+export { StorageEventStore } from './core/EventStore';
+export { StorageEventProcessor } from './core/EventProcessor';
+
 // Re-export logger for customization
 // export { Logger, LogLevel, createLogger } from './core/Logger';
 // export type { LoggerConfig, LogContext } from './core/Logger';
@@ -29,7 +33,8 @@ export { SignDataHandler } from './handlers/SignDataHandler';
 export { DisconnectHandler } from './handlers/DisconnectHandler';
 
 // Re-export wallet contracts and initializers
-export { WalletV5, WalletV5Config, WalletId, Opcodes } from './contracts/w5/WalletV5R1';
+export { WalletV5, WalletId, Opcodes } from './contracts/w5/WalletV5R1';
+export type { WalletV5Config } from './contracts/w5/WalletV5R1';
 export { WalletV5R1CodeCell, WalletV5R1CodeBoc } from './contracts/w5/WalletV5R1.source';
 export { WalletV5R1Adapter } from './contracts/w5/WalletV5R1Adapter';
 export { createWalletV5R1 } from './contracts/w5/WalletV5R1Adapter';

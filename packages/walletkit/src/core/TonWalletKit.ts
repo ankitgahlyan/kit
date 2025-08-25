@@ -23,6 +23,7 @@ import type { ResponseHandler } from './ResponseHandler';
 import { JettonsManager, type JettonInfo } from './JettonsManager';
 import { RawBridgeEventConnect } from '../types/internal';
 import { EventEmitter } from './EventEmitter';
+import { StorageEventProcessor } from './EventProcessor';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -47,6 +48,7 @@ export class TonWalletKit implements ITonWalletKit {
     private tonClient!: TonClient;
     private jettonsManager: JettonsManager;
     private initializer: Initializer;
+    private eventProcessor!: StorageEventProcessor;
 
     // Event emitter for this kit instance
     private eventEmitter: EventEmitter;
@@ -76,6 +78,10 @@ export class TonWalletKit implements ITonWalletKit {
             const components = await this.initializer.initialize(options);
             this.assignComponents(components);
             this.setupEventRouting();
+
+            // Start the event processor recovery loop
+            this.eventProcessor.startRecoveryLoop();
+
             this.isInitialized = true;
         } catch (error) {
             log.error('TonWalletKit initialization failed', { error });
@@ -93,6 +99,7 @@ export class TonWalletKit implements ITonWalletKit {
         this.requestProcessor = components.requestProcessor;
         this.responseHandler = components.responseHandler;
         this.tonClient = components.tonClient;
+        this.eventProcessor = components.eventProcessor;
     }
 
     /**
@@ -101,6 +108,28 @@ export class TonWalletKit implements ITonWalletKit {
     private setupEventRouting(): void {
         // The event routing logic will use the existing EventRouter
         // but integrate with our new ResponseHandler for error cases
+
+        // Start event processing for existing wallets
+        this.startProcessingForExistingWallets();
+    }
+
+    /**
+     * Start event processing for all existing wallets
+     */
+    private async startProcessingForExistingWallets(): Promise<void> {
+        const wallets = this.walletManager.getWallets();
+        const enabledEventTypes = this.eventRouter.getEnabledEventTypes();
+
+        for (const wallet of wallets) {
+            try {
+                await this.eventProcessor.startProcessing(wallet.getAddress(), enabledEventTypes);
+            } catch (error) {
+                log.error('Failed to start event processing for wallet', {
+                    walletAddress: wallet.getAddress(),
+                    error,
+                });
+            }
+        }
     }
 
     /**
@@ -136,11 +165,24 @@ export class TonWalletKit implements ITonWalletKit {
     async addWallet(walletConfig: WalletInitConfig): Promise<void> {
         await this.ensureInitialized();
         const wallet = await createWalletFromConfig(walletConfig, this.tonClient);
-        await this.walletManager.addWallet(wallet);
+        const walletAdded = await this.walletManager.addWallet(wallet);
+
+        // wallet already exists
+        if (!walletAdded) {
+            return;
+        }
+
+        // Start event processing for the new wallet
+        const enabledEventTypes = this.eventRouter.getEnabledEventTypes();
+        await this.eventProcessor.startProcessing(wallet.getAddress(), enabledEventTypes);
     }
 
     async removeWallet(wallet: WalletInterface): Promise<void> {
         await this.ensureInitialized();
+
+        // Stop event processing for the wallet
+        await this.eventProcessor.stopProcessing(wallet.getAddress());
+
         await this.walletManager.removeWallet(wallet);
         // Also remove associated sessions
         await this.sessionManager.removeSessionsForWallet(wallet);
@@ -148,6 +190,13 @@ export class TonWalletKit implements ITonWalletKit {
 
     async clearWallets(): Promise<void> {
         await this.ensureInitialized();
+
+        // Stop event processing for all wallets
+        const wallets = this.walletManager.getWallets();
+        for (const wallet of wallets) {
+            await this.eventProcessor.stopProcessing(wallet.getAddress());
+        }
+
         await this.walletManager.clearWallets();
         await this.sessionManager.clearSessions();
     }
@@ -310,7 +359,6 @@ export class TonWalletKit implements ITonWalletKit {
                 items: r.items,
                 returnStrategy: params.returnStrategy,
             },
-            sessionId: params.clientId,
             timestamp: Date.now(),
             domain: '',
         };
@@ -398,6 +446,7 @@ export class TonWalletKit implements ITonWalletKit {
                 requestProcessor: this.requestProcessor,
                 responseHandler: this.responseHandler,
                 tonClient: this.tonClient,
+                eventProcessor: this.eventProcessor,
             });
         }
 

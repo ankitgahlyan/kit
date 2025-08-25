@@ -40,14 +40,19 @@ export class WalletManager {
     /**
      * Add a wallet with validation
      */
-    async addWallet(wallet: WalletInterface): Promise<void> {
+    async addWallet(wallet: WalletInterface): Promise<boolean> {
         const validation = validateWallet(wallet);
         if (!validation.isValid) {
             throw new Error(`Invalid wallet: ${validation.errors.join(', ')}`);
         }
 
+        if (this.wallets.has(wallet.getAddress())) {
+            log.warn(`Wallet with address ${wallet.getAddress()} already exists`);
+            return false;
+        }
+
         this.wallets.set(wallet.getAddress(), wallet);
-        // await this.persistWallets();
+        return true;
     }
 
     /**

@@ -21,6 +21,8 @@ import { ResponseHandler } from './ResponseHandler';
 import { globalLogger } from './Logger';
 import type { EventEmitter } from './EventEmitter';
 import { createWalletV5R1 } from '../contracts/w5/WalletV5R1Adapter';
+import { StorageEventStore } from './EventStore';
+import { StorageEventProcessor } from './EventProcessor';
 
 const log = globalLogger.createChild('Initializer');
 
@@ -45,6 +47,7 @@ export interface InitializationResult {
     responseHandler: ResponseHandler;
     storageAdapter: StorageAdapter;
     tonClient: TonClient;
+    eventProcessor: StorageEventProcessor;
 }
 
 /**
@@ -81,16 +84,11 @@ export class Initializer {
             const storageAdapter = this.initializeStorage(options);
 
             // 3. Initialize core managers
-            const { walletManager, sessionManager, bridgeManager, eventRouter } = await this.initializeManagers(
-                options,
-                storageAdapter,
-            );
+            const { walletManager, sessionManager, bridgeManager, eventRouter, eventProcessor } =
+                await this.initializeManagers(options, storageAdapter);
 
             // 5. Initialize processors
             const { requestProcessor, responseHandler } = this.initializeProcessors(sessionManager, bridgeManager);
-
-            // 6. Configure event routing
-            this.configureEventRouting(bridgeManager, eventRouter);
 
             log.info('TonWalletKit initialized successfully');
 
@@ -103,6 +101,7 @@ export class Initializer {
                 responseHandler,
                 storageAdapter,
                 tonClient: this.tonClient,
+                eventProcessor,
             };
         } catch (error) {
             log.error('Failed to initialize TonWalletKit', { error });
@@ -153,6 +152,7 @@ export class Initializer {
         sessionManager: SessionManager;
         bridgeManager: BridgeManager;
         eventRouter: EventRouter;
+        eventProcessor: StorageEventProcessor;
     }> {
         // Initialize managers
         const walletManager = new WalletManager(storageAdapter);
@@ -168,22 +168,51 @@ export class Initializer {
         const sessionManager = new SessionManager(storageAdapter, walletManager);
         await sessionManager.initialize();
 
+        const eventStore = new StorageEventStore(storageAdapter, {
+            enabled: true,
+            recoveryIntervalMs: 1000,
+            processingTimeoutMs: 10000,
+            cleanupIntervalMs: 10000,
+            retentionDays: 7,
+            maxEventSizeBytes: 100 * 1024, // 100kb
+        });
+
         const bridgeManager = new BridgeManager(
             {
                 bridgeUrl: options.bridgeUrl,
             },
             sessionManager,
             storageAdapter,
+            eventStore,
         );
         await bridgeManager.initialize();
 
         const eventRouter = new EventRouter(this.eventEmitter);
+
+        // Create event processor for durable events
+        // TODO - change default values
+        const eventProcessor = new StorageEventProcessor(
+            eventStore,
+            {
+                enabled: true,
+                recoveryIntervalMs: 60000, // 1 minute
+                processingTimeoutMs: 300000, // 5 minutes
+                cleanupIntervalMs: 86400000, // 24 hours
+                retentionDays: 7,
+                maxEventSizeBytes: 100 * 1024, // 100KB
+            },
+            walletManager,
+            sessionManager,
+            eventRouter,
+            this.eventEmitter,
+        );
 
         return {
             walletManager,
             sessionManager,
             bridgeManager,
             eventRouter,
+            eventProcessor,
         };
     }
 
@@ -204,18 +233,6 @@ export class Initializer {
             requestProcessor,
             responseHandler,
         };
-    }
-
-    /**
-     * Configure event routing from bridge to router
-     */
-    private configureEventRouting(bridgeManager: BridgeManager, _eventRouter: EventRouter): void {
-        bridgeManager.setEventCallback(async (event) => {
-            // The event routing will be handled by the main TonWalletKit class
-            // This is just setting up the bridge callback
-            log.debug('Bridge event received', { method: event.method });
-            _eventRouter.routeEvent(event);
-        });
     }
 
     /**
@@ -259,6 +276,10 @@ export class Initializer {
     async cleanup(components: Partial<InitializationResult>): Promise<void> {
         try {
             log.info('Cleaning up TonWalletKit components...');
+
+            if (components.eventProcessor) {
+                components.eventProcessor.stopRecoveryLoop();
+            }
 
             if (components.bridgeManager) {
                 await components.bridgeManager.close();

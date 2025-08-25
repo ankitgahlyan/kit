@@ -1,0 +1,302 @@
+// Durable event storage implementation
+
+import type { StoredEvent, EventStore, DurableEventsConfig, EventStatus } from '../types/durableEvents';
+import type { RawBridgeEvent, EventType, StorageAdapter } from '../types/internal';
+import { globalLogger } from './Logger';
+import { validateBridgeEvent } from '../validation/events';
+
+const log = globalLogger.createChild('EventStore');
+
+/**
+ * Concrete implementation of EventStore using StorageAdapter
+ */
+export class StorageEventStore implements EventStore {
+    private storageAdapter: StorageAdapter;
+    private config: DurableEventsConfig;
+    private storageKey = 'durable_events';
+    private indexKey = 'durable_events_index';
+
+    constructor(storageAdapter: StorageAdapter, config: DurableEventsConfig) {
+        this.storageAdapter = storageAdapter;
+        this.config = config;
+    }
+
+    /**
+     * Store a new event from the bridge
+     */
+    async storeEvent(_rawEvent: RawBridgeEvent): Promise<StoredEvent> {
+        const rawEvent = { ..._rawEvent, wallet: undefined };
+        // Validate event structure
+        const validation = validateBridgeEvent(rawEvent);
+        if (!validation.isValid) {
+            throw new Error(`Invalid bridge event: ${validation.errors.join(', ')}`);
+        }
+
+        // Check event size
+        const eventStr = JSON.stringify(rawEvent);
+        const sizeBytes = new TextEncoder().encode(eventStr).length;
+
+        if (sizeBytes > this.config.maxEventSizeBytes) {
+            throw new Error(`Event too large: ${sizeBytes} bytes (max: ${this.config.maxEventSizeBytes})`);
+        }
+
+        // Extract event type from method
+        const eventType = this.extractEventType(rawEvent.method);
+
+        // Create stored event
+        const storedEvent: StoredEvent = {
+            id: rawEvent.id,
+            sessionId: rawEvent.from,
+            eventType,
+            rawEvent,
+            status: 'new',
+            createdAt: Date.now(),
+            sizeBytes,
+        };
+
+        // Store event
+        await this.saveEvent(storedEvent);
+
+        log.info('Event stored', {
+            eventId: storedEvent.id,
+            eventType,
+            sizeBytes,
+            sessionId: rawEvent.from,
+        });
+
+        return storedEvent;
+    }
+
+    /**
+     * Get events for a wallet that are ready for processing
+     */
+    async getEventsForWallet(
+        _walletAddress: string,
+        sessionIds: string[],
+        eventTypes: EventType[],
+    ): Promise<StoredEvent[]> {
+        const events = await this.getAllEvents();
+
+        return events
+            .filter(
+                (event) =>
+                    // Only new events
+                    event.status === 'new' &&
+                    // Must match one of the session IDs
+                    event.sessionId &&
+                    sessionIds.includes(event.sessionId) &&
+                    // Must be one of the requested event types
+                    eventTypes.includes(event.eventType),
+            )
+            .sort((a, b) => a.createdAt - b.createdAt); // Oldest first
+    }
+
+    /**
+     * Attempt to acquire exclusive lock on an event for processing
+     */
+    async acquireLock(eventId: string, walletAddress: string): Promise<StoredEvent | undefined> {
+        const event = await this.getEvent(eventId);
+        if (!event) {
+            log.warn('Cannot lock non-existent event', { eventId });
+            return undefined;
+        }
+
+        if (event.status !== 'new') {
+            log.debug('Cannot lock event - not in new status', {
+                eventId,
+                status: event.status,
+                lockedBy: event.lockedBy,
+            });
+            return undefined;
+        }
+
+        // Update event to processing status with lock
+        const updatedEvent: StoredEvent = {
+            ...event,
+            status: 'processing',
+            processingStartedAt: Date.now(),
+            lockedBy: walletAddress,
+        };
+
+        await this.saveEvent(updatedEvent);
+
+        log.debug('Event lock acquired', { eventId, walletAddress });
+        return updatedEvent;
+    }
+
+    /**
+     * Update event status and timestamps
+     */
+    async updateEventStatus(eventId: string, status: EventStatus): Promise<void> {
+        const event = await this.getEvent(eventId);
+        if (!event) {
+            throw new Error(`Event not found: ${eventId}`);
+        }
+
+        const updatedEvent: StoredEvent = {
+            ...event,
+            status,
+        };
+
+        if (status === 'completed') {
+            updatedEvent.completedAt = Date.now();
+        }
+
+        await this.saveEvent(updatedEvent);
+
+        log.debug('Event status updated', { eventId, status });
+    }
+
+    /**
+     * Get event by ID
+     */
+    async getEvent(eventId: string): Promise<StoredEvent | null> {
+        try {
+            return await this.storageAdapter.get<StoredEvent>(this.getEventKey(eventId));
+        } catch (error) {
+            log.warn('Failed to get event', { eventId, error });
+            return null;
+        }
+    }
+
+    /**
+     * Recover stale events that have been processing too long
+     */
+    async recoverStaleEvents(): Promise<number> {
+        const events = await this.getAllEvents();
+        const now = Date.now();
+        let recoveredCount = 0;
+
+        for (const event of events) {
+            if (
+                event.status === 'processing' &&
+                event.processingStartedAt &&
+                now - event.processingStartedAt > this.config.processingTimeoutMs
+            ) {
+                // Reset to new status
+                const recoveredEvent: StoredEvent = {
+                    ...event,
+                    status: 'new',
+                    processingStartedAt: undefined,
+                    lockedBy: undefined,
+                };
+
+                await this.saveEvent(recoveredEvent);
+                recoveredCount++;
+
+                log.info('Recovered stale event', {
+                    eventId: event.id,
+                    lockedBy: event.lockedBy,
+                    staleMinutes: Math.round((now - event.processingStartedAt) / 60000),
+                });
+            }
+        }
+
+        if (recoveredCount > 0) {
+            log.info('Event recovery completed', { recoveredCount });
+        }
+
+        return recoveredCount;
+    }
+
+    /**
+     * Clean up old completed events
+     */
+    async cleanupOldEvents(): Promise<number> {
+        const events = await this.getAllEvents();
+        const cutoffTime = Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000;
+        let cleanedUpCount = 0;
+
+        for (const event of events) {
+            if (event.status === 'completed' && event.completedAt && event.completedAt < cutoffTime) {
+                await this.storageAdapter.remove(this.getEventKey(event.id));
+                cleanedUpCount++;
+
+                log.debug('Cleaned up old event', { eventId: event.id });
+            }
+        }
+
+        // Update index after cleanup
+        if (cleanedUpCount > 0) {
+            await this.rebuildIndex();
+            log.info('Event cleanup completed', { cleanedUpCount });
+        }
+
+        return cleanedUpCount;
+    }
+
+    /**
+     * Get all events (for debugging and internal operations)
+     */
+    async getAllEvents(): Promise<StoredEvent[]> {
+        try {
+            const eventIds = await this.getEventIndex();
+            const events: StoredEvent[] = [];
+
+            for (const eventId of eventIds) {
+                const event = await this.getEvent(eventId);
+                if (event) {
+                    events.push(event);
+                }
+            }
+
+            return events;
+        } catch (error) {
+            log.warn('Failed to get all events', { error });
+            return [];
+        }
+    }
+
+    // Private helper methods
+
+    private getEventKey(eventId: string): string {
+        return `${this.storageKey}:${eventId}`;
+    }
+
+    private async saveEvent(event: StoredEvent): Promise<void> {
+        // Save the event
+        await this.storageAdapter.set(this.getEventKey(event.id), event);
+
+        // Update index
+        await this.addToIndex(event.id);
+    }
+
+    private async getEventIndex(): Promise<string[]> {
+        try {
+            const index = await this.storageAdapter.get<string[]>(this.indexKey);
+            return index || [];
+        } catch (error) {
+            log.warn('Failed to get event index', { error });
+            return [];
+        }
+    }
+
+    private async addToIndex(eventId: string): Promise<void> {
+        const index = await this.getEventIndex();
+        if (!index.includes(eventId)) {
+            index.push(eventId);
+            await this.storageAdapter.set(this.indexKey, index);
+        }
+    }
+
+    private async rebuildIndex(): Promise<void> {
+        const events = await this.getAllEvents();
+        const index = events.map((event) => event.id);
+        await this.storageAdapter.set(this.indexKey, index);
+    }
+
+    private extractEventType(method: string): EventType {
+        switch (method) {
+            case 'startConnect':
+                return 'startConnect';
+            case 'sendTransaction':
+                return 'sendTransaction';
+            case 'signData':
+                return 'signData';
+            case 'disconnect':
+                return 'disconnect';
+            default:
+                throw new Error(`Unknown event method: ${method}`);
+        }
+    }
+}
