@@ -55,17 +55,17 @@ export class StorageEventProcessor implements IEventProcessor {
     /**
      * Start processing events for a wallet
      */
-    async startProcessing(walletAddress: string, enabledEventTypes: EventType[]): Promise<void> {
+    async startProcessing(walletAddress: string): Promise<void> {
         if (this.processingLoops.get(walletAddress)) {
             log.debug('Processing already active for wallet', { walletAddress });
             return;
         }
 
         this.processingLoops.set(walletAddress, true);
-        log.info('Started event processing for wallet', { walletAddress, enabledEventTypes });
+        log.info('Started event processing for wallet', { walletAddress });
 
         // Start processing loop
-        this.processEventsLoop(walletAddress, enabledEventTypes);
+        this.processEventsLoop(walletAddress);
     }
 
     /**
@@ -87,7 +87,7 @@ export class StorageEventProcessor implements IEventProcessor {
     /**
      * Process next available event for a wallet
      */
-    async processNextEvent(walletAddress: string, enabledEventTypes: EventType[]): Promise<boolean> {
+    async processNextEvent(walletAddress: string): Promise<boolean> {
         try {
             // Get active sessions for this wallet
             const sessions = this.sessionManager
@@ -102,6 +102,7 @@ export class StorageEventProcessor implements IEventProcessor {
             const sessionIds = sessions.map((session) => session.sessionId);
 
             // Get events ready for processing
+            const enabledEventTypes = this.getEnabledEventTypes();
             const events = await this.eventStore.getEventsForWallet(walletAddress, sessionIds, enabledEventTypes);
 
             if (events.length === 0) {
@@ -239,10 +240,10 @@ export class StorageEventProcessor implements IEventProcessor {
     /**
      * Main processing loop for a wallet
      */
-    private async processEventsLoop(walletAddress: string, enabledEventTypes: EventType[]): Promise<void> {
+    private async processEventsLoop(walletAddress: string): Promise<void> {
         while (this.processingLoops.get(walletAddress)) {
             try {
-                const processed = await this.processNextEvent(walletAddress, enabledEventTypes);
+                const processed = await this.processNextEvent(walletAddress);
 
                 if (!processed) {
                     // No events processed, wait for either timeout or wake-up signal
@@ -309,11 +310,7 @@ export class StorageEventProcessor implements IEventProcessor {
     /**
      * Get enabled event types based on registered handlers in EventRouter
      */
-    // private getEnabledEventTypes(): EventType[] {
-    //     return this.eventRouter.getEnabledEventTypes();
-    // }
-
-    // private delay(ms: number): Promise<void> {
-    //     return new Promise((resolve) => setTimeout(resolve, ms));
-    // }
+    private getEnabledEventTypes(): EventType[] {
+        return this.eventRouter.getEnabledEventTypes();
+    }
 }

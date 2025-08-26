@@ -118,11 +118,10 @@ export class TonWalletKit implements ITonWalletKit {
      */
     private async startProcessingForExistingWallets(): Promise<void> {
         const wallets = this.walletManager.getWallets();
-        const enabledEventTypes = this.eventRouter.getEnabledEventTypes();
 
         for (const wallet of wallets) {
             try {
-                await this.eventProcessor.startProcessing(wallet.getAddress(), enabledEventTypes);
+                await this.eventProcessor.startProcessing(wallet.getAddress());
             } catch (error) {
                 log.error('Failed to start event processing for wallet', {
                     walletAddress: wallet.getAddress(),
@@ -173,8 +172,7 @@ export class TonWalletKit implements ITonWalletKit {
         }
 
         // Start event processing for the new wallet
-        const enabledEventTypes = this.eventRouter.getEnabledEventTypes();
-        await this.eventProcessor.startProcessing(wallet.getAddress(), enabledEventTypes);
+        await this.eventProcessor.startProcessing(wallet.getAddress());
     }
 
     async removeWallet(wallet: WalletInterface): Promise<void> {
@@ -259,6 +257,22 @@ export class TonWalletKit implements ITonWalletKit {
                 this.eventRouter.onDisconnect(cb);
             });
         }
+    }
+
+    removeConnectRequestCallback(cb: (event: EventConnectRequest) => void): void {
+        this.eventRouter.removeConnectRequestCallback(cb);
+    }
+
+    removeTransactionRequestCallback(cb: (event: EventTransactionRequest) => void): void {
+        this.eventRouter.removeTransactionRequestCallback(cb);
+    }
+
+    removeSignDataRequestCallback(cb: (event: EventSignDataRequest) => void): void {
+        this.eventRouter.removeSignDataRequestCallback(cb);
+    }
+
+    removeDisconnectCallback(cb: (event: EventDisconnect) => void): void {
+        this.eventRouter.removeDisconnectCallback(cb);
     }
 
     // === URL Processing API ===

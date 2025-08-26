@@ -75,6 +75,12 @@ export interface TonWalletKit {
     /** Register disconnect handler */
     onDisconnect(cb: (event: EventDisconnect) => void): void;
 
+    /** Remove request handlers */
+    removeConnectRequestCallback(cb: (event: EventConnectRequest) => void): void;
+    removeTransactionRequestCallback(cb: (event: EventTransactionRequest) => void): void;
+    removeSignDataRequestCallback(cb: (event: EventSignDataRequest) => void): void;
+    removeDisconnectCallback(cb: (event: EventDisconnect) => void): void;
+
     // === Jettons API ===
 
     /** Jettons API access */

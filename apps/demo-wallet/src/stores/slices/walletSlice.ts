@@ -445,14 +445,20 @@ export const setupWalletKitListeners = (
     showTransactionRequest: (request: EventTransactionRequest) => void,
     showSignDataRequest: (request: EventSignDataRequest) => void,
 ) => {
+    const onTransactionRequest = (event: EventTransactionRequest) => {
+        log.info('Transaction request received:', event);
+        showTransactionRequest(event);
+    };
     walletKit.onConnectRequest((event) => {
         log.info('Connect request received:', event);
         showConnectRequest(event);
     });
-    walletKit.onTransactionRequest((event) => {
-        log.info('Transaction request received:', event);
-        showTransactionRequest(event);
-    });
+
+    walletKit.onTransactionRequest(onTransactionRequest);
+    // setTimeout(() => {
+    //     walletKit.removeTransactionRequestCallback(onTransactionRequest);
+    // }, 10000);
+
     walletKit.onSignDataRequest((event) => {
         log.info('Sign data request received:', event);
         showSignDataRequest(event);
