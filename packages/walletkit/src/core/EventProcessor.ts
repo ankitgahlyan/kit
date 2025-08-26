@@ -7,7 +7,6 @@ import type { SessionManager } from './SessionManager';
 import type { EventRouter } from './EventRouter';
 import type { EventEmitter } from './EventEmitter';
 import { globalLogger } from './Logger';
-import { delay } from '../utils/delay';
 
 const log = globalLogger.createChild('EventProcessor');
 
@@ -24,6 +23,9 @@ export class StorageEventProcessor implements IEventProcessor {
 
     // Active processing loops per wallet
     private processingLoops: Map<string, boolean> = new Map();
+
+    // Wake-up promises for processing loops
+    private wakeUpResolvers: Map<string, () => void> = new Map();
 
     // Recovery and cleanup timeouts
     private recoveryTimeoutId?: number;
@@ -54,8 +56,6 @@ export class StorageEventProcessor implements IEventProcessor {
      * Start processing events for a wallet
      */
     async startProcessing(walletAddress: string, enabledEventTypes: EventType[]): Promise<void> {
-        // debugger;
-
         if (this.processingLoops.get(walletAddress)) {
             log.debug('Processing already active for wallet', { walletAddress });
             return;
@@ -73,6 +73,14 @@ export class StorageEventProcessor implements IEventProcessor {
      */
     async stopProcessing(walletAddress: string): Promise<void> {
         this.processingLoops.set(walletAddress, false);
+
+        // Wake up the processing loop so it can exit cleanly
+        const wakeUpResolver = this.wakeUpResolvers.get(walletAddress);
+        if (wakeUpResolver) {
+            wakeUpResolver();
+            this.wakeUpResolvers.delete(walletAddress);
+        }
+
         log.info('Stopped event processing for wallet', { walletAddress });
     }
 
@@ -237,8 +245,8 @@ export class StorageEventProcessor implements IEventProcessor {
                 const processed = await this.processNextEvent(walletAddress, enabledEventTypes);
 
                 if (!processed) {
-                    // No events processed, wait a bit before checking again
-                    await delay(1000);
+                    // No events processed, wait for either timeout or wake-up signal
+                    await this.waitForWakeUpOrTimeout(walletAddress, 1000);
                 }
             } catch (error) {
                 log.error('Error in processing loop', {
@@ -246,27 +254,56 @@ export class StorageEventProcessor implements IEventProcessor {
                     error: (error as Error).message,
                 });
 
-                // Wait before retrying
-                await delay(5000);
+                // Wait before retrying (shorter timeout for errors)
+                await this.waitForWakeUpOrTimeout(walletAddress, 5000);
             }
         }
 
+        // Clean up wake-up resolver
+        this.wakeUpResolvers.delete(walletAddress);
         log.debug('Processing loop ended for wallet', { walletAddress });
     }
 
     /**
      * Trigger processing for all active wallets
-     * TODO - implement this
      */
     private triggerProcessingForAllWallets(): void {
         // Get all wallet addresses from active processing loops
         for (const [walletAddress, isActive] of this.processingLoops.entries()) {
             if (isActive) {
-                // Emit an event to wake up the processing loop
-                // The loop will check for new events on next iteration
-                log.debug('Triggering processing for wallet', { walletAddress });
+                // Wake up the processing loop immediately
+                const wakeUpResolver = this.wakeUpResolvers.get(walletAddress);
+                if (wakeUpResolver) {
+                    log.debug('Waking up processing loop for wallet', { walletAddress });
+                    wakeUpResolver();
+                } else {
+                    log.debug('No wake-up resolver found for wallet', { walletAddress });
+                }
             }
         }
+    }
+
+    /**
+     * Wait for either a wake-up signal or timeout
+     */
+    private async waitForWakeUpOrTimeout(walletAddress: string, timeoutMs: number): Promise<void> {
+        return new Promise<void>((resolve) => {
+            // Set up timeout
+            const timeoutId = setTimeout(() => {
+                // Clean up wake-up resolver and resolve
+                this.wakeUpResolvers.delete(walletAddress);
+                resolve();
+            }, timeoutMs);
+
+            // Set up wake-up resolver
+            const wakeUpResolver = () => {
+                clearTimeout(timeoutId);
+                this.wakeUpResolvers.delete(walletAddress);
+                resolve();
+            };
+
+            this.wakeUpResolvers.set(walletAddress, wakeUpResolver);
+        });
     }
 
     /**

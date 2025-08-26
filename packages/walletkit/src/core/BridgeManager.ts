@@ -4,7 +4,7 @@ import { SessionCrypto } from '@tonconnect/protocol';
 import { BridgeProvider, ClientConnection, WalletConsumer } from '@tonconnect/bridge-sdk';
 
 import type { BridgeConfig, RawBridgeEvent, StorageAdapter } from '../types/internal';
-import type { EventStore, DurableEventsConfig } from '../types/durableEvents';
+import type { EventStore } from '../types/durableEvents';
 import type { EventEmitter } from './EventEmitter';
 import { globalLogger } from './Logger';
 import { SessionManager } from './SessionManager';
@@ -28,7 +28,6 @@ export class BridgeManager {
 
     // Durable events support
     private eventStore: EventStore;
-    private durableEventsConfig?: DurableEventsConfig;
     private eventEmitter?: EventEmitter;
 
     private requestProcessingTimeoutId?: number;
@@ -38,7 +37,6 @@ export class BridgeManager {
         sessionManager: SessionManager,
         storageAdapter: StorageAdapter,
         eventStore: EventStore,
-        durableEventsConfig?: DurableEventsConfig,
         eventEmitter?: EventEmitter,
     ) {
         this.config = {
@@ -50,7 +48,6 @@ export class BridgeManager {
         this.sessionManager = sessionManager;
         this.storageAdapter = storageAdapter;
         this.eventStore = eventStore;
-        this.durableEventsConfig = durableEventsConfig;
         this.eventEmitter = eventEmitter;
     }
 

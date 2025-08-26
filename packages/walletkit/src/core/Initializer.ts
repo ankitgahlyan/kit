@@ -180,6 +180,7 @@ export class Initializer {
             sessionManager,
             storageAdapter,
             eventStore,
+            this.eventEmitter,
         );
         await bridgeManager.start();
 
