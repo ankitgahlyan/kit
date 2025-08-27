@@ -4,3 +4,5 @@ node_modules
 dist
 .idea
 .turbo
+apps/demo-wallet/dist-extension.pem
+apps/demo-wallet/dist-extension.crx

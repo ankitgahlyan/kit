@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:extension": "tsc -b && vite build --config vite.extension.config.ts && npm run copy-extension-files",
+    "copy-extension-files": "node -e \"require('fs').copyFileSync('public/manifest.json', 'dist-extension/manifest.json')\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },

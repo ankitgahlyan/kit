@@ -4,7 +4,7 @@ import type { AddressJetton } from '@ton/walletkit';
 
 import { Layout, Button, Input, Card } from '../components';
 import { useWallet, useJettons } from '../stores';
-import { walletKit } from '../stores/slices/walletSlice';
+// import { walletKit } from '../stores/slices/walletSlice';
 import { useTonWallet } from '../hooks';
 import { createComponentLogger } from '../utils/logger';
 
@@ -108,7 +108,7 @@ export const SendTransaction: React.FC = () => {
                 });
 
                 // Convert the display amount to the smallest unit based on decimals
-                const jettonAmount = Math.floor(inputAmount * Math.pow(10, selectedToken.data.decimals)).toString();
+                // const jettonAmount = Math.floor(inputAmount * Math.pow(10, selectedToken.data.decimals)).toString();
 
                 // Get current wallet address
                 const currentWallet = useWallet().currentWallet!;
