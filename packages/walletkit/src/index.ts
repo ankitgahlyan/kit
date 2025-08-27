@@ -38,3 +38,22 @@ export type { WalletV5Config } from './contracts/w5/WalletV5R1';
 export { WalletV5R1CodeCell, WalletV5R1CodeBoc } from './contracts/w5/WalletV5R1.source';
 export { WalletV5R1Adapter } from './contracts/w5/WalletV5R1Adapter';
 export { createWalletV5R1 } from './contracts/w5/WalletV5R1Adapter';
+
+// Re-export JS Bridge components
+export { JSBridgeManager, type JSBridgeManagerOptions } from './bridge/JSBridgeManager';
+export { JSBridgeMessageHandler } from './bridge/JSBridgeMessageHandler';
+export type {
+    JSBridgeInjectOptions,
+    TonConnectBridge,
+    DeviceInfo,
+    WalletInfo,
+    ConnectRequest,
+    ConnectEvent,
+    ConnectEventError,
+    BridgeRequest,
+    BridgeResponse,
+    BridgeEvent,
+} from './types/jsBridge';
+
+// Re-export validation utilities
+export { validateWalletName, sanitizeWalletName, isValidWalletName } from './utils/walletNameValidation';

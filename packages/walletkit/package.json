@@ -15,6 +15,16 @@
         "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
       }
+    },
+    "./bridge": {
+      "import": {
+        "types": "./dist/esm/bridge/JSBridgeInjector.d.ts",
+        "default": "./dist/esm/bridge/JSBridgeInjector.js"
+      },
+      "require": {
+        "types": "./dist/cjs/bridge/JSBridgeInjector.d.ts",
+        "default": "./dist/cjs/bridge/JSBridgeInjector.js"
+      }
     }
   },
   "scripts": {

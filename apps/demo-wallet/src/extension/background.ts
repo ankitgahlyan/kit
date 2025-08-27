@@ -26,6 +26,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 });
 
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'loading' && tab.url) {
+        await injectContentScript(tabId);
+    }
+});
+
 async function handleWalletRequest(payload: unknown) {
     try {
         // Store the request for the popup to handle
@@ -50,6 +56,20 @@ async function handleGetWalletState(sendResponse: (response: unknown) => void) {
     } catch (error) {
         console.error('Error getting wallet state:', error);
         sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+}
+
+// Function to inject content script
+async function injectContentScript(tabId: number) {
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['src/extension/content.js'],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            world: 'MAIN' as any, // needed to access window
+        });
+    } catch (error) {
+        console.error('Error injecting script:', error);
     }
 }
 

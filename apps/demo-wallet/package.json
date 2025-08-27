@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:extension": "tsc -b && vite build --config vite.extension.config.ts && npm run copy-extension-files",
+    "dev:extension": "vite build --config vite.extension.config.ts && npm run copy-extension-files && vite build --watch --config vite.extension.config.ts",
+    "build:extension": "vite build --config vite.extension.config.ts",
     "copy-extension-files": "node -e \"require('fs').copyFileSync('public/manifest.json', 'dist-extension/manifest.json')\"",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -37,6 +38,8 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-plugin-web-extension": "^4.4.5",
+    "vite-bundle-analyzer": "^1.2.1"
   }
 }

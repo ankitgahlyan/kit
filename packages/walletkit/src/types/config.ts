@@ -2,6 +2,7 @@
 
 import type { WalletInitConfig } from './wallet';
 import type { StorageAdapter } from '../storage';
+import { JSBridgeManagerOptions } from '../bridge/JSBridgeManager';
 
 /**
  * Main configuration options for TonWalletKit
@@ -48,6 +49,8 @@ export interface TonWalletKitOptions {
             strictMode?: boolean;
             allowUnknownWalletVersions?: boolean;
         };
+
+        jsBridgeOptions?: JSBridgeManagerOptions;
     };
 }
 
