@@ -1,15 +1,49 @@
 import { beginCell, Address } from '@ton/core';
 
-import { WalletInterface } from '../../../types';
+import { TransactionPreview, WalletInterface } from '../../../types';
 import { ConnectTransactionParamContent, ConnectTransactionParamMessage } from '../../../types/internal';
-import { WalletTonInterface, TonTransferParams } from '../../../types/wallet';
+import { WalletTonInterface, TonTransferParams, TonTransferManyParams } from '../../../types/wallet';
 import { isValidAddress } from '../../../utils/address';
 import { isValidNanotonAmount, validateTransactionMessage } from '../../../validation';
 
 export class WalletTonClass implements WalletTonInterface {
-    async createSendTon(
+    async createSendTon(this: WalletInterface, param: TonTransferParams): Promise<ConnectTransactionParamContent> {
+        let messages: ConnectTransactionParamMessage[] = [];
+        if (!isValidAddress(param.toAddress)) {
+            throw new Error(`Invalid to address: ${param.toAddress}`);
+        }
+        if (!isValidNanotonAmount(param.amount)) {
+            throw new Error(`Invalid amount: ${param.amount}`);
+        }
+
+        let body;
+        if (param.body) {
+            body = param.body;
+        } else if (param.comment) {
+            body = beginCell().storeUint(0, 32).storeStringTail(param.comment).endCell().toBoc().toString('base64');
+        }
+        const message: ConnectTransactionParamMessage = {
+            address: param.toAddress,
+            amount: param.amount,
+            payload: body,
+            stateInit: param.stateInit,
+            extraCurrency: param.extraCurrency,
+            mode: param.mode,
+        };
+
+        if (!validateTransactionMessage(message, false).isValid) {
+            throw new Error(`Invalid transaction message: ${JSON.stringify(message)}`);
+        }
+
+        messages.push(message);
+        return {
+            messages,
+            from: this.getAddress(),
+        };
+    }
+    async createSendTonMany(
         this: WalletInterface,
-        { messages: params }: TonTransferParams,
+        { messages: params }: TonTransferManyParams,
     ): Promise<ConnectTransactionParamContent> {
         let messages: ConnectTransactionParamMessage[] = [];
         for (const param of params) {
@@ -46,6 +80,41 @@ export class WalletTonClass implements WalletTonInterface {
             from: this.getAddress(),
         };
     }
+
+    async prepareTransaction(
+        this: WalletInterface,
+        param: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>,
+    ): Promise<{
+        transaction: ConnectTransactionParamContent;
+        preview: TransactionPreview;
+    }> {
+        const transaction = await param;
+        return {
+            transaction,
+            preview: {
+                moneyFlow: {
+                    outputs: 0n,
+                    inputs: 0n,
+                    jettonTransfers: [],
+                    ourAddress: Address.parse(this.getAddress()),
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                emulationResult: {} as any,
+            },
+        };
+    }
+
+    async sendTon(
+        this: WalletInterface,
+        param: TonTransferParams,
+    ): Promise<{
+        transaction: ConnectTransactionParamContent;
+        preview: TransactionPreview;
+    }> {
+        const transaction = await this.createSendTon(param);
+        return await this.prepareTransaction(transaction);
+    }
+
     getBalance(this: WalletInterface): Promise<bigint> {
         return this.client.getBalance(Address.parse(this.getAddress()));
     }

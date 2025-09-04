@@ -6,6 +6,7 @@ import { SendMode } from '@ton/core';
 import { ConnectExtraCurrency, ConnectTransactionParamContent } from './internal';
 import { JettonTransferParams } from './jettons';
 import { NftTransferParamsHuman, NftTransferParamsNative } from './nfts';
+import { TransactionPreview } from './events';
 
 /**
  * TON network types
@@ -117,7 +118,9 @@ export type TonTransferMessage = {
     extraCurrency?: ConnectExtraCurrency;
     mode?: SendMode;
 } & (TonTransferParamsBody | TonTransferParamsComment);
-export type TonTransferParams = {
+export type TonTransferParams = TonTransferMessage;
+
+export type TonTransferManyParams = {
     messages: TonTransferMessage[];
 };
 
@@ -133,7 +136,18 @@ export interface TonTransferParamsComment {
 
 export interface WalletTonInterface {
     createSendTon(params: TonTransferParams): Promise<ConnectTransactionParamContent>;
+    createSendTonMany(params: TonTransferManyParams): Promise<ConnectTransactionParamContent>;
     getBalance(): Promise<bigint>;
+
+    prepareTransaction(data: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>): Promise<{
+        transaction: ConnectTransactionParamContent;
+        preview: TransactionPreview;
+    }>;
+
+    sendTon(params: TonTransferParams): Promise<{
+        transaction: ConnectTransactionParamContent;
+        preview: TransactionPreview;
+    }>;
 }
 
 export interface WalletJettonInterface {
