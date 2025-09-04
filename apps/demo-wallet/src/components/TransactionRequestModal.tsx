@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import type { EventTransactionRequest, JettonInfo } from '@ton/walletkit';
-import { Address } from '@ton/ton';
+import { Address } from '@ton/core';
 
 import { Button } from './Button';
 import { Card } from './Card';

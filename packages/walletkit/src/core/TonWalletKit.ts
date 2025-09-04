@@ -1,6 +1,7 @@
 // Minimal TonWalletKit - Pure orchestration layer
 
-import { Address, type TonClient } from '@ton/ton';
+import { type TonClient } from '@ton/ton';
+import { Address } from '@ton/core';
 import { CHAIN, ConnectEventSuccess, ConnectRequest, DisconnectEvent } from '@tonconnect/protocol';
 
 import type {
@@ -76,6 +77,14 @@ export class TonWalletKit implements ITonWalletKit {
         // Auto-initialize (lazy)
         this.initializationPromise = this.initialize(options);
 
+        this.initializationPromise
+            .then((v) => {
+                console.log('initializationPromise done', v);
+            })
+            .catch((error) => {
+                console.log('initializationPromise error', error);
+            });
+
         this.eventEmitter.on('restoreConnection', async (event: RawBridgeEventRestoreConnection) => {
             if (!event.domain) {
                 log.error('Domain is required for restore connection');
@@ -133,7 +142,9 @@ export class TonWalletKit implements ITonWalletKit {
         if (this.isInitialized) return;
 
         try {
+            console.log('initialize');
             const components = await this.initializer.initialize(options);
+            console.log('initialize components');
             this.assignComponents(components);
             this.setupEventRouting();
 
@@ -197,9 +208,12 @@ export class TonWalletKit implements ITonWalletKit {
      * Ensure initialization is complete
      */
     private async ensureInitialized(): Promise<void> {
+        console.log('ensureInitialized');
         if (this.initializationPromise) {
+            console.log('await this.initializationPromise');
             await this.initializationPromise;
         }
+        console.log('ensureInitialized done');
     }
 
     // === Wallet Management API (Delegated) ===
@@ -224,10 +238,13 @@ export class TonWalletKit implements ITonWalletKit {
     }
 
     async addWallet(walletConfig: WalletInitConfig): Promise<void> {
+        console.log('addWallet', walletConfig);
         await this.ensureInitialized();
+        console.log('ensureInitialized');
         const wallet = await createWalletFromConfig(walletConfig, this.tonClient);
+        console.log('createWalletFromConfig');
         const walletAdded = await this.walletManager.addWallet(wallet);
-
+        console.log('walletManager.addWallet');
         // wallet already exists
         if (!walletAdded) {
             return;

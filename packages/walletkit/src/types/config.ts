@@ -41,6 +41,7 @@ export interface TonWalletKitOptions {
                   prefix?: string;
                   cacheTimeout?: number;
                   maxCacheSize?: number;
+                  allowMemory?: boolean;
               }
             | StorageAdapter;
 

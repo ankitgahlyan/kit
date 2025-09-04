@@ -10,7 +10,7 @@ import {
     storeMessage,
     storeStateInit,
 } from '@ton/core';
-import { TonClient } from '@ton/ton';
+import { type TonClient } from '@ton/ton';
 import { keyPairFromSeed } from '@ton/crypto';
 import { external, internal } from '@ton/core';
 

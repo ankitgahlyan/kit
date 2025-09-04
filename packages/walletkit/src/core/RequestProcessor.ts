@@ -8,7 +8,7 @@ import {
     SendTransactionRpcResponseSuccess,
     SignDataRpcResponseSuccess,
 } from '@tonconnect/protocol';
-import { TonClient } from '@ton/ton';
+import { type TonClient } from '@ton/ton';
 
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest } from '../types';
 import type { SessionManager } from './SessionManager';

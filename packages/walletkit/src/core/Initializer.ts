@@ -1,6 +1,6 @@
 // Initialization and setup logic
 
-import { TonClient } from '@ton/ton';
+import { type TonClient } from '@ton/ton';
 import { CHAIN } from '@tonconnect/protocol';
 
 import {
@@ -85,12 +85,15 @@ export class Initializer {
             // 1. Initialize TON client first (single provider for all downstream classes)
             this.tonClient = this.initializeTonClient(options);
 
+            console.log('initializeTonClient');
             // 2. Initialize storage adapter
             const storageAdapter = this.initializeStorage(options);
+            console.log('initializeStorage');
 
             // 3. Initialize core managers
             const { walletManager, sessionManager, bridgeManager, eventRouter, eventProcessor } =
                 await this.initializeManagers(options, storageAdapter);
+            console.log('initializeManagers');
 
             // 5. Initialize processors
             const { requestProcessor } = this.initializeProcessors(sessionManager, bridgeManager);
@@ -129,7 +132,7 @@ export class Initializer {
             clientConfig.apiKey = options.apiKey;
         }
 
-        return new TonClient(clientConfig);
+        return {} as any; //new TonClient(clientConfig);
     }
 
     /**
@@ -142,6 +145,7 @@ export class Initializer {
 
         return createStorageAdapter({
             prefix: 'tonwalletkit:',
+            ...options.config.storage,
         });
     }
 
@@ -163,18 +167,26 @@ export class Initializer {
         await walletManager.initialize();
         // 4. Initialize with provided wallets
         if (options.wallets && options.wallets.length > 0) {
+            console.log('initializeWallets');
             await this.initializeWallets(walletManager, {
                 ...options,
                 wallets: options.wallets,
             });
+            console.log('initializeWallets done');
         }
-
+        console.log('initializeSessionManager');
         const sessionManager = new SessionManager(storageAdapter, walletManager);
         await sessionManager.initialize();
-
+        console.log('initializeSessionManager done');
+        console.log('initializeEventStore');
         const eventStore = new StorageEventStore(storageAdapter);
-        const eventRouter = new EventRouter(this.eventEmitter, sessionManager);
+        console.log('initializeEventStore done');
 
+        console.log('initializeEventRouter');
+        const eventRouter = new EventRouter(this.eventEmitter, sessionManager);
+        console.log('initializeEventRouter done');
+
+        console.log('initializeBridgeManager');
         const bridgeManager = new BridgeManager(
             options.config.bridge,
             sessionManager,
@@ -183,10 +195,13 @@ export class Initializer {
             eventRouter,
             this.eventEmitter,
         );
+        console.log('initializeBridgeManager done');
         await bridgeManager.start();
-
+        console.log('initializeBridgeManager start done');
         // Create event processor for durable events
         // TODO - change default values
+
+        console.log('initializeEventProcessor');
         const eventProcessor = new StorageEventProcessor(
             options.config.eventProcessor,
             eventStore,
@@ -196,6 +211,7 @@ export class Initializer {
             eventRouter,
             this.eventEmitter,
         );
+        console.log('initializeEventProcessor done');
 
         return {
             walletManager,
