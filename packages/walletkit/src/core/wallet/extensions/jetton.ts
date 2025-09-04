@@ -7,6 +7,7 @@ import { JettonTransferParams } from '../../../types/jettons';
 import { validateTransactionMessage } from '../../../validation';
 import { ConnectTransactionParamContent, ConnectTransactionParamMessage } from '../../../types/internal';
 import { isValidAddress } from '../../../utils/address';
+import { CallForSuccess } from '../../../utils/retry';
 
 export class WalletJettonClass implements WalletJettonInterface {
     async createSendJetton(
@@ -25,7 +26,9 @@ export class WalletJettonClass implements WalletJettonInterface {
         }
 
         // Get jetton wallet address for this user
-        const jettonWalletAddress = await this.getJettonWalletAddress(jettonTransferParams.jettonAddress);
+        const jettonWalletAddress = await CallForSuccess(() =>
+            this.getJettonWalletAddress(jettonTransferParams.jettonAddress),
+        );
 
         // Create forward payload for comment if provided
         const forwardPayload = jettonTransferParams.comment

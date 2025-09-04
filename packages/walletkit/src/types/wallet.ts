@@ -126,11 +126,11 @@ export type TonTransferManyParams = {
 
 export interface TonTransferParamsBody {
     body?: string; // base64 boc
-    comment: never;
+    comment?: never;
 }
 
 export interface TonTransferParamsComment {
-    body: never;
+    body?: never;
     comment?: string;
 }
 

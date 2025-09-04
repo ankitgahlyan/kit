@@ -62,6 +62,7 @@ export type BridgeEventBase = {
     isJsBridge?: boolean;
     tabId?: number;
     sessionId?: string;
+    isLocal?: boolean;
 };
 
 // Bridge event types (raw from bridge)

@@ -89,7 +89,8 @@ export class TransactionHandler
                 throw new Error(`Invalid from address: ${fromValidation.errors.join(', ')}`);
             }
 
-            const messagesValidation = validateTonConnectTransactionMessages(params.messages);
+            const isTonConnect = !event.isLocal;
+            const messagesValidation = validateTonConnectTransactionMessages(params.messages, isTonConnect);
             if (!messagesValidation.isValid) {
                 throw new Error(`Invalid transaction messages: ${messagesValidation.errors.join(', ')}`);
             }

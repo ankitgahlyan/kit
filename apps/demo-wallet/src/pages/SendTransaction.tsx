@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AddressJetton } from '@ton/walletkit';
+import type { AddressJetton, TonTransferParams } from '@ton/walletkit';
 
 import { Layout, Button, Input, Card } from '../components';
-import { useWallet, useJettons } from '../stores';
-// import { walletKit } from '../stores/slices/walletSlice';
-import { useTonWallet } from '../hooks';
+import { useWallet, useJettons, walletKit } from '../stores';
 import { createComponentLogger } from '../utils/logger';
 
 // Create logger for send transaction
@@ -25,8 +23,8 @@ export const SendTransaction: React.FC = () => {
     const [showTokenSelector, setShowTokenSelector] = useState(false);
 
     const navigate = useNavigate();
-    const { balance } = useWallet();
-    const { sendTransaction } = useTonWallet();
+    const { balance, currentWallet } = useWallet();
+    // Get current wallet
     const { userJettons, isLoadingJettons, loadUserJettons, formatJettonAmount } = useJettons();
 
     // Load jettons on mount
@@ -95,12 +93,33 @@ export const SendTransaction: React.FC = () => {
                 throw new Error('Insufficient balance');
             }
 
+            if (!currentWallet) {
+                throw new Error('No wallet available');
+            }
+
             if (selectedToken.type === 'TON') {
-                // Send TON
+                // Send TON using new API
+                log.info('Sending TON', {
+                    amount: inputAmount,
+                    recipient,
+                });
+
                 const nanoTonAmount = Math.floor(inputAmount * 1000000000).toString();
-                await sendTransaction(recipient, nanoTonAmount);
+
+                const tonTransferParams: TonTransferParams = {
+                    toAddress: recipient,
+                    amount: nanoTonAmount,
+                };
+                const result = await currentWallet.sendTon(tonTransferParams);
+                // display Preview result.preview in a modal
+                await walletKit.handleNewTransaction(currentWallet, result.transaction);
+
+                log.info('TON transfer completed', {
+                    transaction: result.transaction,
+                    preview: result.preview,
+                });
             } else if (selectedToken.data) {
-                // Send Jetton
+                // Send Jetton using new API
                 log.info('Sending jetton', {
                     jettonAddress: selectedToken.data.address,
                     amount: inputAmount,
@@ -108,35 +127,23 @@ export const SendTransaction: React.FC = () => {
                 });
 
                 // Convert the display amount to the smallest unit based on decimals
-                // const jettonAmount = Math.floor(inputAmount * Math.pow(10, selectedToken.data.decimals)).toString();
+                const jettonAmount = Math.floor(inputAmount * Math.pow(10, selectedToken.data.decimals)).toString();
 
-                // Get current wallet address
-                const currentWallet = useWallet().currentWallet!;
-                const fromAddress = currentWallet.getAddress();
-                if (!fromAddress) {
-                    throw new Error('Wallet address not available');
-                }
+                // Create jetton transfer transaction
+                const jettonTransaction = await currentWallet.createSendJetton({
+                    toAddress: recipient,
+                    jettonAddress: selectedToken.data.address,
+                    amount: jettonAmount,
+                });
 
-                // Prepare jetton transfer
-                // const preparedTransfer = await walletKit.jettons.prepareJettonTransfer({
-                //     fromAddress,
-                //     toAddress: recipient,
-                //     jettonAddress: selectedToken.data.address,
-                //     amount: jettonAmount,
-                //     forwardAmount: '10000000', // 0.01 TON for notification
-                //     comment: undefined, // Could be added as an optional field
-                // });
+                // Prepare and execute the transaction
+                const result = await currentWallet.prepareTransaction(jettonTransaction);
+                await walletKit.handleNewTransaction(currentWallet, result.transaction);
 
-                // log.info('Jetton transfer prepared', {
-                //     boc: preparedTransfer.boc,
-                //     estimatedFees: preparedTransfer.estimatedFees,
-                // });
-
-                // TODO: For now, we're using the regular transaction flow
-                // In the future, this should be integrated with the walletKit's transaction approval flow
-                throw new Error(
-                    "Jetton transfers are not yet fully implemented in this demo. Please use the wallet kit's transaction request flow.",
-                );
+                log.info('Jetton transfer completed', {
+                    transaction: result.transaction,
+                    preview: result.preview,
+                });
             }
 
             // Navigate back to wallet with success message

@@ -26,7 +26,7 @@ import { StorageEventStore } from './EventStore';
 import { StorageEventProcessor } from './EventProcessor';
 import { WalletInitInterface } from '../types/wallet';
 import { WalletTonClass } from './wallet/extensions/ton';
-// import { WalletJettonClass } from './wallet/extensions/jetton';
+import { WalletJettonClass } from './wallet/extensions/jetton';
 import { WalletNftClass } from './wallet/extensions/nft';
 
 const log = globalLogger.createChild('Initializer');
@@ -302,29 +302,27 @@ function isWalletInterface(config: unknown): config is WalletInterface {
 export async function createWalletFromConfig(config: WalletInitConfig, tonClient: TonClient): Promise<WalletInterface> {
     let wallet: WalletInitInterface;
     // Handle mnemonic configuration
-    if (config instanceof WalletInitConfigMnemonic) {
+    if (config instanceof WalletInitConfigMnemonic || 'mnemonic' in config) {
         if (config.version === 'v5r1') {
-            wallet = await createWalletV5R1(config, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            wallet = await createWalletV5R1(config as any, {
                 tonClient,
             });
         } else {
             throw new Error(`Unsupported wallet version for mnemonic: ${config.version}`);
         }
-    }
-
-    // Handle private key configuration - check for publicKey but not mnemonic
-    if (config instanceof WalletInitConfigPrivateKey) {
+    } else if (config instanceof WalletInitConfigPrivateKey || 'privateKey' in config) {
+        // Handle private key configuration - check for publicKey but not mnemonic
         if (config.version === 'v5r1') {
-            wallet = await createWalletV5R1(config, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            wallet = await createWalletV5R1(config as any, {
                 tonClient,
             });
         } else {
             throw new Error(`Unsupported wallet version for private key: ${config.version}`);
         }
-    }
-
-    // If it's already a WalletInterface, return as-is
-    if (isWalletInterface(config)) {
+    } else if (isWalletInterface(config)) {
+        // If it's already a WalletInterface, return as-is
         wallet = config as WalletInitInterface;
     } else {
         throw new Error('Unsupported wallet configuration format');
@@ -342,8 +340,8 @@ export async function wrapWalletInterface(
     wallet: WalletInitInterface,
     _tonClient: TonClient,
 ): Promise<WalletInterface> {
-    const ourClassesToExtend = [WalletTonClass, WalletNftClass];
-    return new Proxy(wallet, {
+    const ourClassesToExtend = [WalletTonClass, WalletJettonClass, WalletNftClass];
+    const newProxy = new Proxy(wallet, {
         get: (target, prop) => {
             if (typeof prop === 'symbol') {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -356,7 +354,7 @@ export async function wrapWalletInterface(
                 const value = (ourMethonImplementation.prototype as any)[prop];
                 // return ourMethonImplementation.prototype[prop].bind(target);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return (...args: any[]) => value.apply(target, [...args]);
+                return (...args: any[]) => value.apply(newProxy, [...args]);
             }
 
             // Delegate all other properties and methods to the target
@@ -365,4 +363,6 @@ export async function wrapWalletInterface(
             return value;
         },
     }) as WalletInterface;
+
+    return newProxy;
 }

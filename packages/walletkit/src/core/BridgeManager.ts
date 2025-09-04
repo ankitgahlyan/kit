@@ -138,6 +138,10 @@ export class BridgeManager {
             throw new Error('Bridge not initialized');
         }
 
+        if (event.isLocal) {
+            return;
+        }
+
         // const sessionId = event.from;
 
         if (event.isJsBridge) {
@@ -379,6 +383,8 @@ export class BridgeManager {
             while (this.eventQueue.length > 0) {
                 const event = this.eventQueue.shift();
                 if (event) {
+                    // Important: set isLocal to false for all events from bridge
+                    event.isLocal = false;
                     await this.handleBridgeEvent(event);
                 }
             }

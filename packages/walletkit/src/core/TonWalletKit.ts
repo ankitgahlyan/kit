@@ -22,7 +22,13 @@ import type { RequestProcessor } from './RequestProcessor';
 // import type { ResponseHandler } from './ResponseHandler';
 import { JettonsManager } from './JettonsManager';
 import type { JettonsAPI } from '../types/jettons';
-import { BridgeEventBase, RawBridgeEventConnect, RawBridgeEventRestoreConnection } from '../types/internal';
+import {
+    BridgeEventBase,
+    ConnectTransactionParamContent,
+    RawBridgeEventConnect,
+    RawBridgeEventRestoreConnection,
+    RawBridgeEventTransaction,
+} from '../types/internal';
 import { EventEmitter } from './EventEmitter';
 import { StorageEventProcessor } from './EventProcessor';
 import { BridgeManager } from './BridgeManager';
@@ -397,6 +403,24 @@ export class TonWalletKit implements ITonWalletKit {
             log.error('Failed to handle TON Connect URL', { error, url });
             throw error;
         }
+    }
+
+    async handleNewTransaction(wallet: WalletInterface, data: ConnectTransactionParamContent): Promise<void> {
+        await this.ensureInitialized();
+
+        data.valid_until ??= Math.floor(Date.now() / 1000) + 300;
+        data.network ??= CHAIN.MAINNET;
+
+        const bridgeEvent: RawBridgeEventTransaction = {
+            id: Date.now().toString(),
+            method: 'sendTransaction',
+            params: [JSON.stringify(data)],
+            from: '',
+            domain: '',
+            isLocal: true,
+            wallet,
+        };
+        await this.eventRouter.routeEvent(bridgeEvent);
     }
 
     /**

@@ -5,6 +5,7 @@ import { ConnectTransactionParamContent, ConnectTransactionParamMessage } from '
 import { WalletTonInterface, TonTransferParams, TonTransferManyParams } from '../../../types/wallet';
 import { isValidAddress } from '../../../utils/address';
 import { isValidNanotonAmount, validateTransactionMessage } from '../../../validation';
+import { CallForSuccess } from '../../../utils/retry';
 
 export class WalletTonClass implements WalletTonInterface {
     async createSendTon(this: WalletInterface, param: TonTransferParams): Promise<ConnectTransactionParamContent> {
@@ -115,7 +116,7 @@ export class WalletTonClass implements WalletTonInterface {
         return await this.prepareTransaction(transaction);
     }
 
-    getBalance(this: WalletInterface): Promise<bigint> {
-        return this.client.getBalance(Address.parse(this.getAddress()));
+    async getBalance(this: WalletInterface): Promise<bigint> {
+        return await CallForSuccess(() => this.client.getBalance(Address.parse(this.getAddress())));
     }
 }

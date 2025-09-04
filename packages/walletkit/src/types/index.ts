@@ -8,6 +8,16 @@ export type {
     WalletStatus,
     WalletVersion,
     WalletInitConfig,
+    TonTransferParams,
+    TonTransferManyParams,
+    TonTransferParamsBody,
+    TonTransferParamsComment,
+    WalletTonInterface,
+    WalletJettonInterface,
+    WalletNftInterface,
+    WalletInitInterface,
+    WalletInitConfigMnemonicInterface,
+    WalletInitConfigPrivateKeyInterface,
 } from './wallet';
 
 export { WalletInitConfigMnemonic, WalletInitConfigPrivateKey } from './wallet';

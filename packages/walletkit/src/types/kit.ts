@@ -3,6 +3,7 @@
 import type { WalletInterface, WalletInitConfig, WalletInitInterface } from './wallet';
 import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest, EventDisconnect } from './events';
 import type { JettonsAPI } from './jettons';
+import { ConnectTransactionParamContent } from './internal';
 
 /**
  * Main TonWalletKit interface
@@ -40,6 +41,9 @@ export interface TonWalletKit {
 
     /** Handle pasted TON Connect URL/link */
     handleTonConnectUrl(url: string): Promise<void>;
+
+    /** Handle new transaction */
+    handleNewTransaction(wallet: WalletInterface, data: ConnectTransactionParamContent): Promise<void>;
 
     // === Request Processing ===
 
