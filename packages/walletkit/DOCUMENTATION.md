@@ -15,7 +15,12 @@ pnpm add @ton/walletkit
 ### 1) Initialize the kit
 
 ```ts
-import { TonWalletKit, createWalletInitConfigMnemonic } from '@ton/walletkit';
+import { 
+  TonWalletKit,
+  createWalletInitConfigMnemonic,
+  createWalletInitConfigPrivateKey,
+  createWalletInitConfigSigner,
+} from '@ton/walletkit';
 
 const kit = new TonWalletKit({
   bridgeUrl: 'https://bridge.tonapi.io/bridge',
@@ -29,6 +34,24 @@ const walletConfig = createWalletInitConfigMnemonic({
   mnemonicType: 'ton',
   network: 'mainnet',
 });
+
+/* Wallet from private key:
+const walletConfig = createWalletInitConfigPrivateKey({
+  privateKey: '0x...',
+  version: 'v5r1',
+  network: 'mainnet',
+});
+*/
+
+/* Wallet with your own signer:
+const walletConfig = createWalletInitConfigSigner({
+  publicKey: '0x...',
+  version: 'v5r1',
+  network: 'mainnet',
+  sign: (data) => ed25519.sign(data, privateKey),
+});
+*/
+
 await kit.addWallet(walletConfig);
 ```
 
