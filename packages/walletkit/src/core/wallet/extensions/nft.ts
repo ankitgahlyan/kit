@@ -4,7 +4,7 @@ import { Address, beginCell, SendMode } from '@ton/core';
 import { WalletInterface } from '../../../types';
 import { WalletNftInterface } from '../../../types/wallet';
 import { validateTransactionMessage } from '../../../validation';
-import { NftTransferParamsHuman, NftTransferParamsNative } from '../../../types/nfts';
+import { NftTransferParamsHuman, NftTransferParamsRaw } from '../../../types/nfts';
 import { ConnectTransactionParamContent, ConnectTransactionParamMessage } from '../../../types/internal';
 import { LimitRequest } from '../../ApiClientToncenter';
 import type { NftItem } from '../../../types/toncenter/NftItem';
@@ -33,7 +33,7 @@ export class WalletNftClass implements WalletNftInterface {
         return null;
     }
 
-    async createSendNft(
+    async createTransferNftTransaction(
         this: WalletInterface,
         nftTransferMessage: NftTransferParamsHuman,
     ): Promise<ConnectTransactionParamContent> {
@@ -71,9 +71,9 @@ export class WalletNftClass implements WalletNftInterface {
         };
     }
 
-    async createSendNftNative(
+    async createTransferNftRawTransaction(
         this: WalletInterface,
-        params: NftTransferParamsNative,
+        params: NftTransferParamsRaw,
     ): Promise<ConnectTransactionParamContent> {
         const nftPayload = beginCell().store(storeNftTransferMessage(params.transferMessage)).endCell();
         const message: ConnectTransactionParamMessage = {

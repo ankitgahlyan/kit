@@ -4,7 +4,7 @@ import { Address, SendMode } from '@ton/core';
 
 import { ConnectExtraCurrency, ConnectTransactionParamContent } from './internal';
 import { JettonTransferParams } from './jettons';
-import { NftTransferParamsHuman, NftTransferParamsNative } from './nfts';
+import { NftTransferParamsHuman, NftTransferParamsRaw } from './nfts';
 import { TransactionPreview } from './events';
 import { ApiClient } from './toncenter/ApiClient';
 import { LimitRequest } from '../core/ApiClientToncenter';
@@ -147,30 +147,25 @@ export interface TonTransferParamsComment {
 }
 
 export interface WalletTonInterface {
-    createSendTon(params: TonTransferParams): Promise<ConnectTransactionParamContent>;
-    createSendTonMany(params: TonTransferManyParams): Promise<ConnectTransactionParamContent>;
+    createTransferTonTransaction(params: TonTransferParams): Promise<ConnectTransactionParamContent>;
+    createTransferMultiTonTransaction(params: TonTransferManyParams): Promise<ConnectTransactionParamContent>;
+
+    getTransactionPreview(data: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>): Promise<{
+        preview: TransactionPreview;
+    }>;
+
     getBalance(): Promise<bigint>;
-
-    prepareTransaction(data: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>): Promise<{
-        transaction: ConnectTransactionParamContent;
-        preview: TransactionPreview;
-    }>;
-
-    sendTon(params: TonTransferParams): Promise<{
-        transaction: ConnectTransactionParamContent;
-        preview: TransactionPreview;
-    }>;
 }
 
 export interface WalletJettonInterface {
-    createSendJetton(params: JettonTransferParams): Promise<ConnectTransactionParamContent>;
-    getBalance(jettonAddress: string): Promise<bigint>;
+    createTransferJettonTransaction(params: JettonTransferParams): Promise<ConnectTransactionParamContent>;
+    getJettonBalance(jettonAddress: string): Promise<bigint>;
     getJettonWalletAddress(jettonAddress: string): Promise<string>;
 }
 
 export interface WalletNftInterface {
-    createSendNft(params: NftTransferParamsHuman): Promise<ConnectTransactionParamContent>;
-    createSendNftNative(params: NftTransferParamsNative): Promise<ConnectTransactionParamContent>;
+    createTransferNftTransaction(params: NftTransferParamsHuman): Promise<ConnectTransactionParamContent>;
+    createTransferNftRawTransaction(params: NftTransferParamsRaw): Promise<ConnectTransactionParamContent>;
     getNfts(params: LimitRequest): Promise<NftItems>;
     getNft(address: Address | string): Promise<NftItem | null>;
 }

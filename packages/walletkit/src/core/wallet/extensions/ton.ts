@@ -9,7 +9,7 @@ import { CallForSuccess } from '../../../utils/retry';
 import { EmulationErrorUnknown } from '../../../types/emulation/errors';
 
 export class WalletTonClass implements WalletTonInterface {
-    async createSendTon(this: WalletInterface, param: TonTransferParams): Promise<ConnectTransactionParamContent> {
+    async createTransferTonTransaction(this: WalletInterface, param: TonTransferParams): Promise<ConnectTransactionParamContent> {
         let messages: ConnectTransactionParamMessage[] = [];
         if (!isValidAddress(param.toAddress)) {
             throw new Error(`Invalid to address: ${param.toAddress}`);
@@ -43,7 +43,7 @@ export class WalletTonClass implements WalletTonInterface {
             from: this.getAddress(),
         };
     }
-    async createSendTonMany(
+    async createTransferMultiTonTransaction(
         this: WalletInterface,
         { messages: params }: TonTransferManyParams,
     ): Promise<ConnectTransactionParamContent> {
@@ -83,32 +83,19 @@ export class WalletTonClass implements WalletTonInterface {
         };
     }
 
-    async prepareTransaction(
+    async getTransactionPreview(
         this: WalletInterface,
         param: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>,
     ): Promise<{
-        transaction: ConnectTransactionParamContent;
         preview: TransactionPreview;
     }> {
         const transaction = await param;
         return {
-            transaction,
             preview: {
                 result: 'error',
                 emulationError: new EmulationErrorUnknown('Unknown emulation error'),
             },
         };
-    }
-
-    async sendTon(
-        this: WalletInterface,
-        param: TonTransferParams,
-    ): Promise<{
-        transaction: ConnectTransactionParamContent;
-        preview: TransactionPreview;
-    }> {
-        const transaction = await this.createSendTon(param);
-        return await this.prepareTransaction(transaction);
     }
 
     async getBalance(this: WalletInterface): Promise<bigint> {

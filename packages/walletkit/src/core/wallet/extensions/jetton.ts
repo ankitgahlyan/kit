@@ -10,7 +10,7 @@ import { isValidAddress } from '../../../utils/address';
 import { CallForSuccess } from '../../../utils/retry';
 
 export class WalletJettonClass implements WalletJettonInterface {
-    async createSendJetton(
+    async createTransferJettonTransaction(
         this: WalletInterface,
         jettonTransferParams: JettonTransferParams,
     ): Promise<ConnectTransactionParamContent> {
@@ -71,7 +71,7 @@ export class WalletJettonClass implements WalletJettonInterface {
         };
     }
 
-    async getBalance(this: WalletInterface, jettonAddress: string): Promise<bigint> {
+    async getJettonBalance(this: WalletInterface, jettonAddress: string): Promise<bigint> {
         // Get jetton wallet address for this user
         const jettonWalletAddress = await this.getJettonWalletAddress(jettonAddress);
 
