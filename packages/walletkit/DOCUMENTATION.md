@@ -23,8 +23,18 @@ import {
 } from '@ton/walletkit';
 
 const kit = new TonWalletKit({
-  bridgeUrl: 'https://bridge.tonapi.io/bridge',
   network: 'mainnet',
+  // Optional API configuration
+  // apiKey: '...',
+  // apiUrl: 'https://toncenter.com/api/v3',
+  config: {
+    bridge: {
+      bridgeUrl: 'https://bridge.tonapi.io/bridge',
+      // Optional JS bridge support (for extensions/injected providers)
+      enableJsBridge: true,
+      bridgeName: 'tonkeeper',
+    },
+  },
 });
 
 // Optionally preload a wallet (mnemonic/private key/signer)
@@ -45,10 +55,11 @@ const walletConfig = createWalletInitConfigPrivateKey({
 
 /* Wallet with your own signer:
 const walletConfig = createWalletInitConfigSigner({
-  publicKey: '0x...',
+  publicKey: new Uint8Array([/* your public key bytes */]),
   version: 'v5r1',
   network: 'mainnet',
-  sign: (data) => ed25519.sign(data, privateKey),
+  // bytes -> signature bytes (Uint8Array)
+  sign: async (bytes) => yourSigner(bytes),
 });
 */
 
@@ -129,6 +140,94 @@ console.log(address, balance.toString());
 - **SignDataPreview (`sd.preview`)**: Shape of the data to sign. `kind` is `'text' | 'binary' | 'cell'`; use this to render a safe preview.
 
 You can display these previews directly in your confirmation modals.
+
+#### Rendering previews (reference)
+
+The snippets below mirror how the demo wallet renders previews in its modals. Adapt them to your UI framework.
+
+Render Connect preview:
+
+```ts
+function renderConnectPreview(req: EventConnectRequest) {
+  const name = req.preview.manifest?.name ?? req.dAppName;
+  const description = req.preview.manifest?.description;
+  const iconUrl = req.preview.manifest?.iconUrl;
+  const permissions = req.preview.permissions ?? [];
+
+  return {
+    title: `Connect to ${name}?`,
+    iconUrl,
+    description,
+    permissions: permissions.map((p) => ({ title: p.title, description: p.description })),
+  };
+}
+```
+
+
+Render Transaction preview (money flow overview):
+
+Note: The moneyFlow summarization shown above is pseudocode and will change soon to a more user‑friendly version of the API and preview structure.
+
+```ts
+type MoneyFlowLike = {
+  inputs: bigint;
+  outputs: bigint;
+  ourAddress: string | undefined;
+  jettonTransfers: Array<{ from: string; to: string; jetton: string | null; amount: bigint }>;
+};
+
+function summarizeTransaction(preview: TransactionPreview) {
+  if (preview.result === 'error') {
+    return { kind: 'error', message: preview.emulationError.message } as const;
+  }
+
+  const mf: MoneyFlowLike = preview.moneyFlow as any;
+  const tonDifference = mf.inputs - mf.outputs; // positive: receive TON, negative: spend TON
+
+  // Optional: group jetton transfers by jetton address and compute net flow
+  const jettonNet: Record<string, bigint> = {};
+  for (const t of mf.jettonTransfers) {
+    const key = (t.jetton ?? 'TON').toString();
+    if (!jettonNet[key]) jettonNet[key] = 0n;
+    if (mf.ourAddress && t.to === mf.ourAddress) jettonNet[key] += t.amount;
+    if (mf.ourAddress && t.from === mf.ourAddress) jettonNet[key] -= t.amount;
+  }
+
+  return {
+    kind: 'success' as const,
+    tonDifference,
+    jettonNet, // map of jettonAddress -> net amount (bigint)
+    ourAddress: mf.ourAddress,
+  };
+}
+```
+
+Render Sign-Data preview:
+
+```ts
+function renderSignDataPreview(preview: SignDataPreview) {
+  switch (preview.kind) {
+    case 'text':
+      return { type: 'text', content: preview.content };
+    case 'binary':
+      return { type: 'binary', content: preview.content };
+    case 'cell':
+      return {
+        type: 'cell',
+        content: preview.content,
+        schema: preview.schema,
+        parsed: preview.parsed,
+      };
+  }
+}
+```
+
+Tip: For jetton names/symbols and images in transaction previews, you can enrich the UI using:
+
+```ts
+const info = kit.jettons.getJettonInfo(jettonAddress);
+// info?.name, info?.symbol, info?.image
+```
 
 ### 6) Sending assets programmatically
 
