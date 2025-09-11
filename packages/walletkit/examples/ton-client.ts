@@ -1,5 +1,6 @@
 import { Address } from '@ton/core';
 import dotenv from 'dotenv';
+import util from 'util';
 
 import {
     defaultWalletIdV5R1,
@@ -61,7 +62,7 @@ async function logWallet(wallet: WalletInterface) {
 
 async function main() {
     const existAccount = await createWallet();
-    logInfo('exist account', await logWallet(existAccount));
+    logInfo('exist account', util.inspect(await logWallet(existAccount), { colors: true, depth: 6 }));
     const notExistAccount = await createWallet(existAccount.getAddress());
     logInfo('not exist account', await logWallet(notExistAccount));
     const message: ConnectTransactionParamMessage = {
