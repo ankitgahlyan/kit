@@ -348,7 +348,12 @@ export class BridgeManager {
         messageInfo: BridgeEventMessageInfo,
         event: InjectedToExtensionBridgeRequestPayload,
     ): void {
-        log.debug('JS Bridge event queued', { eventId: messageInfo.messageId });
+        log.debug('JS Bridge event queued', { eventId: messageInfo?.messageId });
+
+        // Todo validate event
+        if (!event) {
+            return;
+        }
 
         if (event.method == 'connect') {
             this.eventQueue.push({
