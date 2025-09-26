@@ -50,7 +50,7 @@ export function isWalletInitConfigMnemonic(
 }
 
 export interface WalletInitConfigPrivateKeyInterface {
-    privateKey: string;
+    privateKey: string | Uint8Array;
     version?: WalletVersion;
     walletId?: number;
     network?: CHAIN;
@@ -74,7 +74,7 @@ export function isWalletInitConfigPrivateKey(
 }
 
 export interface WalletInitConfigSignerInterface {
-    publicKey: Uint8Array;
+    publicKey: Uint8Array | Hash;
     version?: WalletVersion;
     walletId?: bigint;
     network?: CHAIN;
@@ -82,8 +82,12 @@ export interface WalletInitConfigSignerInterface {
 }
 
 export function createWalletInitConfigSigner(params: WalletInitConfigSignerInterface): WalletInitConfigSignerInterface {
+    const publicKey =
+        typeof params.publicKey === 'string'
+            ? Uint8Array.from(Buffer.from(params.publicKey.replace('0x', ''), 'hex'))
+            : params.publicKey;
     return {
-        publicKey: params.publicKey,
+        publicKey: publicKey,
         version: params.version ?? 'v5r1',
         walletId: params.walletId,
         network: params.network ?? CHAIN.MAINNET,

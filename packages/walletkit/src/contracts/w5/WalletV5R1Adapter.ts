@@ -341,11 +341,20 @@ export async function createWalletV5R1(
         publicKey = keyPair.publicKey;
         signer = createWalletSigner(keyPair.secretKey);
     } else if (isWalletInitConfigPrivateKey(config)) {
-        const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
-        publicKey = keyPair.publicKey;
-        signer = createWalletSigner(keyPair.secretKey);
+        if (typeof config.privateKey === 'string') {
+            const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
+            publicKey = keyPair.publicKey;
+            signer = createWalletSigner(keyPair.secretKey);
+        } else {
+            const keyPair = keyPairFromSeed(config.privateKey as Buffer);
+            publicKey = keyPair.publicKey;
+            signer = createWalletSigner(config.privateKey);
+        }
     } else if (isWalletInitConfigSigner(config)) {
-        publicKey = config.publicKey;
+        publicKey =
+            typeof config.publicKey === 'string'
+                ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
+                : config.publicKey;
         signer = config.sign;
     } else {
         throw new Error('Unsupported wallet configuration format');
