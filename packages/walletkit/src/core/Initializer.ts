@@ -14,7 +14,6 @@ import {
 } from '../types';
 import type { StorageAdapter } from '../storage';
 import { createStorageAdapter } from '../storage';
-import { validateWallet } from '../validation';
 import { WalletManager } from './WalletManager';
 import { SessionManager } from './SessionManager';
 import { BridgeManager } from './BridgeManager';
@@ -178,13 +177,6 @@ export class Initializer {
         // Initialize managers
         const walletManager = new WalletManager(storageAdapter);
         await walletManager.initialize();
-        // 4. Initialize with provided wallets
-        if (options.wallets && options.wallets.length > 0) {
-            await this.initializeWallets(walletManager, {
-                ...options,
-                wallets: options.wallets,
-            });
-        }
 
         const sessionManager = new SessionManager(storageAdapter, walletManager);
         await sessionManager.initialize();
@@ -248,41 +240,6 @@ export class Initializer {
         return {
             requestProcessor,
         };
-    }
-
-    /**
-     * Initialize with provided wallets
-     */
-    private async initializeWallets(
-        walletManager: WalletManager,
-        options: TonWalletKitOptions & Required<Pick<TonWalletKitOptions, 'wallets'>>,
-    ): Promise<void> {
-        const results = await Promise.allSettled(
-            options.wallets.map(async (walletConfig) => {
-                try {
-                    const wallet = await createWalletFromConfig(walletConfig, this.tonClient!);
-
-                    const validation = validateWallet(wallet);
-                    if (!validation.isValid) {
-                        log.warn('Invalid wallet detected', {
-                            publicKey: wallet.publicKey,
-                            errors: validation.errors,
-                        });
-                        return;
-                    }
-
-                    await walletManager.addWallet(wallet);
-                } catch (error) {
-                    log.error('Failed to create wallet from config', { error });
-                    throw error;
-                }
-            }),
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled').length;
-        const failed = results.filter((r) => r.status === 'rejected').length;
-
-        log.info('Wallet initialization complete', { successful, failed });
     }
 
     /**
