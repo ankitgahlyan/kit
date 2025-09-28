@@ -2,6 +2,7 @@ node_modules
 .env
 .DS_Store
 dist
+dist-android
 .idea
 .turbo
 apps/demo-wallet/dist-extension.pem
