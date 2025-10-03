@@ -5,7 +5,8 @@ import { toHexString } from '@tonconnect/protocol';
 import { ApiClient } from './ApiClient';
 import { toStringTail } from '../primitive';
 
-export const ROOT_DNS_RESOLVER = 'Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq'; // TODO getting from config#4
+export const ROOT_DNS_RESOLVER_MAINNET = 'Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq'; // TODO getting from config#4
+export const ROOT_DNS_RESOLVER_TESTNET = 'kf_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oEkd'; // TODO getting from config#4
 
 export enum DnsCategory {
     DnsNextResolver = 'dns_next_resolver',
@@ -48,10 +49,13 @@ export async function dnsResolve(
     category?: DnsCategory,
     resolver?: string,
 ): Promise<DnsLookupResult | null> {
-    let currentResolver = resolver ?? ROOT_DNS_RESOLVER;
+    let currentResolver = resolver ?? ROOT_DNS_RESOLVER_MAINNET;
     let unresolved = domain;
 
-    while (true) {
+    let maxResolveDepth = 100;
+
+    while (maxResolveDepth > 0) {
+        maxResolveDepth--;
         const step = await dnsLookup(client, unresolved, DnsCategory.DnsNextResolver, currentResolver);
         if (step == null) {
             return null;
@@ -81,6 +85,8 @@ export async function dnsResolve(
 
         return step;
     }
+
+    return null;
 }
 
 export async function dnsLookup(
@@ -90,7 +96,7 @@ export async function dnsLookup(
     resolver?: string,
 ): Promise<DnsLookupResult | null> {
     category = category ?? DnsCategory.DnsNextResolver;
-    resolver = resolver ?? ROOT_DNS_RESOLVER;
+    resolver = resolver ?? ROOT_DNS_RESOLVER_MAINNET;
     const result: DnsLookupResult = {
         resolved: '',
         unresolved: '',

@@ -7,9 +7,7 @@ import { Card } from './Card';
 import { DAppInfo } from './DAppInfo';
 import { createComponentLogger } from '../utils/logger';
 import { formatUnits } from '../utils/units';
-
-import { walletKit } from '@/stores';
-
+import { useWalletKit } from '../stores';
 // Create logger for transaction request modal
 const log = createComponentLogger('TransactionRequestModal');
 
@@ -193,15 +191,16 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
 };
 
 function useJettonInfo(jettonAddress: Address | string | null) {
+    const walletKit = useWalletKit();
     const [jettonInfo, setJettonInfo] = useState<JettonInfo | null>(null);
     useEffect(() => {
         if (!jettonAddress) {
             setJettonInfo(null);
             return;
         }
-        const jettonInfo = walletKit.jettons.getJettonInfo(jettonAddress.toString());
-        setJettonInfo(jettonInfo);
-    }, [jettonAddress]);
+        const jettonInfo = walletKit?.jettons.getJettonInfo(jettonAddress.toString());
+        setJettonInfo(jettonInfo ?? null);
+    }, [jettonAddress, walletKit]);
     return jettonInfo;
 }
 
