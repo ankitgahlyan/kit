@@ -5,14 +5,18 @@ import { Address } from '@ton/core';
 import { Button } from './Button';
 import { Card } from './Card';
 import { DAppInfo } from './DAppInfo';
+import { WalletPreview } from './WalletPreview';
+import { HoldToSignButton } from './HoldToSignButton';
+import type { SavedWallet } from '../types/wallet';
 import { createComponentLogger } from '../utils/logger';
 import { formatUnits } from '../utils/units';
-import { useWalletKit } from '../stores';
+import { useWalletKit, useAuth } from '../stores';
 // Create logger for transaction request modal
 const log = createComponentLogger('TransactionRequestModal');
 
 interface TransactionRequestModalProps {
     request: EventTransactionRequest;
+    savedWallets: SavedWallet[];
     isOpen: boolean;
     onApprove: () => void;
     onReject: (reason?: string) => void;
@@ -20,19 +24,43 @@ interface TransactionRequestModalProps {
 
 export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = ({
     request,
+    savedWallets,
     isOpen,
     onApprove,
     onReject,
 }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const { holdToSign } = useAuth();
+
+    // Find the wallet being used for this transaction
+    const currentWallet = useMemo(() => {
+        if (!request.walletAddress) return null;
+        return savedWallets.find((wallet) => wallet.address === request.walletAddress) || null;
+    }, [savedWallets, request.walletAddress]);
+
+    // Reset success state when modal closes/opens
+    useEffect(() => {
+        if (!isOpen) {
+            setShowSuccess(false);
+            setIsLoading(false);
+        }
+    }, [isOpen]);
 
     const handleApprove = async () => {
         setIsLoading(true);
         try {
+            // First, perform the actual signing operation
             await onApprove();
+
+            // If successful, show success animation
+            setIsLoading(false);
+            setShowSuccess(true);
+
+            // The parent will handle closing the modal after it sees the request is completed
+            // But we keep showing the success state for visual feedback
         } catch (error) {
             log.error('Failed to approve transaction:', error);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -41,17 +69,59 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
         onReject('User rejected the transaction');
     };
 
-    const formatAddress = (address: string | Address): string => {
-        try {
-            const addr = typeof address === 'string' ? address : address.toString();
-            if (!addr) return '';
-            return `${addr.slice(0, 8)}...${addr.slice(-8)}`;
-        } catch {
-            return '';
-        }
-    };
-
     if (!isOpen) return null;
+
+    // Success state view
+    if (showSuccess) {
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <style>{`
+                    @keyframes scale-in {
+                        from {
+                            transform: scale(0.8);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: scale(1);
+                            opacity: 1;
+                        }
+                    }
+                    .success-card {
+                        animation: scale-in 0.3s ease-out;
+                    }
+                `}</style>
+                <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-lg max-w-md w-full p-8 relative overflow-hidden success-card">
+                    {/* Success Content */}
+                    <div className="relative z-10 text-center text-white space-y-6">
+                        {/* Success Icon */}
+                        <div className="flex justify-center">
+                            <div className="bg-white rounded-full p-4">
+                                <svg
+                                    className="w-16 h-16 text-green-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={3}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Success Message */}
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2">Success!</h2>
+                            <p className="text-green-50 text-lg">Transaction signed successfully</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -76,17 +146,17 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                             description={request.dAppInfo?.description}
                         />
 
+                        {/* Wallet Information */}
+                        {currentWallet && (
+                            <div>
+                                {/* <h4 className="font-medium text-gray-900 mb-3">Signing with:</h4> */}
+                                <WalletPreview wallet={currentWallet} isActive={true} isCompact={true} />
+                            </div>
+                        )}
+
                         {/* Transaction Summary */}
                         <div className="border rounded-lg p-4 bg-gray-50">
                             <h3 className="font-semibold text-gray-900 mb-3">Transaction Summary</h3>
-
-                            {/* Sender */}
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-gray-600">From:</span>
-                                <span className="text-sm font-mono text-black">
-                                    {formatAddress(request.walletAddress ?? '')}
-                                </span>
-                            </div>
 
                             {/* Network */}
                             <div className="flex justify-between items-center mb-2">
@@ -175,14 +245,23 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                             <Button variant="secondary" onClick={handleReject} disabled={isLoading} className="flex-1">
                                 Reject
                             </Button>
-                            <Button
-                                onClick={handleApprove}
-                                isLoading={isLoading}
-                                disabled={isLoading}
-                                className="flex-1"
-                            >
-                                Approve & Sign
-                            </Button>
+                            {holdToSign ? (
+                                <HoldToSignButton
+                                    onComplete={handleApprove}
+                                    isLoading={isLoading}
+                                    disabled={isLoading}
+                                    holdDuration={3000}
+                                />
+                            ) : (
+                                <Button
+                                    onClick={handleApprove}
+                                    isLoading={isLoading}
+                                    disabled={isLoading}
+                                    className="flex-1"
+                                >
+                                    Approve & Sign
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </Card>

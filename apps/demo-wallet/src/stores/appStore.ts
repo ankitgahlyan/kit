@@ -78,6 +78,7 @@ export const useStore = create<AppState>()(
                             isPasswordSet: state.auth.isPasswordSet,
                             passwordHash: state.auth.passwordHash,
                             persistPassword: state.auth.persistPassword,
+                            holdToSign: state.auth.holdToSign,
                             useWalletInterfaceType: state.auth.useWalletInterfaceType,
                             ledgerAccountNumber: state.auth.ledgerAccountNumber,
                             network: state.auth.network,
@@ -89,8 +90,12 @@ export const useStore = create<AppState>()(
                         },
                         wallet: {
                             hasWallet: state.wallet.hasWallet,
-                            encryptedMnemonic: state.wallet.encryptedMnemonic,
-                            ledgerConfig: state.wallet.ledgerConfig,
+                            savedWallets: state.wallet.savedWallets, // Persist all saved wallets
+                            activeWalletId: state.wallet.activeWalletId, // Persist active wallet selection
+
+                            // Legacy fields for backward compatibility
+                            // encryptedMnemonic: state.wallet.encryptedMnemonic,
+                            // ledgerConfig: state.wallet.ledgerConfig,
 
                             isSignDataModalOpen: state.wallet.isSignDataModalOpen,
                             isTransactionModalOpen: state.wallet.isTransactionModalOpen,
@@ -126,6 +131,11 @@ export const useStore = create<AppState>()(
                                 state.wallet.disconnectedSessions = [];
                             }
 
+                            // Ensure savedWallets is always initialized
+                            if (!state.wallet.savedWallets) {
+                                state.wallet.savedWallets = [];
+                            }
+
                             // Initialize network if not set (for backward compatibility)
                             if (!state.auth.network) {
                                 state.auth.network = 'testnet';
@@ -143,8 +153,7 @@ export const useStore = create<AppState>()(
                                 state.auth.isUnlocked = true;
                             }
 
-                            if (state.wallet.encryptedMnemonic && !state.wallet.hasWallet) {
-                                log.info('Auto-creating wallet with persisted mnemonic');
+                            if (state.wallet.savedWallets.length > 0) {
                                 state.wallet.hasWallet = true;
                             }
 
@@ -180,6 +189,7 @@ export const useAuth = () =>
             isPasswordSet: state.auth.isPasswordSet,
             isUnlocked: state.auth.isUnlocked,
             persistPassword: state.auth.persistPassword,
+            holdToSign: state.auth.holdToSign,
             useWalletInterfaceType: state.auth.useWalletInterfaceType,
             ledgerAccountNumber: state.auth.ledgerAccountNumber,
             network: state.auth.network,
@@ -188,6 +198,7 @@ export const useAuth = () =>
             lock: state.lock,
             reset: state.reset,
             setPersistPassword: state.setPersistPassword,
+            setHoldToSign: state.setHoldToSign,
             setUseWalletInterfaceType: state.setUseWalletInterfaceType,
             setLedgerAccountNumber: state.setLedgerAccountNumber,
             setNetwork: state.setNetwork,
@@ -205,6 +216,8 @@ export const useWallet = () =>
             publicKey: state.wallet.publicKey,
             transactions: state.wallet.transactions,
             currentWallet: state.wallet.currentWallet,
+            savedWallets: state.wallet.savedWallets,
+            activeWalletId: state.wallet.activeWalletId,
             createWallet: state.createWallet,
             importWallet: state.importWallet,
             loadWallet: state.loadWallet,
@@ -214,6 +227,10 @@ export const useWallet = () =>
             loadTransactions: state.loadTransactions,
             getDecryptedMnemonic: state.getDecryptedMnemonic,
             getAvailableWallets: state.getAvailableWallets,
+            getActiveWallet: state.getActiveWallet,
+            switchWallet: state.switchWallet,
+            removeWallet: state.removeWallet,
+            renameWallet: state.renameWallet,
             createLedgerWallet: state.createLedgerWallet,
         })),
     );

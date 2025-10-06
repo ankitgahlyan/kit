@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Layout, Button, Card, MnemonicDisplay, ImportWallet } from '../components';
 import { useTonWallet } from '../hooks';
-import { useAuth } from '../stores';
+import { useAuth, useWallet } from '../stores';
 
 type SetupMode = 'select' | 'create' | 'import' | 'ledger';
 
@@ -19,6 +19,7 @@ export const SetupWallet: React.FC = () => {
     const navigate = useNavigate();
     const { createNewWallet, createLedgerWallet, importWallet } = useTonWallet();
     const { setUseWalletInterfaceType, ledgerAccountNumber, setLedgerAccountNumber } = useAuth();
+    const { hasWallet } = useWallet();
 
     const handleCreateWallet = async () => {
         setError('');
@@ -35,7 +36,11 @@ export const SetupWallet: React.FC = () => {
         }
     };
 
-    const handleImportWallet = async (mnemonicArray: string[]) => {
+    const handleImportWallet = async (
+        mnemonicArray: string[],
+        interfaceType: 'signer' | 'mnemonic',
+        version?: 'v5r1' | 'v4r2',
+    ) => {
         setError('');
         setIsLoading(true);
 
@@ -44,7 +49,10 @@ export const SetupWallet: React.FC = () => {
                 throw new Error('Mnemonic must be 12 or 24 words');
             }
 
-            await importWallet(mnemonicArray);
+            // Set the wallet interface type before importing
+            setUseWalletInterfaceType(interfaceType);
+
+            await importWallet(mnemonicArray, version);
             navigate('/wallet');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to import wallet');
@@ -131,6 +139,21 @@ export const SetupWallet: React.FC = () => {
                                 <p className="text-xs text-gray-500 text-center">Use your Ledger hardware wallet</p>
                             </div>
                         </Card>
+
+                        {hasWallet && (
+                            <Card>
+                                <div className="space-y-4">
+                                    <Button
+                                        data-test-id="go-to-dashboard"
+                                        onClick={() => navigate('/wallet')}
+                                        className="w-full"
+                                    >
+                                        Return to Dashboard
+                                    </Button>
+                                    <p className="text-xs text-gray-500 text-center">Access your existing wallet</p>
+                                </div>
+                            </Card>
+                        )}
                     </div>
 
                     {error && <div className="text-red-600 text-sm text-center">{error}</div>}

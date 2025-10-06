@@ -12,7 +12,7 @@ import type {
     ITonWalletKit,
 } from '@ton/walletkit';
 
-import type { AuthState, WalletState, PreviewTransaction } from './wallet';
+import type { AuthState, WalletState, PreviewTransaction, SavedWallet } from './wallet';
 
 // Auth slice interface
 export interface AuthSlice extends AuthState {
@@ -22,6 +22,7 @@ export interface AuthSlice extends AuthState {
     lock: () => void;
     reset: () => void;
     setPersistPassword: (persist: boolean) => void;
+    setHoldToSign: (enabled: boolean) => void;
     setUseWalletInterfaceType: (interfaceType: 'signer' | 'mnemonic' | 'ledger') => void;
     setLedgerAccountNumber: (accountNumber: number) => void;
     setNetwork: (network: 'mainnet' | 'testnet') => Promise<void>;
@@ -99,10 +100,17 @@ export interface WalletSlice extends WalletState {
     // WalletKit initialization
     initializeWalletKit: (network?: 'mainnet' | 'testnet') => Promise<ITonWalletKit | undefined>;
 
-    // Actions
-    createWallet: (mnemonic: string[]) => Promise<void>;
-    importWallet: (mnemonic: string[]) => Promise<void>;
-    createLedgerWallet: () => Promise<void>;
+    // Multi-wallet actions
+    createWallet: (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => Promise<string>; // Returns wallet ID
+    importWallet: (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => Promise<string>; // Returns wallet ID
+    createLedgerWallet: (name?: string) => Promise<string>; // Returns wallet ID
+    switchWallet: (walletId: string) => Promise<void>;
+    removeWallet: (walletId: string) => void;
+    renameWallet: (walletId: string, newName: string) => void;
+    loadAllWallets: () => Promise<void>;
+    loadSavedWalletsIntoKit: (walletKit: ITonWalletKit) => Promise<void>;
+
+    // Legacy actions (for backward compatibility)
     loadWallet: () => Promise<void>;
     clearWallet: () => void;
     updateBalance: () => Promise<void>;
@@ -133,8 +141,9 @@ export interface WalletSlice extends WalletState {
     clearDisconnectNotifications: () => void;
 
     // Getters
-    getDecryptedMnemonic: () => Promise<string[] | null>;
+    getDecryptedMnemonic: (walletId?: string) => Promise<string[] | null>;
     getAvailableWallets: () => WalletInterface[];
+    getActiveWallet: () => SavedWallet | undefined;
 }
 
 // Combined app state
