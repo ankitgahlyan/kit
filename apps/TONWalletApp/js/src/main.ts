@@ -244,9 +244,8 @@ export async function main() {
             console.log('➖ Bridge: Removing wallet:', address);
 
             try {
-                const result = await walletKit.removeWallet(address);
-                console.log('✅ Wallet removed:', result);
-                return result;
+                await walletKit.removeWallet(address);
+                console.log('✅ Wallet removed');
             } catch (error) {
                 console.error('❌ Failed to remove wallet:', error);
                 throw error;
