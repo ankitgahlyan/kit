@@ -11,6 +11,11 @@ export const createAuthSlice: AuthSliceCreator = (set: SetState, get) => ({
         isUnlocked: false,
         currentPassword: undefined,
         passwordHash: undefined,
+        persistPassword: false,
+        holdToSign: true, // Default to true for better security
+        useWalletInterfaceType: 'mnemonic',
+        ledgerAccountNumber: 0,
+        network: 'testnet', // Default to testnet for development
     },
 
     // Actions
@@ -80,6 +85,52 @@ export const createAuthSlice: AuthSliceCreator = (set: SetState, get) => ({
             state.auth.isUnlocked = false;
             state.auth.currentPassword = undefined;
             state.auth.passwordHash = undefined;
+            state.auth.persistPassword = false;
+            state.auth.useWalletInterfaceType = 'mnemonic';
+            state.auth.ledgerAccountNumber = 0;
         });
+    },
+
+    setPersistPassword: (persist: boolean) => {
+        set((state) => {
+            state.auth.persistPassword = persist;
+            // If disabling persistence, clear the persisted password
+            if (!persist) {
+                state.auth.currentPassword = undefined;
+            }
+        });
+    },
+
+    setHoldToSign: (enabled: boolean) => {
+        set((state) => {
+            state.auth.holdToSign = enabled;
+        });
+    },
+
+    setUseWalletInterfaceType: (interfaceType: 'signer' | 'mnemonic' | 'ledger') => {
+        set((state) => {
+            state.auth.useWalletInterfaceType = interfaceType;
+        });
+    },
+
+    setLedgerAccountNumber: (accountNumber: number) => {
+        set((state) => {
+            state.auth.ledgerAccountNumber = accountNumber;
+        });
+    },
+
+    setNetwork: async (network: 'mainnet' | 'testnet') => {
+        set((state) => {
+            state.auth.network = network;
+        });
+
+        // Reinitialize wallet kit with new network
+        const state = get();
+        await state.initializeWalletKit(network);
+
+        // Reload wallet if authenticated
+        if (state.wallet.isAuthenticated && state.wallet.hasWallet) {
+            await state.loadWallet();
+        }
     },
 });

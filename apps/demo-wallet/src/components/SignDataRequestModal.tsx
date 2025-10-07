@@ -1,41 +1,71 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { EventSignDataRequest } from '@ton/walletkit';
 
 import { Button } from './Button';
 import { Card } from './Card';
+import { DAppInfo } from './DAppInfo';
+import { WalletPreview } from './WalletPreview';
+import { HoldToSignButton } from './HoldToSignButton';
+import type { SavedWallet } from '../types/wallet';
 import { createComponentLogger } from '../utils/logger';
+import { useAuth } from '../stores';
 
 // Create logger for sign data request modal
 const log = createComponentLogger('SignDataRequestModal');
 
 interface SignDataRequestModalProps {
     request: EventSignDataRequest;
+    savedWallets: SavedWallet[];
     isOpen: boolean;
     onApprove: () => void;
     onReject: (reason?: string) => void;
 }
 
-export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ request, isOpen, onApprove, onReject }) => {
+export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({
+    request,
+    savedWallets,
+    isOpen,
+    onApprove,
+    onReject,
+}) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const { holdToSign } = useAuth();
+
+    // Find the wallet being used for this sign data request
+    const currentWallet = useMemo(() => {
+        if (!request.walletAddress) return null;
+        return savedWallets.find((wallet) => wallet.address === request.walletAddress) || null;
+    }, [savedWallets, request.walletAddress]);
+
+    // Reset success state when modal closes/opens
+    useEffect(() => {
+        if (!isOpen) {
+            setShowSuccess(false);
+            setIsLoading(false);
+        }
+    }, [isOpen]);
 
     const handleApprove = async () => {
         setIsLoading(true);
         try {
+            // First, perform the actual signing operation
             await onApprove();
+
+            // If successful, show success animation
+            setIsLoading(false);
+            setShowSuccess(true);
+
+            // The parent will handle closing the modal after it sees the request is completed
+            // But we keep showing the success state for visual feedback
         } catch (error) {
             log.error('Failed to approve sign data request:', error);
-        } finally {
             setIsLoading(false);
         }
     };
 
     const handleReject = () => {
         onReject('User rejected the sign data request');
-    };
-
-    const formatAddress = (address: string): string => {
-        if (!address) return '';
-        return `${address.slice(0, 8)}...${address.slice(-8)}`;
     };
 
     const renderDataPreview = () => {
@@ -60,15 +90,29 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ requ
                 );
             case 'cell':
                 return (
-                    <div className="border rounded-lg p-3 bg-purple-50">
-                        <h4 className="font-medium text-purple-900 mb-2">TON Cell Data</h4>
+                    <div className="">
+                        {/* <h4 className="font-medium mb-2">TON Cell Data</h4> */}
                         <div className="space-y-2">
-                            <p className="text-sm text-purple-800">Content: {preview.content}</p>
-                            {preview.schema && <p className="text-sm text-purple-800">Schema: {preview.schema}</p>}
+                            <div>
+                                <p className="font-medium">Content</p>
+                                <p className="text-gray-600 text-sm overflow-x-auto whitespace-pre-wrap">
+                                    {preview.content}
+                                </p>
+                            </div>
+                            {preview.schema && (
+                                <div>
+                                    <p className="font-medium">Schema</p>
+                                    <p className="text-gray-600 text-sm overflow-x-auto whitespace-pre-wrap">
+                                        {preview.schema}
+                                    </p>
+                                </div>
+                            )}
+                            {/* <p className="text-sm overflow-x-auto whitespace-pre-wrap">Content: {preview.content}</p> */}
+                            {/* {preview.schema && <p className="text-sm">Schema: {preview.schema}</p>} */}
                             {preview.parsed && (
                                 <div>
-                                    <p className="text-sm text-purple-800 mb-1">Parsed Data:</p>
-                                    <pre className="text-xs text-purple-700 overflow-x-auto whitespace-pre-wrap">
+                                    <p className="font-medium mb-1">Parsed Data:</p>
+                                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-gray-100 p-2 rounded-lg">
                                         {JSON.stringify(preview.parsed, null, 2)}
                                     </pre>
                                 </div>
@@ -79,7 +123,7 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ requ
             default:
                 return (
                     <div className="border rounded-lg p-3 bg-gray-50">
-                        <h4 className="font-medium text-gray-900 mb-2">Data to Sign</h4>
+                        {/* <h4 className="font-medium text-gray-900 mb-2">Data to Sign</h4> */}
                         <p className="text-sm text-gray-600">Unknown data format</p>
                     </div>
                 );
@@ -88,6 +132,59 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ requ
 
     if (!isOpen) return null;
 
+    // Success state view
+    if (showSuccess) {
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <style>{`
+                    @keyframes scale-in {
+                        from {
+                            transform: scale(0.8);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: scale(1);
+                            opacity: 1;
+                        }
+                    }
+                    .success-card {
+                        animation: scale-in 0.3s ease-out;
+                    }
+                `}</style>
+                <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-lg max-w-md w-full p-8 relative overflow-hidden success-card">
+                    {/* Success Content */}
+                    <div className="relative z-10 text-center text-white space-y-6">
+                        {/* Success Icon */}
+                        <div className="flex justify-center">
+                            <div className="bg-white rounded-full p-4">
+                                <svg
+                                    className="w-16 h-16 text-green-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={3}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Success Message */}
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2">Success!</h2>
+                            <p className="text-green-50 text-lg">Data signed successfully</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Normal request view
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -95,36 +192,26 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ requ
                     <div className="space-y-6">
                         {/* Header */}
                         <div className="text-center">
-                            <h2 className="text-xl font-bold text-gray-900">Sign Data Request</h2>
+                            <h2 data-test-id="request" className="text-xl font-bold text-gray-900">
+                                Sign Data Request
+                            </h2>
                             <p className="text-gray-600 text-sm mt-1">A dApp wants you to sign data with your wallet</p>
                         </div>
 
-                        {/* Request Information */}
-                        <div className="border rounded-lg p-4 bg-gray-50">
-                            <h3 className="font-semibold text-gray-900 mb-3">Request Details</h3>
+                        {/* dApp Information */}
+                        <DAppInfo
+                            iconUrl={request.dAppInfo?.iconUrl}
+                            name={request.dAppInfo?.name}
+                            url={request.dAppInfo?.url}
+                            description={request.dAppInfo?.description}
+                        />
 
-                            {/* From Address */}
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-gray-600">From:</span>
-                                <span className="text-sm font-mono text-black">{formatAddress(request.from)}</span>
+                        {/* Wallet Information */}
+                        {currentWallet && (
+                            <div>
+                                <WalletPreview wallet={currentWallet} isActive={true} isCompact={true} />
                             </div>
-
-                            {/* Wallet Address */}
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-gray-600">Wallet:</span>
-                                <span className="text-sm font-mono text-black">
-                                    {formatAddress(request.wallet.getAddress())}
-                                </span>
-                            </div>
-
-                            {/* Request ID */}
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">Request ID:</span>
-                                <span className="text-sm font-mono text-black text-xs">
-                                    {request.id.slice(0, 8)}...
-                                </span>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Data Preview */}
                         <div>
@@ -155,17 +242,33 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({ requ
 
                         {/* Action Buttons */}
                         <div className="flex space-x-3">
-                            <Button variant="secondary" onClick={handleReject} disabled={isLoading} className="flex-1">
-                                Reject
-                            </Button>
                             <Button
-                                onClick={handleApprove}
-                                isLoading={isLoading}
+                                data-test-id="sign-data-reject"
+                                variant="secondary"
+                                onClick={handleReject}
                                 disabled={isLoading}
                                 className="flex-1"
                             >
-                                Sign Data
+                                Reject
                             </Button>
+                            {holdToSign ? (
+                                <HoldToSignButton
+                                    onComplete={handleApprove}
+                                    isLoading={isLoading}
+                                    disabled={isLoading}
+                                    holdDuration={3000}
+                                />
+                            ) : (
+                                <Button
+                                    data-test-id="sign-data-approve"
+                                    onClick={handleApprove}
+                                    isLoading={isLoading}
+                                    disabled={isLoading}
+                                    className="flex-1"
+                                >
+                                    Sign Data ('regular')
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </Card>

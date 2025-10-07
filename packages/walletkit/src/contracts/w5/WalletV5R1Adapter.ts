@@ -1,6 +1,7 @@
 // WalletV5R1 adapter that implements WalletInterface
 
 import {
+    Address,
     beginCell,
     Cell,
     Dictionary,
@@ -10,72 +11,93 @@ import {
     storeMessage,
     storeStateInit,
 } from '@ton/core';
-import { type TonClient } from '@ton/ton';
 import { keyPairFromSeed } from '@ton/crypto';
 import { external, internal } from '@ton/core';
+import { CHAIN, toHexString } from '@tonconnect/protocol';
 
-import type { TonNetwork } from '../../types';
-import { WalletInitConfigMnemonic, WalletInitConfigPrivateKey } from '../../types';
 import { WalletV5, WalletId } from './WalletV5R1';
 import { WalletV5R1CodeCell } from './WalletV5R1.source';
 import { globalLogger } from '../../core/Logger';
-import { DefaultSignature, FakeSignature } from '../../utils/sign';
+import { WalletKitError, ERROR_CODES } from '../../errors';
+import { createWalletSigner, FakeSignature } from '../../utils/sign';
 import { formatWalletAddress } from '../../utils/address';
 import { MnemonicToKeyPair } from '../../utils/mnemonic';
 import { CallForSuccess } from '../../utils/retry';
 import { ConnectTransactionParamContent } from '../../types/internal';
 import { ActionSendMsg, packActionsList } from './actions';
-import { WalletInitInterface } from '../../types/wallet';
+import {
+    WalletInitInterface,
+    WalletInitConfigMnemonicInterface,
+    WalletInitConfigPrivateKeyInterface,
+    WalletInitConfigSignerInterface,
+    isWalletInitConfigSigner,
+    isWalletInitConfigMnemonic,
+    isWalletInitConfigPrivateKey,
+    WalletSigner,
+} from '../../types/wallet';
+import { ApiClient } from '../../types/toncenter/ApiClient';
+import { Uint8ArrayToBigInt } from '../../utils/base64';
+import { PrepareSignDataResult } from '../../utils/signData/sign';
+import { Hash } from '../../types/primitive';
+import { CreateTonProofMessageBytes, TonProofParsedMessage } from '../../utils/tonProof';
 
 const log = globalLogger.createChild('WalletV5R1Adapter');
+
+export const defaultWalletIdV5R1 = 2147483409;
 
 /**
  * Configuration for creating a WalletV5R1 adapter
  */
 export interface WalletV5R1AdapterConfig {
-    /** Private key buffer (32 bytes) */
-    privateKey: Uint8Array;
+    /** Signer function */
+    signer: WalletSigner;
+    /** Public key */
+    publicKey: Uint8Array;
     /** Wallet ID configuration */
-    walletId?: number;
+    walletId?: number | bigint;
     /** Shared TON client instance */
-    tonClient: TonClient;
+    tonClient: ApiClient;
     /** Network */
-    network: TonNetwork;
+    network: CHAIN;
+    /** Workchain */
+    workchain?: number;
 }
 
 /**
  * WalletV5R1 adapter that implements WalletInterface for WalletV5 contracts
  */
 export class WalletV5R1Adapter implements WalletInitInterface {
-    private keyPair: { publicKey: Uint8Array; secretKey: Uint8Array };
-    private walletContract: WalletV5;
-    client: TonClient;
+    // private keyPair: { publicKey: Uint8Array; secretKey: Uint8Array };
+    private signer: WalletSigner;
     private config: WalletV5R1AdapterConfig;
 
+    readonly walletContract: WalletV5;
+    readonly client: ApiClient;
     public readonly publicKey: Uint8Array;
     public readonly version = 'v5r1';
 
     constructor(config: WalletV5R1AdapterConfig) {
         this.config = config;
         this.client = config.tonClient;
+        this.signer = config.signer;
 
-        // Initialize key pair - this will be properly set in initialize()
-        // this.keyPair = { publicKey: Buffer.alloc(32), secretKey: Buffer.alloc(64) };
-        // this.publicKey = '';
-        const privateKey =
-            this.config.privateKey.length === 32 ? this.config.privateKey : this.config.privateKey.slice(0, 32);
-        this.keyPair = keyPairFromSeed(Buffer.from(privateKey));
-        this.publicKey = Uint8Array.from(this.keyPair.publicKey);
+        this.publicKey = Uint8Array.from(this.config.publicKey);
         this.walletContract = WalletV5.createFromConfig(
             {
-                publicKey: this.keyPair.publicKey,
+                publicKey: Uint8ArrayToBigInt(this.publicKey),
                 seqno: 0,
                 signatureAllowed: true,
-                walletId: 2147483409n, // todo fix
+                walletId:
+                    typeof config.walletId === 'bigint'
+                        ? Number(config.walletId)
+                        : (config.walletId ?? defaultWalletIdV5R1),
                 extensions: Dictionary.empty(),
             },
-            WalletV5R1CodeCell,
-            0,
+            {
+                code: WalletV5R1CodeCell,
+                workchain: config.workchain ?? 0,
+                client: this.client,
+            },
         );
     }
 
@@ -83,7 +105,11 @@ export class WalletV5R1Adapter implements WalletInitInterface {
      * Sign raw bytes with wallet's private key
      */
     async sign(bytes: Uint8Array): Promise<Uint8Array> {
-        return DefaultSignature(bytes, this.keyPair.secretKey);
+        return this.signer(bytes);
+    }
+
+    getNetwork(): CHAIN {
+        return this.config.network;
     }
 
     /**
@@ -93,32 +119,77 @@ export class WalletV5R1Adapter implements WalletInitInterface {
         return formatWalletAddress(this.walletContract.address, options?.testnet);
     }
 
-    async getSignedExternal(
+    async getSignedSendTransaction(
         input: ConnectTransactionParamContent,
         options: { fakeSignature: boolean },
     ): Promise<string> {
-        // if (keyPair.secretKey.length === 32) {
-        //     keyPair.secretKey = Buffer.concat([Uint8Array.from(keyPair.secretKey), Uint8Array.from(keyPair.publicKey)]);
-        // }
-
         const actions = packActionsList(
             input.messages.map((m) => {
+                let bounce = true;
+                const parsedAddress = Address.parseFriendly(m.address);
+                if (parsedAddress.isBounceable === false) {
+                    bounce = false;
+                }
+
                 const msg = internal({
-                    body: m.payload ? Cell.fromBase64(m.payload) : undefined,
                     to: m.address,
                     value: BigInt(m.amount),
-                    bounce: false,
+                    bounce: bounce,
                     extracurrency: m.extraCurrency
                         ? Object.fromEntries(Object.entries(m.extraCurrency).map(([k, v]) => [Number(k), BigInt(v)]))
                         : undefined,
                 });
 
+                if (m.payload) {
+                    try {
+                        msg.body = Cell.fromBase64(m.payload);
+                    } catch (error) {
+                        log.warn('Failed to load payload', { error });
+                        throw WalletKitError.fromError(
+                            ERROR_CODES.CONTRACT_VALIDATION_FAILED,
+                            'Failed to parse transaction payload',
+                            error,
+                        );
+                    }
+                }
+
                 if (m.stateInit) {
-                    msg.init = loadStateInit(Cell.fromBase64(m.stateInit).asSlice());
+                    try {
+                        msg.init = loadStateInit(Cell.fromBase64(m.stateInit).asSlice());
+                    } catch (error) {
+                        log.warn('Failed to load state init', { error });
+                        throw WalletKitError.fromError(
+                            ERROR_CODES.CONTRACT_VALIDATION_FAILED,
+                            'Failed to parse state init',
+                            error,
+                        );
+                    }
                 }
                 return new ActionSendMsg(SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS, msg);
             }),
         );
+
+        const createBodyOptions: { validUntil: number | undefined; fakeSignature: boolean } = {
+            ...options,
+            validUntil: undefined,
+        };
+        // add valid untill
+        if (input.valid_until) {
+            const now = Math.floor(Date.now() / 1000);
+            const maxValidUntil = now + 600;
+            if (input.valid_until < now) {
+                throw new WalletKitError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Transaction valid_until timestamp is in the past',
+                    undefined,
+                    { validUntil: input.valid_until, currentTime: now },
+                );
+            } else if (input.valid_until > maxValidUntil) {
+                createBodyOptions.validUntil = maxValidUntil;
+            } else {
+                createBodyOptions.validUntil = input.valid_until;
+            }
+        }
 
         let seqno = 0;
         try {
@@ -126,19 +197,12 @@ export class WalletV5R1Adapter implements WalletInitInterface {
         } catch (_) {
             //
         }
-        const provider = this.client.provider(this.walletContract.address);
-        let walletId;
-        try {
-            walletId = (await this.walletContract.getWalletId(provider)).serialized; // WalletId.deserialize(subwalletId);
-        } catch (_) {
-            //
-        }
-
+        const walletId = (await this.walletContract.walletId).serialized;
         if (!walletId) {
             throw new Error('Failed to get seqno or walletId');
         }
 
-        const transfer = await this.createBodyV5(seqno, walletId, actions, options);
+        const transfer = await this.createBodyV5(seqno, walletId, actions, createBodyOptions);
 
         const ext = external({
             to: this.walletContract.address,
@@ -191,8 +255,7 @@ export class WalletV5R1Adapter implements WalletInitInterface {
      */
     async getSeqno(): Promise<number> {
         try {
-            const provider = this.client.provider(this.walletContract.address);
-            return await this.walletContract.getSeqno(provider);
+            return await this.walletContract.seqno;
         } catch (error) {
             log.warn('Failed to get seqno', { error });
             // return 0;
@@ -205,11 +268,12 @@ export class WalletV5R1Adapter implements WalletInitInterface {
      */
     async getWalletId(): Promise<WalletId> {
         try {
-            const provider = this.client.provider(this.walletContract.address);
-            return await this.walletContract.getWalletId(provider);
+            return this.walletContract.walletId;
         } catch (error) {
             log.warn('Failed to get wallet ID', { error });
-            return new WalletId({ subwalletNumber: this.config.walletId || 0 });
+            const walletId = this.config.walletId;
+            const subwalletNumber = typeof walletId === 'bigint' ? Number(walletId) : walletId || 0;
+            return new WalletId({ subwalletNumber });
         }
     }
 
@@ -218,20 +282,25 @@ export class WalletV5R1Adapter implements WalletInitInterface {
      */
     async isDeployed(): Promise<boolean> {
         try {
-            const state = await this.client.getContractState(this.walletContract.address);
-            return state.state === 'active';
+            const state = await this.client.getAccountState(this.walletContract.address);
+            return state.status === 'active';
         } catch (error) {
             log.warn('Failed to check deployment status', { error });
             return false;
         }
     }
 
-    async createBodyV5(seqno: number, walletId: bigint, actionsList: Cell, options: { fakeSignature: boolean }) {
+    async createBodyV5(
+        seqno: number,
+        walletId: bigint,
+        actionsList: Cell,
+        options: { validUntil: number | undefined; fakeSignature: boolean },
+    ) {
         const Opcodes = {
             auth_signed: 0x7369676e,
         };
 
-        const expireAt = Math.floor(Date.now() / 1000) + 60;
+        const expireAt = options.validUntil ?? Math.floor(Date.now() / 1000) + 300;
         const payload = beginCell()
             .storeUint(Opcodes.auth_signed, 32)
             .storeUint(walletId, 32)
@@ -244,32 +313,59 @@ export class WalletV5R1Adapter implements WalletInitInterface {
         const signature = options.fakeSignature ? FakeSignature(signingData) : await this.sign(signingData);
         return beginCell().storeSlice(payload.beginParse()).storeBuffer(Buffer.from(signature)).endCell();
     }
+
+    async getSignedSignData(input: PrepareSignDataResult): Promise<Hash> {
+        const signature = await this.sign(input.hash);
+        return ('0x' + toHexString(signature)) as Hash;
+    }
+
+    async getSignedTonProof(input: TonProofParsedMessage): Promise<Hash> {
+        const message = await CreateTonProofMessageBytes(input);
+        const signature = await this.sign(message);
+
+        return ('0x' + toHexString(signature)) as Hash;
+    }
 }
 
 /**
  * Utility function to create WalletV5R1 from any supported configuration
  */
 export async function createWalletV5R1(
-    config: WalletInitConfigMnemonic | WalletInitConfigPrivateKey,
+    config: WalletInitConfigMnemonicInterface | WalletInitConfigPrivateKeyInterface | WalletInitConfigSignerInterface,
     options: {
-        tonClient: TonClient;
+        tonClient: ApiClient;
     },
 ): Promise<WalletInitInterface> {
-    let keyPair: {
-        publicKey: Uint8Array;
-        secretKey: Uint8Array;
-    };
-    if (config instanceof WalletInitConfigMnemonic) {
-        keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
-    } else if (config instanceof WalletInitConfigPrivateKey) {
-        keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
+    let publicKey: Uint8Array;
+    let signer: WalletSigner;
+    if (isWalletInitConfigMnemonic(config)) {
+        const keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
+        publicKey = keyPair.publicKey;
+        signer = createWalletSigner(keyPair.secretKey);
+    } else if (isWalletInitConfigPrivateKey(config)) {
+        if (typeof config.privateKey === 'string') {
+            const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
+            publicKey = keyPair.publicKey;
+            signer = createWalletSigner(keyPair.secretKey);
+        } else {
+            const keyPair = keyPairFromSeed(config.privateKey as Buffer);
+            publicKey = keyPair.publicKey;
+            signer = createWalletSigner(config.privateKey);
+        }
+    } else if (isWalletInitConfigSigner(config)) {
+        publicKey =
+            typeof config.publicKey === 'string'
+                ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
+                : config.publicKey;
+        signer = config.sign;
     } else {
         throw new Error('Unsupported wallet configuration format');
     }
 
     return new WalletV5R1Adapter({
-        privateKey: keyPair.secretKey,
-        network: config.network || 'mainnet',
+        publicKey: publicKey,
+        signer: signer,
+        network: config.network || CHAIN.MAINNET,
         tonClient: options.tonClient,
         walletId: config.walletId,
     });

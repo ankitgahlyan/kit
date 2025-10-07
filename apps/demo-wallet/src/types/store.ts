@@ -8,10 +8,11 @@ import type {
     AddressJetton,
     JettonTransfer,
     JettonInfo,
-    JettonBalance,
+    NftItem,
+    ITonWalletKit,
 } from '@ton/walletkit';
 
-import type { AuthState, WalletState, Transaction } from './wallet';
+import type { AuthState, WalletState, PreviewTransaction, SavedWallet } from './wallet';
 
 // Auth slice interface
 export interface AuthSlice extends AuthState {
@@ -20,6 +21,11 @@ export interface AuthSlice extends AuthState {
     unlock: (password: string) => Promise<boolean>;
     lock: () => void;
     reset: () => void;
+    setPersistPassword: (persist: boolean) => void;
+    setHoldToSign: (enabled: boolean) => void;
+    setUseWalletInterfaceType: (interfaceType: 'signer' | 'mnemonic' | 'ledger') => void;
+    setLedgerAccountNumber: (accountNumber: number) => void;
+    setNetwork: (network: 'mainnet' | 'testnet') => Promise<void>;
 }
 
 // Jettons slice interface
@@ -49,10 +55,6 @@ export interface JettonsSlice {
     // Actions
     loadUserJettons: (userAddress?: string) => Promise<void>;
     refreshJettons: (userAddress?: string) => Promise<void>;
-    loadJettonTransfers: (userAddress?: string, jettonAddress?: string) => Promise<void>;
-    loadPopularJettons: () => Promise<void>;
-    searchJettons: (query: string) => Promise<JettonInfo[]>;
-    getJettonBalance: (jettonWalletAddress: string) => Promise<JettonBalance>;
     validateJettonAddress: (address: string) => boolean;
     clearJettons: () => void;
 
@@ -61,15 +63,59 @@ export interface JettonsSlice {
     formatJettonAmount: (amount: string, decimals: number) => string;
 }
 
+// NFTs slice interface
+export interface NftsSlice {
+    nfts: {
+        // Data
+        userNfts: NftItem[];
+
+        // Loading states
+        isLoadingNfts: boolean;
+        isRefreshing: boolean;
+
+        // Error states
+        error: string | null;
+
+        // Last update timestamp
+        lastNftsUpdate: number;
+
+        // Pagination
+        hasMore: boolean;
+        offset: number;
+    };
+
+    // Actions
+    loadUserNfts: (userAddress?: string, limit?: number) => Promise<void>;
+    refreshNfts: (userAddress?: string) => Promise<void>;
+    loadMoreNfts: (userAddress?: string) => Promise<void>;
+    clearNfts: () => void;
+
+    // Utility methods
+    getNftByAddress: (address: string) => NftItem | undefined;
+    formatNftIndex: (index: bigint) => string;
+}
+
 // Wallet slice interface
 export interface WalletSlice extends WalletState {
-    // Actions
-    createWallet: (mnemonic: string[]) => Promise<void>;
-    importWallet: (mnemonic: string[]) => Promise<void>;
+    // WalletKit initialization
+    initializeWalletKit: (network?: 'mainnet' | 'testnet') => Promise<ITonWalletKit | undefined>;
+
+    // Multi-wallet actions
+    createWallet: (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => Promise<string>; // Returns wallet ID
+    importWallet: (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => Promise<string>; // Returns wallet ID
+    createLedgerWallet: (name?: string) => Promise<string>; // Returns wallet ID
+    switchWallet: (walletId: string) => Promise<void>;
+    removeWallet: (walletId: string) => void;
+    renameWallet: (walletId: string, newName: string) => void;
+    loadAllWallets: () => Promise<void>;
+    loadSavedWalletsIntoKit: (walletKit: ITonWalletKit) => Promise<void>;
+
+    // Legacy actions (for backward compatibility)
     loadWallet: () => Promise<void>;
     clearWallet: () => void;
     updateBalance: () => Promise<void>;
-    addTransaction: (transaction: Transaction) => void;
+    addTransaction: (transaction: PreviewTransaction) => void;
+    loadTransactions: (limit?: number) => Promise<void>;
 
     // TON Connect actions
     handleTonConnectUrl: (url: string) => Promise<void>;
@@ -95,12 +141,13 @@ export interface WalletSlice extends WalletState {
     clearDisconnectNotifications: () => void;
 
     // Getters
-    getDecryptedMnemonic: () => Promise<string[] | null>;
+    getDecryptedMnemonic: (walletId?: string) => Promise<string[] | null>;
     getAvailableWallets: () => WalletInterface[];
+    getActiveWallet: () => SavedWallet | undefined;
 }
 
 // Combined app state
-export interface AppState extends AuthSlice, WalletSlice, JettonsSlice {}
+export interface AppState extends AuthSlice, WalletSlice, JettonsSlice, NftsSlice {}
 
 // Slice creator types
 export type AuthSliceCreator = StateCreator<AppState, [], [], AuthSlice>;
@@ -108,6 +155,8 @@ export type AuthSliceCreator = StateCreator<AppState, [], [], AuthSlice>;
 export type WalletSliceCreator = StateCreator<AppState, [], [], WalletSlice>;
 
 export type JettonsSliceCreator = StateCreator<AppState, [], [], JettonsSlice>;
+
+export type NftsSliceCreator = StateCreator<AppState, [], [], NftsSlice>;
 
 // Migration types
 export interface MigrationState {

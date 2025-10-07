@@ -1,83 +1,55 @@
 // Configuration type definitions
 
-import type { WalletInitConfig } from './wallet';
+import { CHAIN } from '@tonconnect/protocol';
+
 import type { StorageAdapter } from '../storage';
 import { EventProcessorConfig } from '../core/EventProcessor';
+import { DeviceInfo, WalletInfo } from './jsBridge';
+import { BridgeConfig } from './internal';
+import { ApiClient } from './toncenter/ApiClient';
 
 /**
  * Main configuration options for TonWalletKit
  */
 export interface TonWalletKitOptions {
-    /** Optional TON API URL for blockchain queries */
-    apiUrl?: string;
-
-    /** Optional API key for TON API */
-    apiKey?: string;
-
-    /** Initial wallets to add to the kit */
-    wallets?: Array<WalletInitConfig>;
-
-    /** Storage adapter for persistence (defaults to localStorage) */
-    storage?: StorageAdapter;
+    walletManifest?: WalletInfo;
+    deviceInfo?: DeviceInfo;
 
     /** Network */
-    network?: 'mainnet' | 'testnet';
+    network?: CHAIN;
 
-    /** Optional configuration overrides */
-    config: {
-        /** Bridge reconnection settings */
-        bridge: {
-            heartbeatInterval?: number;
-            reconnectInterval?: number;
-            maxReconnectAttempts?: number;
-            bridgeUrl?: string;
-            enableJsBridge?: boolean;
-            bridgeName?: string;
-        };
+    /** Bridge settings */
+    bridge?: BridgeConfig;
+    /** Storage settings */
+    storage?:
+        | {
+              prefix?: string;
+              cacheTimeout?: number;
+              maxCacheSize?: number;
+              allowMemory?: boolean;
+          }
+        | StorageAdapter;
 
-        /** Storage settings */
-        storage?:
-            | {
-                  prefix?: string;
-                  cacheTimeout?: number;
-                  maxCacheSize?: number;
-                  allowMemory?: boolean;
-              }
-            | StorageAdapter;
-
-        /** Validation settings */
-        validation?: {
-            strictMode?: boolean;
-            allowUnknownWalletVersions?: boolean;
-        };
-
-        eventProcessor?: EventProcessorConfig;
+    /** Validation settings */
+    validation?: {
+        strictMode?: boolean;
+        allowUnknownWalletVersions?: boolean;
     };
+
+    /** Event processor settings */
+    eventProcessor?: EventProcessorConfig;
+
+    apiClient?:
+        | {
+              url?: string; // default 'https://toncenter.com'
+              key?: string; // key for better RPS limits
+          }
+        | ApiClient;
+
+    analytics?: AnalyticsConfig;
 }
 
-/**
- * Runtime configuration that can be updated after initialization
- */
-export interface RuntimeConfig {
-    /** Enable/disable debug logging */
-    debug?: boolean;
-
-    /** Custom error handlers */
-    errorHandlers?: {
-        onBridgeError?: (error: Error) => void;
-        onValidationError?: (error: Error) => void;
-        onStorageError?: (error: Error) => void;
-    };
-
-    /** Feature flags */
-    features?: {
-        /** Enable advanced transaction analysis */
-        advancedTxAnalysis?: boolean;
-
-        /** Enable automatic session cleanup */
-        autoSessionCleanup?: boolean;
-
-        /** Enable response caching */
-        responseCaching?: boolean;
-    };
+export interface AnalyticsConfig {
+    enabled?: boolean;
+    endpoint?: string;
 }

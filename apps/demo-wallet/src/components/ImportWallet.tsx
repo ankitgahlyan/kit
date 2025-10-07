@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 
 interface ImportWalletProps {
-    onImport: (mnemonic: string[]) => Promise<void>;
+    onImport: (mnemonic: string[], interfaceType: 'signer' | 'mnemonic', version?: 'v5r1' | 'v4r2') => Promise<void>;
     onBack: () => void;
     isLoading: boolean;
     error: string;
@@ -14,6 +14,8 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
     const [activeInput, setActiveInput] = useState(0);
     const [pasteMode, setPasteMode] = useState(false);
     const [pasteText, setPasteText] = useState('');
+    const [interfaceType, setInterfaceType] = useState<'signer' | 'mnemonic'>('mnemonic');
+    const [walletVersion, setWalletVersion] = useState<'v5r1' | 'v4r2'>('v5r1');
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     // Initialize refs array
@@ -95,7 +97,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
     const handleSubmit = () => {
         const nonEmptyWords = words.filter((word) => word.trim() !== '');
         if (nonEmptyWords.length >= 12) {
-            onImport(nonEmptyWords);
+            onImport(nonEmptyWords, interfaceType, walletVersion);
         }
     };
 
@@ -110,9 +112,91 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
     return (
         <div className="space-y-6">
             <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900">Import Wallet</h2>
+                <h2 className="text-2xl font-bold text-gray-900" data-test-id="subtitle">
+                    Import Wallet
+                </h2>
                 <p className="mt-2 text-sm text-gray-600">
                     Enter your 12 or 24-word recovery phrase to restore your TON wallet.
+                </p>
+            </div>
+
+            {/* Wallet Version Selector */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Wallet Version</label>
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setWalletVersion('v5r1')}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                            walletVersion === 'v5r1'
+                                ? 'bg-blue-50 text-blue-700 border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <div className="flex flex-col items-center space-y-1">
+                            <span className="font-semibold">V5R1</span>
+                            <span className="text-xs text-gray-500">Latest version</span>
+                        </div>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setWalletVersion('v4r2')}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                            walletVersion === 'v4r2'
+                                ? 'bg-blue-50 text-blue-700 border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <div className="flex flex-col items-center space-y-1">
+                            <span className="font-semibold">V4R2</span>
+                            <span className="text-xs text-gray-500">Legacy version</span>
+                        </div>
+                    </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                    {walletVersion === 'v5r1'
+                        ? 'Latest wallet version with enhanced features and security.'
+                        : 'Legacy wallet version for compatibility with older wallets.'}
+                </p>
+            </div>
+
+            {/* Wallet Interface Type Selector */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Wallet Interface Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setInterfaceType('mnemonic')}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                            interfaceType === 'mnemonic'
+                                ? 'bg-blue-50 text-blue-700 border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <div className="flex flex-col items-center space-y-1">
+                            <span className="font-semibold">Mnemonic</span>
+                            <span className="text-xs text-gray-500">Standard wallet</span>
+                        </div>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setInterfaceType('signer')}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                            interfaceType === 'signer'
+                                ? 'bg-blue-50 text-blue-700 border-blue-500'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                        <div className="flex flex-col items-center space-y-1">
+                            <span className="font-semibold">Signer</span>
+                            <span className="text-xs text-gray-500">Custom signing</span>
+                        </div>
+                    </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                    {interfaceType === 'mnemonic'
+                        ? 'Standard wallet interface that handles key derivation automatically.'
+                        : 'Custom signer interface that provides manual control over transaction signing.'}
                 </p>
             </div>
 
@@ -129,6 +213,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                     Individual Words
                 </button>
                 <button
+                    data-test-id="paste-all"
                     onClick={() => setPasteMode(true)}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         pasteMode
@@ -203,6 +288,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Recovery Phrase</label>
                         <textarea
+                            data-test-id="mnemonic"
                             value={pasteText}
                             onChange={(e) => setPasteText(e.target.value)}
                             placeholder="Paste your entire recovery phrase here..."
@@ -214,7 +300,12 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                         </p>
                     </div>
 
-                    <Button onClick={handlePasteModeSubmit} disabled={!pasteText.trim()} className="w-full">
+                    <Button
+                        data-test-id="mnemonic-process"
+                        onClick={handlePasteModeSubmit}
+                        disabled={!pasteText.trim()}
+                        className="w-full"
+                    >
                         Process Words
                     </Button>
                 </div>
@@ -229,6 +320,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                     Back
                 </Button>
                 <Button
+                    data-test-id="import-wallet-process"
                     onClick={handleSubmit}
                     isLoading={isLoading}
                     disabled={!isValid || isLoading}

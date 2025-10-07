@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { AddressJetton, TonTransferParams } from '@ton/walletkit';
 
 import { Layout, Button, Input, Card } from '../components';
-import { useWallet, useJettons, walletKit } from '../stores';
+import { useWallet, useJettons, useWalletKit } from '../stores';
 import { createComponentLogger } from '../utils/logger';
 
 // Create logger for send transaction
@@ -15,6 +15,7 @@ interface SelectedToken {
 }
 
 export const SendTransaction: React.FC = () => {
+    const walletKit = useWalletKit();
     const [recipient, setRecipient] = useState('');
     const [amount, setAmount] = useState('');
     const [error, setError] = useState('');
@@ -110,13 +111,14 @@ export const SendTransaction: React.FC = () => {
                     toAddress: recipient,
                     amount: nanoTonAmount,
                 };
-                const result = await currentWallet.sendTon(tonTransferParams);
+                const result = await currentWallet.createTransferTonTransaction(tonTransferParams);
                 // display Preview result.preview in a modal
-                await walletKit.handleNewTransaction(currentWallet, result.transaction);
+                if (walletKit) {
+                    await walletKit.handleNewTransaction(currentWallet, result);
+                }
 
                 log.info('TON transfer completed', {
-                    transaction: result.transaction,
-                    preview: result.preview,
+                    transaction: result,
                 });
             } else if (selectedToken.data) {
                 // Send Jetton using new API
@@ -130,20 +132,15 @@ export const SendTransaction: React.FC = () => {
                 const jettonAmount = Math.floor(inputAmount * Math.pow(10, selectedToken.data.decimals)).toString();
 
                 // Create jetton transfer transaction
-                const jettonTransaction = await currentWallet.createSendJetton({
+                const jettonTransaction = await currentWallet.createTransferJettonTransaction({
                     toAddress: recipient,
                     jettonAddress: selectedToken.data.address,
                     amount: jettonAmount,
                 });
 
-                // Prepare and execute the transaction
-                const result = await currentWallet.prepareTransaction(jettonTransaction);
-                await walletKit.handleNewTransaction(currentWallet, result.transaction);
-
-                log.info('Jetton transfer completed', {
-                    transaction: result.transaction,
-                    preview: result.preview,
-                });
+                if (walletKit) {
+                    await walletKit.handleNewTransaction(currentWallet, jettonTransaction);
+                }
             }
 
             // Navigate back to wallet with success message
@@ -182,7 +179,9 @@ export const SendTransaction: React.FC = () => {
                         ← Back
                     </Button>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Send {getCurrentTokenName()}</h2>
+                        <h2 data-test-id="request" className="text-xl font-bold text-gray-900">
+                            Send {getCurrentTokenName()}
+                        </h2>
                     </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { mnemonicNew } from '@ton/crypto';
+import { CreateTonMnemonic } from '@ton/walletkit';
 
 import { useWallet, useAuth } from '../stores';
 import { createComponentLogger } from '../utils/logger';
@@ -18,8 +18,8 @@ interface UseTonWalletReturn {
     error: string | null;
     initializeWallet: () => Promise<void>;
     createNewWallet: () => Promise<string[]>;
-    importWallet: (mnemonic: string[]) => Promise<void>;
-    getBalance: () => Promise<string>;
+    createLedgerWallet: () => Promise<void>;
+    importWallet: (mnemonic: string[], version?: 'v5r1' | 'v4r2') => Promise<void>;
     sendTransaction: (to: string, amount: string) => Promise<void>;
 }
 
@@ -60,7 +60,7 @@ export const useTonWallet = (): UseTonWalletReturn => {
 
         try {
             setError(null);
-            const mnemonic = await mnemonicNew();
+            const mnemonic = await CreateTonMnemonic();
 
             // Create wallet with mnemonic
             await walletStore.createWallet(mnemonic);
@@ -73,8 +73,23 @@ export const useTonWallet = (): UseTonWalletReturn => {
         }
     }, [tonKit, walletStore]);
 
+    const createLedgerWallet = useCallback(async (): Promise<void> => {
+        if (!tonKit) throw new Error('TON Kit not initialized');
+
+        try {
+            setError(null);
+
+            // Create Ledger wallet
+            await walletStore.createLedgerWallet();
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to create Ledger wallet';
+            setError(errorMessage);
+            throw new Error(errorMessage);
+        }
+    }, [tonKit, walletStore]);
+
     const importWallet = useCallback(
-        async (mnemonic: string[]): Promise<void> => {
+        async (mnemonic: string[], version?: 'v5r1' | 'v4r2'): Promise<void> => {
             if (!tonKit) throw new Error('TON Kit not initialized');
 
             try {
@@ -88,7 +103,7 @@ export const useTonWallet = (): UseTonWalletReturn => {
                 }
 
                 // Import wallet
-                await walletStore.importWallet(mnemonic);
+                await walletStore.importWallet(mnemonic, undefined, version);
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Failed to import wallet';
                 setError(errorMessage);
@@ -97,28 +112,6 @@ export const useTonWallet = (): UseTonWalletReturn => {
         },
         [tonKit, walletStore],
     );
-
-    const getBalance = useCallback(async (): Promise<string> => {
-        if (!tonKit) throw new Error('TON Kit not initialized');
-
-        try {
-            setError(null);
-
-            // Get mnemonic from store
-            const mnemonic = await walletStore.getDecryptedMnemonic();
-            if (!mnemonic) throw new Error('No wallet available');
-
-            // Mock balance - simulate random balance between 0 and 10 TON
-            // const randomBalance = Math.floor(Math.random() * 10000000000).toString(); // Random balance in nanoTON
-
-            // walletStore.updateBalance(randomBalance);
-            return '1';
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to get balance';
-            setError(errorMessage);
-            throw new Error(errorMessage);
-        }
-    }, [tonKit, walletStore]);
 
     const sendTransaction = useCallback(
         async (to: string, amount: string): Promise<void> => {
@@ -137,6 +130,7 @@ export const useTonWallet = (): UseTonWalletReturn => {
                 // Add transaction to history
                 walletStore.addTransaction({
                     id: Date.now().toString(),
+                    messageHash: '',
                     type: 'send',
                     amount,
                     address: to,
@@ -165,8 +159,8 @@ export const useTonWallet = (): UseTonWalletReturn => {
         error,
         initializeWallet,
         createNewWallet,
+        createLedgerWallet,
         importWallet,
-        getBalance,
         sendTransaction,
     };
 };

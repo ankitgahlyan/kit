@@ -2,10 +2,8 @@
 
 // Wallet types
 export type {
-    TonNetwork,
     WalletInterface,
     WalletMetadata,
-    WalletStatus,
     WalletVersion,
     WalletInitConfig,
     TonTransferParams,
@@ -16,43 +14,46 @@ export type {
     WalletJettonInterface,
     WalletNftInterface,
     WalletInitInterface,
+    WalletInitConfigSignerInterface,
     WalletInitConfigMnemonicInterface,
     WalletInitConfigPrivateKeyInterface,
 } from './wallet';
 
-export { WalletInitConfigMnemonic, WalletInitConfigPrivateKey } from './wallet';
+export {
+    createWalletInitConfigMnemonic,
+    createWalletInitConfigPrivateKey,
+    createWalletInitConfigSigner,
+    isWalletInitConfigMnemonic,
+    isWalletInitConfigPrivateKey,
+    isWalletInitConfigSigner,
+} from './wallet';
 
 // Transaction types (from validation module)
 export type { HumanReadableTx } from '../validation/transaction';
+export type { ValidationResult } from '../validation/types';
 
 // Event types
 export type {
     EventConnectRequest,
     EventTransactionRequest,
     EventSignDataRequest,
+    EventTransactionApproval,
+    EventSignDataApproval,
     EventDisconnect,
+    EventRequestError,
     ConnectPreview,
-    TransactionRequest,
     TransactionPreview,
     SignDataPreview,
 } from './events';
 
 // Configuration types
-export type { TonWalletKitOptions, RuntimeConfig } from './config';
+export type { TonWalletKitOptions } from './config';
 
 // Main kit interface
-export type { TonWalletKit, SessionInfo, KitStatus } from './kit';
+export type { ITonWalletKit, SessionInfo } from './kit';
 
 // Internal types (re-export from internal.ts)
-export type {
-    SessionData,
-    BridgeConfig,
-    EventCallback,
-    ValidationResult,
-    RawBridgeEvent,
-    EventType,
-    EventHandler,
-} from './internal';
+export type { SessionData, BridgeConfig, EventCallback, RawBridgeEvent, EventType, EventHandler } from './internal';
 
 // Durable events types
 export type { EventStatus, StoredEvent, DurableEventsConfig, EventStore, EventProcessor } from './durableEvents';
@@ -87,4 +88,11 @@ export type {
     EmulationTokenInfo,
     EmulationTokenInfoWallets,
     EmulationTokenInfoMasters,
+    ToncenterTracesResponse,
+    ToncenterTraceItem,
+    TraceMeta,
 } from './toncenter/emulation';
+
+export type { NftItem } from './toncenter/NftItem';
+
+export type { NftItems } from './toncenter/NftItems';

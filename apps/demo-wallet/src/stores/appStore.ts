@@ -4,8 +4,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { immer } from 'zustand/middleware/immer';
 
 import { createAuthSlice } from './slices/authSlice';
-import { createWalletSlice, setupWalletKitListeners } from './slices/walletSlice';
+import { createWalletSlice } from './slices/walletSlice';
 import { createJettonsSlice } from './slices/jettonsSlice';
+import { createNftsSlice } from './slices/nftsSlice';
 import { createComponentLogger } from '../utils/logger';
 import type { AppState } from '../types/store';
 
@@ -35,6 +36,7 @@ const migrate = (persistedState: unknown, fromVersion: number): unknown => {
                 isAuthenticated: false, // Never persist authentication
                 transactions: (state.transactions as unknown[]) || [],
                 encryptedMnemonic: state.encryptedMnemonic as string, // Migrate encrypted mnemonic
+                ledgerConfig: undefined, // Initialize ledgerConfig for new installations
                 disconnectedSessions: [], // Always initialize as empty array
             },
         };
@@ -60,6 +62,9 @@ export const useStore = create<AppState>()(
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     ...createJettonsSlice(...a),
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    ...createNftsSlice(...a),
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 })) as unknown as any,
                 {
@@ -72,14 +77,33 @@ export const useStore = create<AppState>()(
                         auth: {
                             isPasswordSet: state.auth.isPasswordSet,
                             passwordHash: state.auth.passwordHash,
-                            // isUnlocked: state.auth.isUnlocked,
-                            // currentPassword: state.auth.currentPassword,
+                            persistPassword: state.auth.persistPassword,
+                            holdToSign: state.auth.holdToSign,
+                            useWalletInterfaceType: state.auth.useWalletInterfaceType,
+                            ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                            network: state.auth.network,
+                            // Conditionally persist password based on user setting
+                            ...(state.auth.persistPassword && {
+                                currentPassword: state.auth.currentPassword,
+                            }),
                             // isUnlocked: omit - never persist unlocked state for security
                         },
                         wallet: {
                             hasWallet: state.wallet.hasWallet,
-                            transactions: state.wallet.transactions,
-                            encryptedMnemonic: state.wallet.encryptedMnemonic,
+                            savedWallets: state.wallet.savedWallets, // Persist all saved wallets
+                            activeWalletId: state.wallet.activeWalletId, // Persist active wallet selection
+
+                            // Legacy fields for backward compatibility
+                            // encryptedMnemonic: state.wallet.encryptedMnemonic,
+                            // ledgerConfig: state.wallet.ledgerConfig,
+
+                            isSignDataModalOpen: state.wallet.isSignDataModalOpen,
+                            isTransactionModalOpen: state.wallet.isTransactionModalOpen,
+                            isConnectModalOpen: state.wallet.isConnectModalOpen,
+
+                            pendingSignDataRequest: state.wallet.pendingSignDataRequest,
+                            pendingTransactionRequest: state.wallet.pendingTransactionRequest,
+                            pendingConnectRequest: state.wallet.pendingConnectRequest,
                         },
                         // jettons: {
                         //     userJettons: state.jettons.userJettons,
@@ -101,9 +125,40 @@ export const useStore = create<AppState>()(
                             log.error('Store rehydration error:', error);
                         } else if (state) {
                             log.info('Store rehydrated successfully');
+
                             // Ensure disconnectedSessions is always initialized
                             if (!state.wallet.disconnectedSessions) {
                                 state.wallet.disconnectedSessions = [];
+                            }
+
+                            // Ensure savedWallets is always initialized
+                            if (!state.wallet.savedWallets) {
+                                state.wallet.savedWallets = [];
+                            }
+
+                            // Initialize network if not set (for backward compatibility)
+                            if (!state.auth.network) {
+                                state.auth.network = 'testnet';
+                                log.info('Initialized network to default: testnet');
+                            }
+
+                            // Auto-unlock if password is persisted and available
+                            if (
+                                state.auth.persistPassword &&
+                                state.auth.currentPassword &&
+                                state.auth.isPasswordSet &&
+                                !state.auth.isUnlocked
+                            ) {
+                                log.info('Auto-unlocking wallet with persisted password');
+                                state.auth.isUnlocked = true;
+                            }
+
+                            if (state.wallet.savedWallets.length > 0) {
+                                state.wallet.hasWallet = true;
+                            }
+
+                            if (!state.wallet.transactions) {
+                                state.wallet.transactions = [];
                             }
                         }
                     },
@@ -113,17 +168,19 @@ export const useStore = create<AppState>()(
     ),
 );
 
-// Initialize wallet kit listeners on first load
+// Initialize wallet kit on first load
 if (typeof window !== 'undefined') {
-    // Set up wallet kit listeners with the store's request handlers
     const store = useStore.getState();
-    setupWalletKitListeners(
-        store.showConnectRequest,
-        store.showTransactionRequest,
-        store.showSignDataRequest,
-        store.handleDisconnectEvent,
-    );
+
+    // Initialize wallet kit with persisted network preference
+    const persistedNetwork = store.auth.network || 'testnet';
+    log.info(`Initializing WalletKit with persisted network: ${persistedNetwork}`);
+
+    store.initializeWalletKit(persistedNetwork);
 }
+
+// Hook for accessing WalletKit instance
+export const useWalletKit = () => useStore((state) => state.wallet.walletKit);
 
 // Helper hooks for accessing specific parts of the store
 export const useAuth = () =>
@@ -131,10 +188,21 @@ export const useAuth = () =>
         useShallow((state) => ({
             isPasswordSet: state.auth.isPasswordSet,
             isUnlocked: state.auth.isUnlocked,
+            persistPassword: state.auth.persistPassword,
+            holdToSign: state.auth.holdToSign,
+            useWalletInterfaceType: state.auth.useWalletInterfaceType,
+            ledgerAccountNumber: state.auth.ledgerAccountNumber,
+            network: state.auth.network,
             setPassword: state.setPassword,
             unlock: state.unlock,
             lock: state.lock,
             reset: state.reset,
+            setPersistPassword: state.setPersistPassword,
+            setHoldToSign: state.setHoldToSign,
+            setUseWalletInterfaceType: state.setUseWalletInterfaceType,
+            setLedgerAccountNumber: state.setLedgerAccountNumber,
+            setNetwork: state.setNetwork,
+            createLedgerWallet: state.createLedgerWallet,
         })),
     );
 
@@ -148,14 +216,22 @@ export const useWallet = () =>
             publicKey: state.wallet.publicKey,
             transactions: state.wallet.transactions,
             currentWallet: state.wallet.currentWallet,
+            savedWallets: state.wallet.savedWallets,
+            activeWalletId: state.wallet.activeWalletId,
             createWallet: state.createWallet,
             importWallet: state.importWallet,
             loadWallet: state.loadWallet,
             clearWallet: state.clearWallet,
             updateBalance: state.updateBalance,
             addTransaction: state.addTransaction,
+            loadTransactions: state.loadTransactions,
             getDecryptedMnemonic: state.getDecryptedMnemonic,
             getAvailableWallets: state.getAvailableWallets,
+            getActiveWallet: state.getActiveWallet,
+            switchWallet: state.switchWallet,
+            removeWallet: state.removeWallet,
+            renameWallet: state.renameWallet,
+            createLedgerWallet: state.createLedgerWallet,
         })),
     );
 
@@ -205,6 +281,36 @@ export const useDisconnectEvents = () =>
         })),
     );
 
+export const useNfts = () =>
+    useStore(
+        useShallow((state) => ({
+            // Data
+            userNfts: state.nfts.userNfts,
+            lastNftsUpdate: state.nfts.lastNftsUpdate,
+
+            // Loading states
+            isLoadingNfts: state.nfts.isLoadingNfts,
+            isRefreshing: state.nfts.isRefreshing,
+
+            // Error states
+            error: state.nfts.error,
+
+            // Pagination
+            hasMore: state.nfts.hasMore,
+            offset: state.nfts.offset,
+
+            // Actions
+            loadUserNfts: state.loadUserNfts,
+            refreshNfts: state.refreshNfts,
+            loadMoreNfts: state.loadMoreNfts,
+            clearNfts: state.clearNfts,
+
+            // Utilities
+            getNftByAddress: state.getNftByAddress,
+            formatNftIndex: state.formatNftIndex,
+        })),
+    );
+
 export const useJettons = () =>
     useStore(
         useShallow((state) => ({
@@ -212,6 +318,7 @@ export const useJettons = () =>
             userJettons: state.jettons.userJettons,
             jettonTransfers: state.jettons.jettonTransfers,
             popularJettons: state.jettons.popularJettons,
+            lastJettonsUpdate: state.jettons.lastJettonsUpdate,
 
             // Loading states
             isLoadingJettons: state.jettons.isLoadingJettons,
@@ -226,10 +333,6 @@ export const useJettons = () =>
             // Actions
             loadUserJettons: state.loadUserJettons,
             refreshJettons: state.refreshJettons,
-            loadJettonTransfers: state.loadJettonTransfers,
-            loadPopularJettons: state.loadPopularJettons,
-            searchJettons: state.searchJettons,
-            getJettonBalance: state.getJettonBalance,
             validateJettonAddress: state.validateJettonAddress,
             clearJettons: state.clearJettons,
 

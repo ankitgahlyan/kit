@@ -3,6 +3,7 @@ import { parseInternal } from '@truecarry/tlb-abi';
 
 import { ConnectTransactionParamContent } from '../types/internal';
 import { EmulationTokenInfoWallets, ToncenterEmulationResponse } from '../types/toncenter/emulation';
+import { EmulationError, EmulationErrorTransactionAccountNotFound } from '../types/emulation/errors';
 
 // import { ConnectMessageTransactionMessage } from '@/types/connect';
 
@@ -15,20 +16,26 @@ export interface ToncenterMessage {
 }
 
 export interface MoneyFlow {
-    outputs: bigint;
-    inputs: bigint;
+    outputs: string;
+    inputs: string;
     jettonTransfers: {
         from: Address;
         to: Address;
         jetton: Address | null;
-        amount: bigint;
+        amount: string;
     }[];
     ourAddress: Address | null;
 }
 
-export interface ToncenterEmulationResult {
-    result: ToncenterEmulationResponse;
-}
+export type ToncenterEmulationResult =
+    | {
+          result: 'success';
+          emulationResult: ToncenterEmulationResponse;
+      }
+    | {
+          result: 'error';
+          emulationError: EmulationError;
+      };
 
 export interface ToncenterEmulationHook {
     emulation: ToncenterEmulationResult;
@@ -61,64 +68,88 @@ export function createToncenterMessage(
     };
 }
 
+export class FetchToncenterEmulationError extends Error {
+    response: Response;
+    constructor(message: string, response: Response) {
+        super(message);
+        this.name = 'fetchToncenterEmulationError';
+        this.response = response;
+    }
+}
+
 /**
  * Fetches toncenter emulation result
  */
 export async function fetchToncenterEmulation(message: ToncenterMessage): Promise<ToncenterEmulationResult> {
     const response = await fetch('https://toncenter.com/api/emulate/v1/emulateTonConnect', message);
     if (!response.ok) {
-        throw new Error('Failed to fetch toncenter emulation result');
+        try {
+            const errorMessage = await response.json();
+            if (errorMessage.error === 'Failed to fetch account state: Account not found in accounts_dict') {
+                return {
+                    result: 'error',
+                    emulationError: new EmulationErrorTransactionAccountNotFound('Account not found'),
+                };
+            }
+        } catch (_) {
+            throw new FetchToncenterEmulationError('Failed to fetch toncenter emulation result', response);
+        }
+        throw new FetchToncenterEmulationError('Failed to fetch toncenter emulation result', response);
     }
     const result = (await response.json()) as ToncenterEmulationResponse;
-    return { result };
+    return { result: 'success', emulationResult: result };
 }
 
 /**
  * Processes toncenter emulation result to extract money flow
  */
-export function processToncenterMoneyFlow(emulation: ToncenterEmulationResult): MoneyFlow {
-    if (!emulation || !emulation.result) {
+export function processToncenterMoneyFlow(emulation: ToncenterEmulationResponse): MoneyFlow {
+    if (!emulation || !emulation.transactions) {
         return {
-            outputs: 0n,
-            inputs: 0n,
+            outputs: '0',
+            inputs: '0',
             jettonTransfers: [],
             ourAddress: null,
         };
     }
 
-    const firstTx = emulation.result.transactions[emulation.result.trace.tx_hash];
+    const firstTx = emulation.transactions[emulation.trace.tx_hash];
 
     // Get all transactions for our account
-    const ourTxes = Object.values(emulation.result.transactions).filter((t) => t.account === firstTx.account);
+    const ourTxes = Object.values(emulation.transactions).filter((t) => t.account === firstTx.account);
 
     const messagesFrom = ourTxes.flatMap((t) => t.out_msgs);
     const messagesTo = ourTxes.flatMap((t) => t.in_msg).filter((m) => m !== null);
 
     // Calculate TON outputs
-    const outputs = messagesFrom.reduce((acc, m) => {
-        if (m.value) {
-            return acc + BigInt(m.value);
-        }
-        return acc + 0n;
-    }, 0n);
+    const outputs = messagesFrom
+        .reduce((acc, m) => {
+            if (m.value) {
+                return acc + BigInt(m.value);
+            }
+            return acc + 0n;
+        }, 0n)
+        .toString();
 
     // Calculate TON inputs
-    const inputs = messagesTo.reduce((acc, m) => {
-        if (m.value) {
-            return acc + BigInt(m.value);
-        }
-        return acc + 0n;
-    }, 0n);
+    const inputs = messagesTo
+        .reduce((acc, m) => {
+            if (m.value) {
+                return acc + BigInt(m.value);
+            }
+            return acc + 0n;
+        }, 0n)
+        .toString();
 
     // Process jetton transfers
     const jettonTransfers: {
         from: Address;
         to: Address;
         jetton: Address | null;
-        amount: bigint;
+        amount: string;
     }[] = [];
 
-    for (const t of Object.values(emulation.result.transactions)) {
+    for (const t of Object.values(emulation.transactions)) {
         if (!t.in_msg?.source) {
             continue;
         }
@@ -136,7 +167,7 @@ export function processToncenterMoneyFlow(emulation: ToncenterEmulationResult): 
         }
         const jettonAmount = parsed.data.amount;
 
-        const metadata = emulation.result.metadata[t.account];
+        const metadata = emulation.metadata[t.account];
         if (!metadata || !metadata?.token_info) {
             continue;
         }
@@ -155,7 +186,7 @@ export function processToncenterMoneyFlow(emulation: ToncenterEmulationResult): 
             from,
             to,
             jetton: jettonAddress,
-            amount: jettonAmount,
+            amount: jettonAmount.toString(),
         });
     }
 

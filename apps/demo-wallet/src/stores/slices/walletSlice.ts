@@ -1,47 +1,253 @@
 import {
     TonWalletKit,
-    WalletInitConfigMnemonic,
     type WalletInterface,
     type EventConnectRequest,
     type EventTransactionRequest,
     type EventSignDataRequest,
     type EventDisconnect,
     ExtensionStorageAdapter,
+    type WalletInitConfig,
+    createWalletInitConfigSigner,
+    createWalletInitConfigMnemonic,
+    MnemonicToKeyPair,
+    DefaultSignature,
+    CHAIN,
+    type ITonWalletKit,
+    createDeviceInfo,
+    createWalletManifest,
+    type ToncenterTransaction,
+    SEND_TRANSACTION_ERROR_CODES,
 } from '@ton/walletkit';
+import { createWalletInitConfigLedger, createLedgerPath, createWalletV4R2Ledger } from '@ton/v4ledger-adapter';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import { toast } from 'sonner';
 
 import { SimpleEncryption } from '../../utils';
 import { createComponentLogger } from '../../utils/logger';
-import type { Transaction } from '../../types/wallet';
+import type { PreviewTransaction, LedgerConfig, SavedWallet } from '../../types/wallet';
 import type { SetState, WalletSliceCreator } from '../../types/store';
 import { isExtension } from '../../utils/isExtension';
+import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../../utils/walletManifest';
 
 // Create logger for wallet slice
 const log = createComponentLogger('WalletSlice');
 
-const walletKit = new TonWalletKit({
-    // bridgeUrl: 'https://bridge.tonapi.io/bridge',
-    network: 'mainnet',
-    wallets: [],
-    apiKey: '25a9b2326a34b39a5fa4b264fb78fb4709e1bd576fc5e6b176639f5b71e94b0d',
-    config: {
+const ENV_BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL ?? 'https://walletbot.me/tonconnect-bridge/bridge';
+const ENV_TON_API_KEY_MAINNET =
+    import.meta.env.VITE_TON_API_KEY ?? '25a9b2326a34b39a5fa4b264fb78fb4709e1bd576fc5e6b176639f5b71e94b0d';
+const ENV_TON_API_KEY_TESTNET =
+    import.meta.env.VITE_TON_API_TESTNET_KEY ?? 'd852b54d062f631565761042cccea87fa6337c41eb19b075e6c7fb88898a3992';
+
+// Initialize wallet kit instance
+function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet'): ITonWalletKit {
+    const walletKit = new TonWalletKit({
+        deviceInfo: createDeviceInfo(getTonConnectDeviceInfo()),
+        walletManifest: createWalletManifest(getTonConnectWalletManifest()),
+
         bridge: {
-            bridgeUrl: 'https://bridge.tonapi.io/bridge',
-            enableJsBridge: true,
-            bridgeName: 'tonkeeper',
+            bridgeUrl: ENV_BRIDGE_URL,
         },
-    },
-    // eslint-disable-next-line no-undef, @typescript-eslint/no-explicit-any
-    storage: isExtension() ? new ExtensionStorageAdapter({}, chrome.storage.local as any) : undefined,
-});
+
+        network: network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET,
+        apiClient: {
+            key: network === 'mainnet' ? ENV_TON_API_KEY_MAINNET : ENV_TON_API_KEY_TESTNET,
+        },
+        // eslint-disable-next-line no-undef, @typescript-eslint/no-explicit-any
+        storage: isExtension() ? new ExtensionStorageAdapter({}, chrome.storage.local as any) : undefined,
+
+        analytics: {
+            enabled: true,
+        },
+    }) as ITonWalletKit;
+
+    log.info(`WalletKit initialized with network: ${network}`);
+    return walletKit;
+}
+
+// Helper function to transform Toncenter transaction to our Transaction type
+function transformToncenterTransaction(tx: ToncenterTransaction): PreviewTransaction {
+    // Determine transaction type based on messages
+    let type: 'send' | 'receive' = 'receive';
+    let amount = '0';
+    let address = '';
+
+    // Check incoming message
+    if (tx.in_msg && tx.in_msg.value) {
+        amount = tx.in_msg.value;
+        address = tx.in_msg.source || '';
+        type = 'receive';
+    }
+
+    // Check outgoing messages - if there are any, it's likely a send transaction
+    if (tx.out_msgs && tx.out_msgs.length > 0) {
+        const mainOutMsg = tx.out_msgs[0];
+        if (mainOutMsg.value) {
+            amount = mainOutMsg.value;
+            address = mainOutMsg.destination;
+            type = 'send';
+        }
+    }
+
+    // Determine status based on transaction description
+    let status: 'pending' | 'confirmed' | 'failed' = 'confirmed';
+    if (tx.description.aborted) {
+        status = 'failed';
+    } else if (!tx.description.compute_ph.success) {
+        status = 'failed';
+    }
+
+    return {
+        id: tx.hash,
+        traceId: tx.trace_id || undefined,
+        messageHash: tx.in_msg?.hash || '',
+        type,
+        amount,
+        address,
+        timestamp: tx.now * 1000, // Convert to milliseconds
+        status,
+        externalMessageHash: tx.trace_external_hash || undefined,
+    };
+}
+
+async function createWalletConfig(params: {
+    mnemonic?: string[];
+    useWalletInterfaceType: 'signer' | 'mnemonic' | 'ledger';
+    ledgerAccountNumber?: number;
+    storedLedgerConfig?: LedgerConfig;
+    network: 'mainnet' | 'testnet';
+    walletKit: ITonWalletKit;
+    version?: 'v5r1' | 'v4r2';
+}): Promise<WalletInitConfig> {
+    const {
+        mnemonic,
+        useWalletInterfaceType,
+        ledgerAccountNumber = 0,
+        storedLedgerConfig,
+        network,
+        walletKit,
+        version = 'v5r1',
+    } = params;
+
+    while (!walletKit.isReady()) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    const chainNetwork = network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET;
+
+    switch (useWalletInterfaceType) {
+        case 'signer': {
+            if (!mnemonic) {
+                throw new Error('Mnemonic required for signer wallet type');
+            }
+            const keyPair = await MnemonicToKeyPair(mnemonic);
+
+            return createWalletInitConfigSigner({
+                publicKey: keyPair.publicKey,
+                version: version,
+                network: chainNetwork,
+                sign: async (bytes: Uint8Array) => {
+                    if (confirm('Are you sure you want to sign?')) {
+                        return DefaultSignature(bytes, keyPair.secretKey);
+                    }
+
+                    throw new Error('User did not confirm');
+                },
+            });
+        }
+        case 'mnemonic': {
+            if (!mnemonic) {
+                throw new Error('Mnemonic required for mnemonic wallet type');
+            }
+            return createWalletInitConfigMnemonic({
+                mnemonic,
+                version: version,
+                mnemonicType: 'ton',
+                network: chainNetwork,
+            });
+        }
+        case 'ledger': {
+            // For Ledger, we need to request WebUSB transport
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (typeof navigator === 'undefined' || !(navigator as any).usb) {
+                throw new Error('WebUSB not supported in this environment');
+            }
+
+            try {
+                // If we have stored config, use it to avoid connecting to device
+                if (storedLedgerConfig) {
+                    return createWalletV4R2Ledger(
+                        createWalletInitConfigLedger({
+                            createTransport: async () => await TransportWebHID.create(),
+                            path: storedLedgerConfig.path,
+                            publicKey: Uint8Array.from(storedLedgerConfig.publicKey),
+                            version: storedLedgerConfig.version as 'v4r2',
+                            network: storedLedgerConfig.network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET,
+                            workchain: storedLedgerConfig.workchain,
+                            walletId: storedLedgerConfig.walletId,
+                            accountIndex: storedLedgerConfig.accountIndex,
+                        }),
+                        {
+                            tonClient: walletKit.getApiClient(),
+                        },
+                    );
+                }
+
+                // Otherwise, create fresh connection
+                const path = createLedgerPath(false, 0, ledgerAccountNumber);
+
+                return createWalletV4R2Ledger(
+                    createWalletInitConfigLedger({
+                        createTransport: async () => await TransportWebHID.create(),
+                        path,
+                        version: 'v4r2',
+                        network: chainNetwork,
+                        workchain: 0,
+                        accountIndex: ledgerAccountNumber,
+                    }),
+                    {
+                        tonClient: walletKit.getApiClient(),
+                    },
+                );
+            } catch (error) {
+                log.error('Failed to create Ledger transport:', error);
+                throw new Error('Failed to connect to Ledger device');
+            }
+        }
+        default:
+            throw new Error(`Invalid wallet interface type: ${useWalletInterfaceType}`);
+    }
+}
+
+// Helper to generate unique wallet ID
+function generateWalletId(): string {
+    return `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Helper to generate default wallet name
+function generateWalletName(existingWallets: SavedWallet[], type: 'mnemonic' | 'signer' | 'ledger'): string {
+    const prefix = type === 'ledger' ? 'Ledger' : 'Wallet';
+    let counter = existingWallets.filter((w) => w.name.startsWith(prefix)).length + 1;
+    let name = `${prefix} ${counter}`;
+
+    // Ensure unique name
+    while (existingWallets.some((w) => w.name === name)) {
+        counter++;
+        name = `${prefix} ${counter}`;
+    }
+
+    return name;
+}
 
 export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
     wallet: {
         // Initial state
+        walletKit: null,
         isAuthenticated: false,
         hasWallet: false,
+        savedWallets: [],
+        activeWalletId: undefined,
         address: undefined,
         balance: undefined,
-        mnemonic: undefined,
         publicKey: undefined,
         transactions: [],
         currentWallet: undefined,
@@ -51,150 +257,594 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         isTransactionModalOpen: false,
         pendingSignDataRequest: undefined,
         isSignDataModalOpen: false,
-        encryptedMnemonic: undefined,
-        disconnectedSessions: [], // Track recently disconnected sessions
+        disconnectedSessions: [],
     },
 
-    // Actions
-    createWallet: async (mnemonic: string[]) => {
+    // Load all saved wallets into WalletKit
+    loadSavedWalletsIntoKit: async (walletKit: ITonWalletKit) => {
+        const state = get();
+        if (!state.auth.currentPassword) {
+            log.warn('Cannot load wallets: user not authenticated');
+            return;
+        }
+
+        const savedWallets = state.wallet.savedWallets;
+        if (savedWallets.length === 0) {
+            log.info('No saved wallets to load');
+            return;
+        }
+
+        log.info(`Loading ${savedWallets.length} saved wallets into WalletKit`);
+        const network = state.auth.network || 'testnet';
+
+        for (const savedWallet of savedWallets) {
+            try {
+                let walletConfig: WalletInitConfig;
+
+                if (savedWallet.walletType === 'ledger' && savedWallet.ledgerConfig) {
+                    // Load Ledger wallet
+                    walletConfig = await createWalletConfig({
+                        useWalletInterfaceType: 'ledger',
+                        ledgerAccountNumber: savedWallet.ledgerConfig.accountIndex,
+                        storedLedgerConfig: savedWallet.ledgerConfig,
+                        network,
+                        walletKit,
+                        version: savedWallet.version || 'v4r2',
+                    });
+                } else if (savedWallet.encryptedMnemonic) {
+                    // Load mnemonic/signer wallet
+                    const mnemonicJson = await SimpleEncryption.decrypt(
+                        savedWallet.encryptedMnemonic,
+                        state.auth.currentPassword,
+                    );
+                    const mnemonic = JSON.parse(mnemonicJson) as string[];
+
+                    walletConfig = await createWalletConfig({
+                        mnemonic,
+                        useWalletInterfaceType: savedWallet.walletInterfaceType,
+                        ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                        storedLedgerConfig: undefined,
+                        network,
+                        walletKit,
+                        version: savedWallet.version || 'v5r1',
+                    });
+                } else {
+                    log.warn(`Skipping wallet ${savedWallet.id}: no mnemonic or ledger config`);
+                    continue;
+                }
+
+                // debugger;
+
+                await walletKit.addWallet(walletConfig);
+                log.info(`Loaded wallet ${savedWallet.name} (${savedWallet.address})`);
+            } catch (error) {
+                log.error(`Failed to load wallet ${savedWallet.name}:`, error);
+            }
+        }
+    },
+
+    initializeWalletKit: async (network: 'mainnet' | 'testnet' = 'testnet') => {
+        const state = get();
+
+        // Check if we need to reinitialize
+        if (state.wallet.walletKit) {
+            const currentNetwork = state.wallet.walletKit.getNetwork();
+            const targetNetwork = network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET;
+
+            if (currentNetwork === targetNetwork) {
+                log.info(`WalletKit already initialized with network: ${network}`);
+                return;
+            }
+
+            // Cleanup existing instance
+            log.info(`Reinitializing WalletKit to ${network}`);
+            try {
+                const existingWallets = state.wallet.walletKit.getWallets();
+                log.info(`Clearing ${existingWallets.length} existing wallets before reinitialization`);
+            } catch (error) {
+                log.warn('Error during cleanup:', error);
+            }
+        }
+
+        // Create new instance
+        const walletKit = createWalletKitInstance(network);
+
+        // Set up wallet kit event listeners
+        const onTransactionRequest = async (event: EventTransactionRequest) => {
+            log.info('Transaction request received:', event);
+
+            const wallet = await walletKit.getWallet(event.walletAddress ?? '');
+            if (!wallet) {
+                log.error('Wallet not found for transaction request');
+                return;
+            }
+
+            const balance = await wallet.getBalance();
+            const minNeededBalance = event.request.messages.reduce((acc, message) => acc + BigInt(message.amount), 0n);
+            if (balance < minNeededBalance) {
+                await walletKit.rejectTransactionRequest(event, {
+                    code: SEND_TRANSACTION_ERROR_CODES.BAD_REQUEST_ERROR,
+                    message: 'Insufficient balance',
+                });
+                return;
+            }
+
+            get().showTransactionRequest(event);
+        };
+
+        walletKit.onConnectRequest((event) => {
+            log.info('Connect request received:', event);
+            get().showConnectRequest(event);
+        });
+
+        walletKit.onTransactionRequest(onTransactionRequest);
+
+        walletKit.onSignDataRequest((event) => {
+            log.info('Sign data request received:', event);
+            get().showSignDataRequest(event);
+        });
+
+        walletKit.onDisconnect((event) => {
+            log.info('Disconnect event received:', event);
+            get().handleDisconnectEvent(event);
+        });
+
+        log.info('WalletKit listeners initialized');
+
+        set((state) => {
+            state.wallet.walletKit = walletKit;
+        });
+
+        // Load all saved wallets into the WalletKit instance
+        await get().loadSavedWalletsIntoKit(walletKit);
+
+        return walletKit;
+    },
+
+    // Create a new wallet
+    createWallet: async (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => {
         const state = get();
         if (!state.auth.currentPassword) {
             throw new Error('User not authenticated');
         }
 
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
         try {
-            // Encrypt and store the mnemonic in state
+            const walletId = generateWalletId();
+            const walletName =
+                name || generateWalletName(state.wallet.savedWallets, state.auth.useWalletInterfaceType || 'mnemonic');
+
+            // Encrypt and store the mnemonic
             const encryptedMnemonic = await SimpleEncryption.encrypt(
                 JSON.stringify(mnemonic),
                 state.auth.currentPassword,
             );
 
             // Create wallet using walletkit
-            const walletConfig = new WalletInitConfigMnemonic({
+            const network = state.auth.network || 'testnet';
+            const walletConfig = await createWalletConfig({
                 mnemonic,
-                version: 'v5r1',
-                mnemonicType: 'ton',
-                network: 'mainnet',
+                useWalletInterfaceType: state.auth.useWalletInterfaceType || 'mnemonic',
+                ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                storedLedgerConfig: undefined,
+                network,
+                walletKit: state.wallet.walletKit,
+                version,
             });
 
-            await walletKit.addWallet(walletConfig);
-            const wallets = walletKit.getWallets();
-            const wallet = wallets[0];
+            const wallet = await state.wallet.walletKit.addWallet(walletConfig);
+            // const wallets = state.wallet.walletKit.getWallets();
+            // const wallet = wallets.find((w) => w.getAddress() === walletConfig.getAddress());
 
-            // Get real wallet info
+            if (!wallet) {
+                throw new Error('Failed to find created wallet');
+            }
+
+            // Get wallet info
             const address = wallet.getAddress();
+
+            // Check if wallet with this address already exists
+            const existingWallet = state.wallet.savedWallets.find((w) => w.address === address);
+            if (existingWallet) {
+                log.warn(`Wallet with address ${address} already exists`);
+                state.wallet.walletKit.removeWallet(wallet);
+                throw new Error('A wallet with this address already exists');
+            }
+
             const balance = await wallet.getBalance();
             const publicKey = Array.from(wallet.publicKey)
                 .map((b) => b.toString(16).padStart(2, '0'))
                 .join('');
 
-            // Update state - persistence layer will handle storage
+            // Create saved wallet entry
+            const savedWallet: SavedWallet = {
+                id: walletId,
+                name: walletName,
+                address,
+                publicKey,
+                encryptedMnemonic,
+                walletType: state.auth.useWalletInterfaceType || 'mnemonic',
+                walletInterfaceType: state.auth.useWalletInterfaceType || 'mnemonic',
+                version: wallet.version as 'v5r1' | 'v4r2',
+                createdAt: Date.now(),
+            };
+
+            // Update state
             set((state) => {
+                state.wallet.savedWallets.push(savedWallet);
                 state.wallet.hasWallet = true;
                 state.wallet.isAuthenticated = true;
+                state.wallet.activeWalletId = walletId;
                 state.wallet.address = address;
                 state.wallet.publicKey = publicKey;
                 state.wallet.balance = balance.toString();
-                state.wallet.encryptedMnemonic = encryptedMnemonic;
-                state.wallet.mnemonic = undefined; // Never store in memory
                 state.wallet.currentWallet = wallet;
             });
+
+            log.info(`Created wallet ${walletId} (${walletName})`);
+            return walletId;
         } catch (error) {
             log.error('Error creating wallet:', error);
-            throw new Error('Failed to create wallet');
+            throw error instanceof Error ? error : new Error('Failed to create wallet');
         }
     },
 
-    importWallet: async (mnemonic: string[]) => {
-        // Same as create wallet - we encrypt and store the mnemonic
-        return get().createWallet(mnemonic);
+    importWallet: async (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2') => {
+        // Same as create wallet
+        return get().createWallet(mnemonic, name, version);
     },
 
-    loadWallet: async () => {
+    createLedgerWallet: async (name?: string) => {
         const state = get();
         if (!state.auth.currentPassword) {
             throw new Error('User not authenticated');
         }
 
+        if (state.auth.useWalletInterfaceType !== 'ledger') {
+            throw new Error('Wallet type must be set to ledger');
+        }
+
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
         try {
-            // Check if we have an encrypted mnemonic in state
-            if (!state.wallet.encryptedMnemonic) {
-                set((state) => {
-                    state.wallet.hasWallet = false;
-                    state.wallet.isAuthenticated = false;
-                });
-                return;
-            }
+            const walletId = generateWalletId();
+            const walletName = name || generateWalletName(state.wallet.savedWallets, 'ledger');
 
-            // Decrypt the mnemonic and recreate wallet with walletkit
-            const decryptedString = await SimpleEncryption.decrypt(
-                state.wallet.encryptedMnemonic,
-                state.auth.currentPassword,
-            );
-            const mnemonic = JSON.parse(decryptedString) as string[];
-
-            // Create wallet using walletkit
-            const walletConfig = new WalletInitConfigMnemonic({
-                mnemonic,
-                version: 'v5r1',
-                mnemonicType: 'ton',
-                network: 'mainnet',
+            // Create wallet using walletkit with Ledger configuration
+            const network = state.auth.network || 'testnet';
+            const walletConfig = await createWalletConfig({
+                useWalletInterfaceType: 'ledger',
+                ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                storedLedgerConfig: undefined,
+                network,
+                walletKit: state.wallet.walletKit,
             });
 
-            await walletKit.addWallet(walletConfig);
-            const wallets = walletKit.getWallets();
-            const wallet = wallets[0];
+            const wallet = await state.wallet.walletKit.addWallet(walletConfig);
+            // const wallets = state.wallet.walletKit.getWallets();
+            // const wallet = wallets.find((w) => w.getAddress() === walletConfig.getAddress());
 
-            // Get real wallet info
+            if (!wallet) {
+                throw new Error('Failed to find created Ledger wallet');
+            }
+
+            // Get wallet info
             const address = wallet.getAddress();
+
+            // Check if wallet with this address already exists
+            const existingWallet = state.wallet.savedWallets.find((w) => w.address === address);
+            if (existingWallet) {
+                log.warn(`Wallet with address ${address} already exists`);
+                state.wallet.walletKit.removeWallet(wallet);
+                throw new Error('A wallet with this address already exists');
+            }
+
             const balance = await wallet.getBalance();
             const publicKey = Array.from(wallet.publicKey)
                 .map((b) => b.toString(16).padStart(2, '0'))
                 .join('');
 
-            // Update state - persistence layer will handle storage
+            // Store Ledger configuration
+            const ledgerPath = createLedgerPath(false, 0, state.auth.ledgerAccountNumber || 0);
+            const ledgerConfig: LedgerConfig = {
+                publicKey: Array.from(wallet.publicKey),
+                path: ledgerPath,
+                walletId: 698983191,
+                version: wallet.version,
+                network: network,
+                workchain: 0,
+                accountIndex: state.auth.ledgerAccountNumber || 0,
+            };
+
+            // Create saved wallet entry
+            const savedWallet: SavedWallet = {
+                id: walletId,
+                name: walletName,
+                address,
+                publicKey,
+                ledgerConfig,
+                walletType: 'ledger',
+                walletInterfaceType: 'ledger',
+                version: wallet.version as 'v5r1' | 'v4r2',
+                createdAt: Date.now(),
+            };
+
+            // Update state
             set((state) => {
+                state.wallet.savedWallets.push(savedWallet);
                 state.wallet.hasWallet = true;
                 state.wallet.isAuthenticated = true;
+                state.wallet.activeWalletId = walletId;
                 state.wallet.address = address;
                 state.wallet.publicKey = publicKey;
                 state.wallet.balance = balance.toString();
                 state.wallet.currentWallet = wallet;
             });
+
+            log.info(`Created Ledger wallet ${walletId} (${walletName})`);
+            return walletId;
         } catch (error) {
-            log.error('Error loading wallet:', error);
-            set((state) => {
-                state.wallet.hasWallet = false;
-                state.wallet.isAuthenticated = false;
-            });
+            log.error('Error creating Ledger wallet:', error);
+            throw error instanceof Error ? error : new Error('Failed to create Ledger wallet');
         }
     },
 
-    getDecryptedMnemonic: async (): Promise<string[] | null> => {
+    switchWallet: async (walletId: string) => {
+        const state = get();
+        // debugger;
+        if (!state.auth.currentPassword) {
+            throw new Error('User not authenticated');
+        }
+
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
+        const savedWallet = state.wallet.savedWallets.find((w) => w.id === walletId);
+        if (!savedWallet) {
+            throw new Error('Wallet not found');
+        }
+
+        try {
+            log.info(`Switching to wallet ${walletId} (${savedWallet.name})`);
+
+            // Check if wallet is already loaded in WalletKit
+            let wallet = state.wallet.walletKit.getWallets().find((w) => w.getAddress() === savedWallet.address);
+
+            // If not loaded, load it
+            if (!wallet) {
+                const network = state.auth.network || 'testnet';
+
+                if (savedWallet.walletType === 'ledger') {
+                    const walletConfig = await createWalletConfig({
+                        useWalletInterfaceType: 'ledger',
+                        ledgerAccountNumber: savedWallet.ledgerConfig?.accountIndex,
+                        storedLedgerConfig: savedWallet.ledgerConfig,
+                        network,
+                        walletKit: state.wallet.walletKit,
+                        version: savedWallet.version || 'v4r2',
+                    });
+
+                    await state.wallet.walletKit.addWallet(walletConfig);
+                } else if (savedWallet.encryptedMnemonic) {
+                    const decryptedString = await SimpleEncryption.decrypt(
+                        savedWallet.encryptedMnemonic,
+                        state.auth.currentPassword,
+                    );
+                    const mnemonic = JSON.parse(decryptedString) as string[];
+
+                    const walletConfig = await createWalletConfig({
+                        mnemonic,
+                        useWalletInterfaceType: savedWallet.walletInterfaceType,
+                        ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                        storedLedgerConfig: undefined,
+                        network,
+                        walletKit: state.wallet.walletKit,
+                        version: savedWallet.version || 'v5r1',
+                    });
+
+                    await state.wallet.walletKit.addWallet(walletConfig);
+                }
+
+                // Get the newly loaded wallet
+                wallet = state.wallet.walletKit.getWallets().find((w) => w.getAddress() === savedWallet.address);
+            }
+
+            if (!wallet) {
+                throw new Error('Failed to load wallet');
+            }
+
+            // Get fresh balance
+            const balance = await wallet.getBalance();
+
+            // Update state
+            set((state) => {
+                state.wallet.activeWalletId = walletId;
+                state.wallet.address = savedWallet.address;
+                state.wallet.publicKey = savedWallet.publicKey;
+                state.wallet.balance = balance.toString();
+                state.wallet.currentWallet = wallet;
+                state.wallet.transactions = []; // Clear transactions for new wallet
+            });
+
+            // Load transactions for the new wallet
+            await get().loadTransactions();
+
+            log.info(`Switched to wallet ${walletId} successfully`);
+        } catch (error) {
+            log.error('Error switching wallet:', error);
+            throw new Error('Failed to switch wallet');
+        }
+    },
+
+    removeWallet: (walletId: string) => {
+        const state = get();
+        const walletIndex = state.wallet.savedWallets.findIndex((w) => w.id === walletId);
+
+        if (walletIndex === -1) {
+            throw new Error('Wallet not found');
+        }
+
+        set((state) => {
+            // Remove the wallet from saved wallets
+            state.wallet.savedWallets.splice(walletIndex, 1);
+
+            // If this was the active wallet, switch to another or clear
+            if (state.wallet.activeWalletId === walletId) {
+                if (state.wallet.savedWallets.length > 0) {
+                    // Switch to first available wallet
+                    const newActiveId = state.wallet.savedWallets[0].id;
+                    state.wallet.activeWalletId = newActiveId;
+                    // Note: switchWallet should be called after this to properly load the wallet
+                } else {
+                    // No wallets left, clear everything
+                    state.wallet.hasWallet = false;
+                    state.wallet.isAuthenticated = false;
+                    state.wallet.activeWalletId = undefined;
+                    state.wallet.address = undefined;
+                    state.wallet.publicKey = undefined;
+                    state.wallet.balance = undefined;
+                    state.wallet.currentWallet = undefined;
+                    state.wallet.transactions = [];
+                }
+            }
+        });
+
+        log.info(`Removed wallet ${walletId}`);
+
+        // If we switched to a new active wallet, load it
+        const newState = get();
+        if (newState.wallet.activeWalletId && newState.wallet.activeWalletId !== walletId) {
+            get().switchWallet(newState.wallet.activeWalletId);
+        }
+    },
+
+    renameWallet: (walletId: string, newName: string) => {
+        set((state) => {
+            const wallet = state.wallet.savedWallets.find((w) => w.id === walletId);
+            if (wallet) {
+                wallet.name = newName;
+            }
+        });
+        log.info(`Renamed wallet ${walletId} to ${newName}`);
+    },
+
+    loadAllWallets: async () => {
+        const state = get();
+        if (!state.auth.currentPassword) {
+            throw new Error('User not authenticated');
+        }
+
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
+        try {
+            log.info(`Loading ${state.wallet.savedWallets.length} saved wallets`);
+
+            // Load all saved wallets into WalletKit
+            for (const savedWallet of state.wallet.savedWallets) {
+                // Check if already loaded
+                const existingWallet = state.wallet.walletKit
+                    .getWallets()
+                    .find((w) => w.getAddress() === savedWallet.address);
+
+                if (existingWallet) {
+                    log.info(`Wallet ${savedWallet.id} already loaded`);
+                    continue;
+                }
+
+                const network = state.auth.network || 'testnet';
+
+                if (savedWallet.walletType === 'ledger') {
+                    const walletConfig = await createWalletConfig({
+                        useWalletInterfaceType: 'ledger',
+                        ledgerAccountNumber: savedWallet.ledgerConfig?.accountIndex,
+                        storedLedgerConfig: savedWallet.ledgerConfig,
+                        network,
+                        walletKit: state.wallet.walletKit,
+                    });
+
+                    await state.wallet.walletKit.addWallet(walletConfig);
+                } else if (savedWallet.encryptedMnemonic) {
+                    const decryptedString = await SimpleEncryption.decrypt(
+                        savedWallet.encryptedMnemonic,
+                        state.auth.currentPassword,
+                    );
+                    const mnemonic = JSON.parse(decryptedString) as string[];
+
+                    const walletConfig = await createWalletConfig({
+                        mnemonic,
+                        useWalletInterfaceType: savedWallet.walletInterfaceType,
+                        ledgerAccountNumber: state.auth.ledgerAccountNumber,
+                        storedLedgerConfig: undefined,
+                        network,
+                        walletKit: state.wallet.walletKit,
+                    });
+
+                    await state.wallet.walletKit.addWallet(walletConfig);
+                }
+            }
+
+            // If we have saved wallets but no active wallet, activate the first one
+            if (state.wallet.savedWallets.length > 0 && !state.wallet.activeWalletId) {
+                await get().switchWallet(state.wallet.savedWallets[0].id);
+            } else if (state.wallet.activeWalletId) {
+                // Load the active wallet
+                await get().switchWallet(state.wallet.activeWalletId);
+            }
+
+            set((state) => {
+                state.wallet.hasWallet = state.wallet.savedWallets.length > 0;
+                state.wallet.isAuthenticated = state.wallet.savedWallets.length > 0;
+            });
+
+            log.info('All wallets loaded successfully');
+        } catch (error) {
+            log.error('Error loading wallets:', error);
+            throw new Error('Failed to load wallets');
+        }
+    },
+
+    // Legacy method for backward compatibility
+    loadWallet: async () => {
+        await get().loadAllWallets();
+    },
+
+    getDecryptedMnemonic: async (walletId?: string): Promise<string[] | null> => {
         const state = get();
 
-        // Debug: Check if we have current password
         if (!state.auth.currentPassword) {
             log.error('No current password available');
             return null;
         }
 
         try {
-            // Debug: Check if we have encrypted data in state
-            if (!state.wallet.encryptedMnemonic) {
-                log.error('No encrypted mnemonic found in state');
+            // Get the wallet to decrypt
+            const targetWalletId = walletId || state.wallet.activeWalletId;
+            if (!targetWalletId) {
+                log.error('No wallet ID provided or active');
                 return null;
             }
 
-            // Debug: Attempt decryption
+            const savedWallet = state.wallet.savedWallets.find((w) => w.id === targetWalletId);
+            if (!savedWallet || !savedWallet.encryptedMnemonic) {
+                log.error('No encrypted mnemonic found for wallet');
+                return null;
+            }
+
             const decryptedString = await SimpleEncryption.decrypt(
-                state.wallet.encryptedMnemonic,
+                savedWallet.encryptedMnemonic,
                 state.auth.currentPassword,
             );
 
             const mnemonic = JSON.parse(decryptedString) as string[];
 
-            // Debug: Check result
             if (!mnemonic || mnemonic.length === 0) {
                 log.error('Decrypted mnemonic is empty');
                 return null;
@@ -211,13 +861,13 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         set((state) => {
             state.wallet.isAuthenticated = false;
             state.wallet.hasWallet = false;
+            state.wallet.savedWallets = [];
+            state.wallet.activeWalletId = undefined;
             state.wallet.address = undefined;
             state.wallet.balance = undefined;
-            state.wallet.mnemonic = undefined;
             state.wallet.publicKey = undefined;
             state.wallet.transactions = [];
             state.wallet.currentWallet = undefined;
-            state.wallet.encryptedMnemonic = undefined;
             state.wallet.pendingConnectRequest = undefined;
             state.wallet.isConnectModalOpen = false;
             state.wallet.pendingTransactionRequest = undefined;
@@ -235,11 +885,9 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         }
 
         try {
-            // Get fresh balance from blockchain
             const balance = await state.wallet.currentWallet.getBalance();
             const balanceString = balance.toString();
 
-            // Update state - persistence layer will handle storage
             set((state) => {
                 state.wallet.balance = balanceString;
             });
@@ -249,24 +897,62 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         }
     },
 
-    addTransaction: (transaction: Transaction) => {
+    addTransaction: (transaction: PreviewTransaction) => {
         set((state) => {
             state.wallet.transactions = [transaction, ...state.wallet.transactions];
         });
     },
 
-    // TON Connect URL handling
+    loadTransactions: async (limit = 10) => {
+        const state = get();
+        if (!state.wallet.address) {
+            log.warn('No wallet address available to load transactions');
+            return;
+        }
+
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
+        try {
+            log.info('Loading transactions for address:', state.wallet.address);
+
+            const response = await state.wallet.walletKit.getApiClient().getAccountTransactions({
+                address: [state.wallet.address],
+                limit,
+                offset: 0,
+            });
+
+            const transformedTransactions = response.transactions.map((tx: ToncenterTransaction) =>
+                transformToncenterTransaction(tx),
+            );
+
+            set((state) => {
+                state.wallet.transactions = transformedTransactions;
+            });
+
+            log.info(`Loaded ${transformedTransactions.length} transactions`);
+        } catch (error) {
+            log.error('Error loading transactions:', error);
+            throw new Error('Failed to load transactions');
+        }
+    },
+
     handleTonConnectUrl: async (url: string) => {
+        const state = get();
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
         try {
             log.info('Handling TON Connect URL:', url);
-            await walletKit.handleTonConnectUrl(url);
+            await state.wallet.walletKit.handleTonConnectUrl(url);
         } catch (error) {
             log.error('Failed to handle TON Connect URL:', error);
             throw new Error('Failed to process TON Connect link');
         }
     },
 
-    // Connect request handling
     showConnectRequest: (request: EventConnectRequest) => {
         set((state) => {
             state.wallet.pendingConnectRequest = request;
@@ -281,17 +967,18 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
+
         try {
-            // Set the wallet on the connect event as per user requirements
-            const updatedRequest = {
+            const updatedRequest: EventConnectRequest = {
                 ...state.wallet.pendingConnectRequest,
-                wallet: selectedWallet,
+                walletAddress: selectedWallet.getAddress(),
             };
 
-            // Approve the connect request with the selected wallet
-            await walletKit.approveConnectRequest(updatedRequest);
+            await state.wallet.walletKit.approveConnectRequest(updatedRequest);
 
-            // Close the modal and clear pending request
             set((state) => {
                 state.wallet.pendingConnectRequest = undefined;
                 state.wallet.isConnectModalOpen = false;
@@ -309,10 +996,13 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
-        try {
-            await walletKit.rejectConnectRequest(state.wallet.pendingConnectRequest, reason);
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
 
-            // Close the modal and clear pending request
+        try {
+            await state.wallet.walletKit.rejectConnectRequest(state.wallet.pendingConnectRequest, reason);
+
             set((state) => {
                 state.wallet.pendingConnectRequest = undefined;
                 state.wallet.isConnectModalOpen = false;
@@ -330,7 +1020,6 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         });
     },
 
-    // Transaction request handling
     showTransactionRequest: (request: EventTransactionRequest) => {
         set((state) => {
             state.wallet.pendingTransactionRequest = request;
@@ -345,15 +1034,30 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
-        try {
-            // Approve the transaction request with the wallet kit
-            await walletKit.approveTransactionRequest(state.wallet.pendingTransactionRequest);
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
 
-            // Close the modal and clear pending request
-            set((state) => {
-                state.wallet.pendingTransactionRequest = undefined;
-                state.wallet.isTransactionModalOpen = false;
-            });
+        try {
+            const approveResult = await state.wallet.walletKit.approveTransactionRequest(
+                state.wallet.pendingTransactionRequest,
+            );
+            if (approveResult.success) {
+                // Delay closing the modal to allow success animation to show
+                setTimeout(() => {
+                    set((state) => {
+                        state.wallet.pendingTransactionRequest = undefined;
+                        state.wallet.isTransactionModalOpen = false;
+                    });
+                }, 3000); // 3 second delay for success animation
+            } else {
+                log.error('Failed to approve transaction request:', approveResult);
+                if (approveResult.error?.message?.toLocaleLowerCase()?.includes('ledger')) {
+                    toast.error('Could not approve transaction request with Ledger, please unlock it and open TON App');
+                } else {
+                    toast.error('Could not approve transaction request');
+                }
+            }
         } catch (error) {
             log.error('Failed to approve transaction request:', error);
             throw error;
@@ -367,10 +1071,13 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
-        try {
-            await walletKit.rejectTransactionRequest(state.wallet.pendingTransactionRequest, reason);
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
 
-            // Close the modal and clear pending request
+        try {
+            await state.wallet.walletKit.rejectTransactionRequest(state.wallet.pendingTransactionRequest, reason);
+
             set((state) => {
                 state.wallet.pendingTransactionRequest = undefined;
                 state.wallet.isTransactionModalOpen = false;
@@ -388,7 +1095,6 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         });
     },
 
-    // Sign data request handling
     showSignDataRequest: (request: EventSignDataRequest) => {
         set((state) => {
             state.wallet.pendingSignDataRequest = request;
@@ -403,15 +1109,20 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
-        try {
-            // Approve the sign data request with the wallet kit
-            await walletKit.signDataRequest(state.wallet.pendingSignDataRequest);
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
 
-            // Close the modal and clear pending request
-            set((state) => {
-                state.wallet.pendingSignDataRequest = undefined;
-                state.wallet.isSignDataModalOpen = false;
-            });
+        try {
+            await state.wallet.walletKit.signDataRequest(state.wallet.pendingSignDataRequest);
+
+            // Delay closing the modal to allow success animation to show
+            setTimeout(() => {
+                set((state) => {
+                    state.wallet.pendingSignDataRequest = undefined;
+                    state.wallet.isSignDataModalOpen = false;
+                });
+            }, 3000); // 3 second delay for success animation
         } catch (error) {
             log.error('Failed to approve sign data request:', error);
             throw error;
@@ -425,10 +1136,13 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
             return;
         }
 
-        try {
-            await walletKit.rejectSignDataRequest(state.wallet.pendingSignDataRequest, reason);
+        if (!state.wallet.walletKit) {
+            throw new Error('WalletKit not initialized');
+        }
 
-            // Close the modal and clear pending request
+        try {
+            await state.wallet.walletKit.rejectSignDataRequest(state.wallet.pendingSignDataRequest, reason);
+
             set((state) => {
                 state.wallet.pendingSignDataRequest = undefined;
                 state.wallet.isSignDataModalOpen = false;
@@ -446,64 +1160,37 @@ export const createWalletSlice: WalletSliceCreator = (set: SetState, get) => ({
         });
     },
 
-    // Disconnect event handling
     handleDisconnectEvent: (event: EventDisconnect) => {
         log.info('Disconnect event received:', event);
 
-        // Add to disconnected sessions list
         set((state) => {
             state.wallet.disconnectedSessions.push({
-                walletAddress: event.wallet.getAddress(),
+                walletAddress: event.walletAddress,
                 reason: event.reason,
                 timestamp: Date.now(),
             });
         });
     },
 
-    // Clear disconnect notifications
     clearDisconnectNotifications: () => {
         set((state) => {
             state.wallet.disconnectedSessions = [];
         });
     },
 
-    // Getters
     getAvailableWallets: () => {
-        return walletKit.getWallets();
+        const state = get();
+        if (!state.wallet.walletKit) {
+            return [];
+        }
+        return state.wallet.walletKit.getWallets();
+    },
+
+    getActiveWallet: () => {
+        const state = get();
+        if (!state.wallet.activeWalletId) {
+            return undefined;
+        }
+        return state.wallet.savedWallets.find((w) => w.id === state.wallet.activeWalletId);
     },
 });
-
-// Set up connect and transaction request listeners - this will be called from the appStore
-export const setupWalletKitListeners = (
-    showConnectRequest: (request: EventConnectRequest) => void,
-    showTransactionRequest: (request: EventTransactionRequest) => void,
-    showSignDataRequest: (request: EventSignDataRequest) => void,
-    handleDisconnectEvent: (event: EventDisconnect) => void,
-) => {
-    const onTransactionRequest = (event: EventTransactionRequest) => {
-        log.info('Transaction request received:', event);
-        showTransactionRequest(event);
-    };
-    walletKit.onConnectRequest((event) => {
-        log.info('Connect request received:', event);
-        showConnectRequest(event);
-    });
-
-    walletKit.onTransactionRequest(onTransactionRequest);
-    // setTimeout(() => {
-    //     walletKit.removeTransactionRequestCallback(onTransactionRequest);
-    // }, 10000);
-
-    walletKit.onSignDataRequest((event) => {
-        log.info('Sign data request received:', event);
-        showSignDataRequest(event);
-    });
-
-    walletKit.onDisconnect((event) => {
-        log.info('Disconnect event received:', event);
-        handleDisconnectEvent(event);
-    });
-};
-
-// Export walletKit for external access if needed
-export { walletKit };

@@ -8,7 +8,7 @@ export type NftTransferParamsHuman = {
     comment?: string;
 };
 
-export type NftTransferParamsNative = {
+export type NftTransferParamsRaw = {
     nftAddress: string;
     transferAmount: bigint;
 

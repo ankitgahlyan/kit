@@ -12,5 +12,15 @@ module.exports = [
         },
         rules: {},
     },
-    { ignores: ['**/dist/*', '**/dist-extension/*', 'apps/ioskit/*'] },
+    {
+        ignores: [
+            '**/*report/*',
+            '**/dist/*',
+            '**/*stryker*/*',
+            '**/*coverage*/*',
+            '**/dist-extension/*',
+            '**/Packages/TONWalletKit/*',
+            '**/TONWalletApp/TONWalletApp/*',
+        ],
+    },
 ];

@@ -1,85 +1,104 @@
 // Wallet-related type definitions
 
-import { TonClient } from '@ton/ton';
-import { SendMode } from '@ton/core';
+import { Address, SendMode } from '@ton/core';
+import { CHAIN } from '@tonconnect/protocol';
+// import Transport from '@ledgerhq/hw-transport';
 
 import { ConnectExtraCurrency, ConnectTransactionParamContent } from './internal';
 import { JettonTransferParams } from './jettons';
-import { NftTransferParamsHuman, NftTransferParamsNative } from './nfts';
+import { NftTransferParamsHuman, NftTransferParamsRaw } from './nfts';
 import { TransactionPreview } from './events';
+import { ApiClient } from './toncenter/ApiClient';
+import { LimitRequest } from './toncenter/ApiClient';
+import type { NftItem } from './toncenter/NftItem';
+import { NftItems } from './toncenter/NftItems';
+import { PrepareSignDataResult } from '../utils/signData/sign';
+import { Hash } from './primitive';
+import { TonProofParsedMessage } from '../utils/tonProof';
 
 /**
  * TON network types
  */
-export type TonNetwork = 'mainnet' | 'testnet';
+export type WalletVersion = 'v5r1' | 'v4r2' | 'unknown';
 
-export type WalletVersion = 'v5r1' | 'unknown'; // | 'v4r2';
+export type WalletSigner = (bytes: Uint8Array) => Promise<Uint8Array>;
 
 export interface WalletInitConfigMnemonicInterface {
     mnemonic: string[];
     version?: WalletVersion;
     mnemonicType?: 'ton' | 'bip39';
-    walletId?: number;
-    network?: TonNetwork;
+    walletId?: bigint;
+    network?: CHAIN;
 }
 
-export class WalletInitConfigMnemonic {
-    mnemonic: string[];
-    version: WalletVersion;
-    mnemonicType: 'ton' | 'bip39';
-    walletId?: number;
-    network: TonNetwork;
+export function createWalletInitConfigMnemonic(
+    params: WalletInitConfigMnemonicInterface,
+): WalletInitConfigMnemonicInterface {
+    return {
+        mnemonic: params.mnemonic,
+        version: params.version ?? 'v5r1',
+        mnemonicType: params.mnemonicType ?? 'ton',
+        walletId: params.walletId,
+        network: params.network ?? CHAIN.MAINNET,
+    };
+}
 
-    constructor({
-        mnemonic,
-        version = 'v5r1',
-        mnemonicType = 'ton',
-        walletId,
-        network,
-    }: {
-        mnemonic: string[];
-        version?: WalletVersion;
-        mnemonicType?: 'ton' | 'bip39';
-        walletId?: number;
-        network?: TonNetwork;
-    }) {
-        this.mnemonic = mnemonic;
-        this.version = version ?? 'v5r1';
-        this.mnemonicType = mnemonicType ?? 'ton';
-        this.walletId = walletId;
-        this.network = network ?? 'mainnet';
-    }
+export function isWalletInitConfigMnemonic(
+    config: WalletInitConfig,
+): config is ReturnType<typeof createWalletInitConfigMnemonic> {
+    return 'mnemonic' in config;
 }
 
 export interface WalletInitConfigPrivateKeyInterface {
-    privateKey: string;
+    privateKey: string | Uint8Array;
     version?: WalletVersion;
     walletId?: number;
-    network?: TonNetwork;
+    network?: CHAIN;
 }
 
-export class WalletInitConfigPrivateKey {
-    privateKey: string; // private key in hex format
-    version: WalletVersion;
-    walletId?: number;
-    network: TonNetwork;
+export function createWalletInitConfigPrivateKey(
+    params: WalletInitConfigPrivateKeyInterface,
+): WalletInitConfigPrivateKeyInterface {
+    return {
+        privateKey: params.privateKey,
+        version: params.version ?? 'v5r1',
+        walletId: params.walletId,
+        network: params.network ?? CHAIN.MAINNET,
+    };
+}
 
-    constructor({
-        privateKey,
-        version = 'v5r1',
-        walletId,
-        network,
-    }: {
-        privateKey: string;
-        version?: WalletVersion;
-        walletId?: number;
-        network?: TonNetwork;
-    }) {
-        this.privateKey = privateKey;
-        this.version = version;
-        this.walletId = walletId;
-        this.network = network ?? 'mainnet';
-    }
+export function isWalletInitConfigPrivateKey(
+    config: WalletInitConfig,
+): config is ReturnType<typeof createWalletInitConfigPrivateKey> {
+    return 'privateKey' in config;
+}
+
+export interface WalletInitConfigSignerInterface {
+    publicKey: Uint8Array | Hash;
+    version?: WalletVersion;
+    walletId?: bigint;
+    network?: CHAIN;
+    sign: WalletSigner;
+}
+
+export function createWalletInitConfigSigner(params: WalletInitConfigSignerInterface): WalletInitConfigSignerInterface {
+    const publicKey =
+        typeof params.publicKey === 'string'
+            ? Uint8Array.from(Buffer.from(params.publicKey.replace('0x', ''), 'hex'))
+            : params.publicKey;
+    return {
+        publicKey: publicKey,
+        version: params.version ?? 'v5r1',
+        walletId: params.walletId,
+        network: params.network ?? CHAIN.MAINNET,
+        sign: params.sign,
+    };
+}
+
+export function isWalletInitConfigSigner(
+    config: WalletInitConfig,
+): config is ReturnType<typeof createWalletInitConfigSigner> {
+    return 'publicKey' in config && 'sign' in config;
 }
 
 /**
@@ -92,10 +111,9 @@ export interface WalletInitInterface {
     /** Wallet contract version (e.g., 'v4r2', 'v5r1') */
     version: string;
 
-    client: TonClient;
+    client: ApiClient;
 
-    /** Sign raw bytes with wallet's private key */
-    sign(bytes: Uint8Array): Promise<Uint8Array>;
+    getNetwork(): CHAIN;
 
     /** Get wallet's TON address */
     getAddress(options?: { testnet?: boolean }): string;
@@ -103,12 +121,24 @@ export interface WalletInitInterface {
     /** Get state init for wallet deployment base64 encoded boc */
     getStateInit(): Promise<string>;
 
-    getSignedExternal(
+    getSignedSendTransaction(
         input: ConnectTransactionParamContent,
-        options: {
+        options?: {
             fakeSignature: boolean;
         },
-    ): Promise<string>;
+    ): Promise<string>; // base64 encoded boc
+    getSignedSignData(
+        input: PrepareSignDataResult,
+        options?: {
+            fakeSignature: boolean;
+        },
+    ): Promise<Hash>;
+    getSignedTonProof(
+        input: TonProofParsedMessage,
+        options?: {
+            fakeSignature: boolean;
+        },
+    ): Promise<Hash>;
 }
 
 export type TonTransferMessage = {
@@ -135,38 +165,34 @@ export interface TonTransferParamsComment {
 }
 
 export interface WalletTonInterface {
-    createSendTon(params: TonTransferParams): Promise<ConnectTransactionParamContent>;
-    createSendTonMany(params: TonTransferManyParams): Promise<ConnectTransactionParamContent>;
+    createTransferTonTransaction(params: TonTransferParams): Promise<ConnectTransactionParamContent>;
+    createTransferMultiTonTransaction(params: TonTransferManyParams): Promise<ConnectTransactionParamContent>;
+
+    getTransactionPreview(data: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>): Promise<{
+        preview: TransactionPreview;
+    }>;
+
     getBalance(): Promise<bigint>;
-
-    prepareTransaction(data: ConnectTransactionParamContent | Promise<ConnectTransactionParamContent>): Promise<{
-        transaction: ConnectTransactionParamContent;
-        preview: TransactionPreview;
-    }>;
-
-    sendTon(params: TonTransferParams): Promise<{
-        transaction: ConnectTransactionParamContent;
-        preview: TransactionPreview;
-    }>;
 }
 
 export interface WalletJettonInterface {
-    createSendJetton(params: JettonTransferParams): Promise<ConnectTransactionParamContent>;
-    getBalance(jettonAddress: string): Promise<bigint>;
+    createTransferJettonTransaction(params: JettonTransferParams): Promise<ConnectTransactionParamContent>;
+    getJettonBalance(jettonAddress: string): Promise<bigint>;
     getJettonWalletAddress(jettonAddress: string): Promise<string>;
 }
 
 export interface WalletNftInterface {
-    createSendNft(params: NftTransferParamsHuman): Promise<ConnectTransactionParamContent>;
-    createSendNftNative(params: NftTransferParamsNative): Promise<ConnectTransactionParamContent>;
+    createTransferNftTransaction(params: NftTransferParamsHuman): Promise<ConnectTransactionParamContent>;
+    createTransferNftRawTransaction(params: NftTransferParamsRaw): Promise<ConnectTransactionParamContent>;
+    getNfts(params: LimitRequest): Promise<NftItems>;
+    getNft(address: Address | string): Promise<NftItem | null>;
 }
 
 export type WalletInitConfig =
     | WalletInitInterface
-    | WalletInitConfigMnemonic
-    | WalletInitConfigPrivateKey
     | WalletInitConfigMnemonicInterface
-    | WalletInitConfigPrivateKeyInterface;
+    | WalletInitConfigPrivateKeyInterface
+    | WalletInitConfigSignerInterface;
 
 export type WalletInterface = WalletInitInterface & WalletTonInterface & WalletJettonInterface & WalletNftInterface;
 
@@ -178,13 +204,4 @@ export interface WalletMetadata {
     version: string;
     address?: string;
     lastUsed?: Date;
-}
-
-/**
- * Wallet status information
- */
-export interface WalletStatus {
-    isDeployed: boolean;
-    balance: string;
-    lastActivity?: Date;
 }

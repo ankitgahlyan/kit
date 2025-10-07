@@ -9,24 +9,40 @@ import {
     TransactionRequestModal,
     SignDataRequestModal,
     DisconnectNotifications,
+    NftsCard,
+    RecentTransactions,
     JettonsCard,
+    WalletSwitcher,
 } from '../components';
 import { useWallet, useTonConnect, useTransactionRequests, useSignDataRequests } from '../stores';
-import { walletKit } from '../stores/slices/walletSlice';
 import { useTonWallet } from '../hooks';
 import { createComponentLogger } from '../utils/logger';
+import { usePasteHandler } from '../hooks/usePasteHandler';
+
+import { useWalletKit } from '@/stores';
 
 // Create logger for wallet dashboard
 const log = createComponentLogger('WalletDashboard');
 
 export const WalletDashboard: React.FC = () => {
+    const walletKit = useWalletKit();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [tonConnectUrl, setTonConnectUrl] = useState('');
     const [isConnecting, setIsConnecting] = useState(false);
     const navigate = useNavigate();
 
-    const { balance, address, transactions, getAvailableWallets } = useWallet();
+    const {
+        balance,
+        address,
+        getAvailableWallets,
+        updateBalance,
+        savedWallets,
+        activeWalletId,
+        switchWallet,
+        removeWallet,
+        renameWallet,
+    } = useWallet();
     const {
         handleTonConnectUrl,
         pendingConnectRequest,
@@ -38,18 +54,21 @@ export const WalletDashboard: React.FC = () => {
         useTransactionRequests();
     const { pendingSignDataRequest, isSignDataModalOpen, approveSignDataRequest, rejectSignDataRequest } =
         useSignDataRequests();
-    const { getBalance, error } = useTonWallet();
+    const { error } = useTonWallet();
+
+    // Use the paste handler hook
+    usePasteHandler(handleTonConnectUrl);
 
     const handleRefreshBalance = useCallback(async () => {
         setIsRefreshing(true);
         try {
-            await getBalance();
+            await updateBalance();
         } catch (err) {
             log.error('Error refreshing balance:', err);
         } finally {
             setIsRefreshing(false);
         }
-    }, [getBalance]);
+    }, [updateBalance]);
 
     const handleCopyAddress = useCallback(async () => {
         if (!address) return;
@@ -79,38 +98,71 @@ export const WalletDashboard: React.FC = () => {
     }, [tonConnectUrl, handleTonConnectUrl]);
 
     const handleTestDisconnectAll = useCallback(async () => {
+        if (!walletKit) return;
         try {
             await walletKit.disconnect(); // Disconnect all sessions
             log.info('All sessions disconnected');
         } catch (err) {
             log.error('Failed to disconnect sessions:', err);
         }
-    }, []);
+    }, [walletKit]);
 
     const formatTonAmount = (amount: string): string => {
         const tonAmount = parseFloat(amount || '0') / 1000000000; // Convert nanoTON to TON
         return tonAmount.toFixed(4);
     };
 
-    const formatAddress = (addr: string): string => {
-        if (!addr) return '';
-        return `${addr.slice(0, 6)}...${addr.slice(-6)}`;
-    };
-
-    const formatTimestamp = (timestamp: number): string => {
-        return new Date(timestamp).toLocaleString();
-    };
-
     useEffect(() => {
         // Auto-refresh balance on mount
         if (!balance) {
-            handleRefreshBalance();
+            updateBalance();
         }
-    }, [balance, handleRefreshBalance]);
+    }, [balance, updateBalance]);
+
+    // auto refresh balance every 10 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            updateBalance();
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [updateBalance]);
+
+    const handleSwitchWallet = async (walletId: string) => {
+        try {
+            await switchWallet(walletId);
+        } catch (err) {
+            log.error('Failed to switch wallet:', err);
+        }
+    };
+
+    const handleRemoveWallet = (walletId: string) => {
+        try {
+            removeWallet(walletId);
+        } catch (err) {
+            log.error('Failed to remove wallet:', err);
+        }
+    };
+
+    const handleRenameWallet = (walletId: string, newName: string) => {
+        try {
+            renameWallet(walletId, newName);
+        } catch (err) {
+            log.error('Failed to rename wallet:', err);
+        }
+    };
 
     return (
         <Layout title="TON Wallet" showLogout>
             <div className="space-y-6">
+                {/* Wallet Switcher */}
+                <WalletSwitcher
+                    savedWallets={savedWallets}
+                    activeWalletId={activeWalletId}
+                    onSwitchWallet={handleSwitchWallet}
+                    onRemoveWallet={handleRemoveWallet}
+                    onRenameWallet={handleRenameWallet}
+                />
+
                 {/* Balance Card */}
                 <Card>
                     <div className="text-center space-y-4">
@@ -190,6 +242,9 @@ export const WalletDashboard: React.FC = () => {
                 {/* Jettons Card */}
                 <JettonsCard />
 
+                {/* NFTs Card */}
+                <NftsCard />
+
                 {/* TON Connect URL Input */}
                 <Card title="Connect to dApp">
                     <div className="space-y-4">
@@ -198,6 +253,7 @@ export const WalletDashboard: React.FC = () => {
                                 Paste TON Connect Link
                             </label>
                             <textarea
+                                data-test-id="tonconnect-url"
                                 id="tonconnect-url"
                                 rows={3}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none text-black"
@@ -207,6 +263,7 @@ export const WalletDashboard: React.FC = () => {
                             />
                         </div>
                         <Button
+                            data-test-id="tonconnect-process"
                             onClick={handleConnectDApp}
                             isLoading={isConnecting}
                             disabled={!tonConnectUrl.trim() || isConnecting}
@@ -240,148 +297,17 @@ export const WalletDashboard: React.FC = () => {
                 <DisconnectNotifications />
 
                 {/* Transaction History */}
-                <Card title="Recent Transactions">
-                    {transactions.length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="text-gray-400 mb-2">
-                                <svg
-                                    className="w-12 h-12 mx-auto"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
-                                </svg>
-                            </div>
-                            <p className="text-gray-500 text-sm">No transactions yet</p>
-                            <p className="text-gray-400 text-xs mt-1">Your transaction history will appear here</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {transactions.slice(0, 10).map((tx) => (
-                                <div
-                                    key={tx.id}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                                >
-                                    <div className="flex items-center space-x-3">
-                                        <div
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                                tx.type === 'send' ? 'bg-red-100' : 'bg-green-100'
-                                            }`}
-                                        >
-                                            {tx.type === 'send' ? (
-                                                <svg
-                                                    className="w-4 h-4 text-red-600"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M7 11l5-5m0 0l5 5m-5-5v12"
-                                                    />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    className="w-4 h-4 text-green-600"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M17 13l-5 5m0 0l-5-5m5 5V6"
-                                                    />
-                                                </svg>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {tx.type === 'send' ? 'Sent' : 'Received'}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{formatAddress(tx.address)}</p>
-                                            <p className="text-xs text-gray-400">{formatTimestamp(tx.timestamp)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p
-                                            className={`text-sm font-medium ${
-                                                tx.type === 'send' ? 'text-red-600' : 'text-green-600'
-                                            }`}
-                                        >
-                                            {tx.type === 'send' ? '-' : '+'}
-                                            {formatTonAmount(tx.amount)} TON
-                                        </p>
-                                        <p
-                                            className={`text-xs ${
-                                                tx.status === 'confirmed'
-                                                    ? 'text-green-500'
-                                                    : tx.status === 'failed'
-                                                      ? 'text-red-500'
-                                                      : 'text-yellow-500'
-                                            }`}
-                                        >
-                                            {tx.status}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </Card>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-4">
-                    <Button
-                        variant="secondary"
-                        onClick={() => navigate('/receive')}
-                        className="h-16 flex flex-col items-center justify-center space-y-1"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span className="text-sm">Receive</span>
-                    </Button>
-
-                    <Button
-                        variant="secondary"
-                        onClick={() => navigate('/history')}
-                        className="h-16 flex flex-col items-center justify-center space-y-1"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                        <span className="text-sm">History</span>
-                    </Button>
-                </div>
+                <RecentTransactions />
 
                 {/* Development Test Section */}
-                {process.env.NODE_ENV === 'development' && (
-                    <Card title="Development Tools">
-                        <div className="space-y-4">
-                            <p className="text-sm text-gray-600">
-                                Test disconnect event functionality (development only)
-                            </p>
-                            <Button variant="secondary" onClick={handleTestDisconnectAll} className="w-full">
-                                Test: Disconnect All Sessions
-                            </Button>
-                        </div>
-                    </Card>
-                )}
+                <Card title="Development Tools">
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-600">Test disconnect event functionality</p>
+                        <Button variant="secondary" onClick={handleTestDisconnectAll} className="w-full">
+                            Test: Disconnect All Sessions
+                        </Button>
+                    </div>
+                </Card>
             </div>
 
             {/* Connect Request Modal */}
@@ -389,6 +315,7 @@ export const WalletDashboard: React.FC = () => {
                 <ConnectRequestModal
                     request={pendingConnectRequest}
                     availableWallets={getAvailableWallets()}
+                    savedWallets={savedWallets}
                     isOpen={isConnectModalOpen}
                     onApprove={approveConnectRequest}
                     onReject={rejectConnectRequest}
@@ -399,6 +326,7 @@ export const WalletDashboard: React.FC = () => {
             {pendingTransactionRequest && (
                 <TransactionRequestModal
                     request={pendingTransactionRequest}
+                    savedWallets={savedWallets}
                     isOpen={isTransactionModalOpen}
                     onApprove={approveTransactionRequest}
                     onReject={rejectTransactionRequest}
@@ -409,6 +337,7 @@ export const WalletDashboard: React.FC = () => {
             {pendingSignDataRequest && (
                 <SignDataRequestModal
                     request={pendingSignDataRequest}
+                    savedWallets={savedWallets}
                     isOpen={isSignDataModalOpen}
                     onApprove={approveSignDataRequest}
                     onReject={rejectSignDataRequest}
