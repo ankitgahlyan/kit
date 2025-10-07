@@ -5,84 +5,37 @@ import { CHAIN, MemoryStorageAdapter, TonWalletKit } from '@ton/walletkit';
 declare global {
     interface Window {
         walletKitSwiftBridge?: {
-            config?: any;
             sendEvent: (eventType: string, data: any) => void;
-            callNative: (method: string, args: any[]) => Promise<any>;
         };
 
         walletKit?: any;
-
-        initWalletKit: () => Promise<void>;
+        initWalletKit: (configuration) => Promise<void>;
     }
 }
 
-window.initWalletKit = async () => {
+window.initWalletKit = async (configuration) => {
     console.log('🚀 WalletKit iOS Bridge starting...');
 
-    console.log('Creating WalletKit instance');
+    console.log('Creating WalletKit instance with configuration', configuration);
 
     const walletKit = new TonWalletKit({
-        network: CHAIN.MAINNET,
-        walletManifest: {
-            name: 'Wallet',
-            appName: 'Wallet',
-            imageUrl: 'https://example.com/image.png',
-            bridgeUrl: 'https://example.com/bridge.png',
-            universalLink: 'https://example.com/universal-link',
-            aboutUrl: 'https://example.com/about',
-            platforms: ['chrome', 'firefox', 'safari', 'android', 'ios', 'windows', 'macos', 'linux'],
-            jsBridgeKey: 'wallet',
-        },
-        deviceInfo: {
-            platform: 'browser',
-            appName: 'Wallet',
-            appVersion: '1.0.0',
-            maxProtocolVersion: 2,
-            features: [
-                'SendTransaction',
-                {
-                    name: 'SendTransaction',
-                    maxMessages: 1,
-                },
-                {
-                    name: 'SignData',
-                    types: ['text', 'binary', 'cell'],
-                },
-            ],
-        },
+        network: configuration.network,
+        walletManifest: configuration.walletManifest,
+        deviceInfo: configuration.deviceInfo,
         // apiUrl: 'https://tonapi.io',
         // config: {
-        bridge: {
-            bridgeUrl: 'https://bridge.tonapi.io/bridge',
-        },
+        bridge: configuration.bridge,
         eventProcessor: {
             // disableEvents: true,
         },
         // },
 
-        apiClient: {
-            key: '25a9b2326a34b39a5fa4b264fb78fb4709e1bd576fc5e6b176639f5b71e94b0d',
-        },
+        apiClient: configuration.apiClient,
 
         storage: new MemoryStorageAdapter({}),
     });
 
     console.log('🚀 WalletKit iOS Bridge starting...');
-
-    // Bridge configuration will be injected by Swift
-    let bridgeConfig = {
-        network: 'testnet',
-        storage: 'memory',
-        manifestUrl: '',
-        isMobile: true,
-        isNative: true,
-    };
-
-    // Update config if provided by Swift bridge
-    if (window.walletKitSwiftBridge?.config) {
-        bridgeConfig = { ...bridgeConfig, ...window.walletKitSwiftBridge.config };
-        console.log('📋 Using bridge config:', bridgeConfig);
-    }
 
     let initialized = false;
 
@@ -91,7 +44,7 @@ window.initWalletKit = async () => {
     // Events from WalletKit will be forwarded to Swift via the bridge
 
     async function initializeWalletKit() {
-        console.log('🔄 Initializing WalletKit Bridge with config:', bridgeConfig);
+        console.log('🔄 Initializing WalletKit Bridge');
 
         // WalletKit is already constructed with config, just set up the bridge
         console.log('✅ WalletKit instance ready');
