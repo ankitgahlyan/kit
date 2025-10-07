@@ -52,7 +52,7 @@ extension TONWalletKitConfiguration {
         let features: [RawFeature]
         
         init(appName: String, features: [RawFeature]) {
-            self.platform = "ios"// UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+            self.platform = UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
             self.appName = appName
             self.appVersion = Bundle.main.appVersion
             self.features = features
