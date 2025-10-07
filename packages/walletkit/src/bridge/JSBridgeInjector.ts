@@ -21,17 +21,27 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
     const deviceInfo = getDeviceInfoWithDefaults(options.deviceInfo);
     const walletInfo = getWalletInfoWithDefaults(options.walletInfo);
 
-    const walletName = walletInfo?.appName;
+    // const walletName = walletInfo?.appName;
+    let jsBridgeKey = 'unknown-wallet';
+    if (options.jsBridgeKey) {
+        jsBridgeKey = options.jsBridgeKey;
+    } else if (options.walletInfo) {
+        if ('jsBridgeKey' in options.walletInfo) {
+            jsBridgeKey = options.walletInfo.jsBridgeKey;
+        } else if ('name' in options.walletInfo) {
+            jsBridgeKey = options.walletInfo.name;
+        }
+    }
 
     const isWalletBrowser = false;
 
     // Check if wallet already exists and has tonconnect
     if (
-        (window as unknown as Record<string, unknown>)[walletName] &&
-        (window as unknown as Record<string, Record<string, unknown>>)[walletName].tonconnect
+        (window as unknown as Record<string, unknown>)[jsBridgeKey] &&
+        (window as unknown as Record<string, Record<string, unknown>>)[jsBridgeKey].tonconnect
     ) {
         // eslint-disable-next-line no-console
-        console.log(`${walletName}.tonconnect already exists, skipping injection`);
+        console.log(`${jsBridgeKey}.tonconnect already exists, skipping injection`);
         return;
     }
 
@@ -152,7 +162,7 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
                 // eslint-disable-next-line no-undef
                 chrome.runtime.sendMessage(extensionId, {
                     type: 'TONCONNECT_BRIDGE_REQUEST',
-                    source: `${walletName}-tonconnect`,
+                    source: `${jsBridgeKey}-tonconnect`,
                     payload: {
                         ...data,
                     },
@@ -207,13 +217,13 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
         if (!data || typeof data !== 'object') return;
 
         // Handle bridge responses from extension
-        if (data.type === 'TONCONNECT_BRIDGE_RESPONSE' && data.source === `${walletName}-tonconnect`) {
+        if (data.type === 'TONCONNECT_BRIDGE_RESPONSE' && data.source === `${jsBridgeKey}-tonconnect`) {
             bridge._handleResponse(data);
             return;
         }
 
         // Handle bridge events from extension
-        if (data.type === 'TONCONNECT_BRIDGE_EVENT' && data.source === `${walletName}-tonconnect`) {
+        if (data.type === 'TONCONNECT_BRIDGE_EVENT' && data.source === `${jsBridgeKey}-tonconnect`) {
             bridge._handleEvent(data.event);
             return;
         }
@@ -227,12 +237,12 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
     window.addEventListener('message', messageListener);
 
     // Ensure wallet object exists
-    if (!(window as unknown as Record<string, unknown>)[walletName]) {
-        (window as unknown as Record<string, Record<string, unknown>>)[walletName] = {};
+    if (!(window as unknown as Record<string, unknown>)[jsBridgeKey]) {
+        (window as unknown as Record<string, Record<string, unknown>>)[jsBridgeKey] = {};
     }
 
     // Inject the bridge
-    Object.defineProperty((window as unknown as Record<string, Record<string, unknown>>)[walletName], 'tonconnect', {
+    Object.defineProperty((window as unknown as Record<string, Record<string, unknown>>)[jsBridgeKey], 'tonconnect', {
         value: bridge,
         writable: false,
         enumerable: true,
@@ -242,7 +252,7 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
     // Dispatch ready event
     try {
         window.dispatchEvent(
-            new CustomEvent(`${walletName}Ready`, {
+            new CustomEvent(`${jsBridgeKey}Ready`, {
                 detail: { bridge: bridge },
                 bubbles: false,
                 cancelable: false,
@@ -250,11 +260,11 @@ export function injectBridgeCode(window: Window, options: JSBridgeInjectOptions)
         );
     } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(`Failed to dispatch ${walletName}Ready event:`, error);
+        console.error(`Failed to dispatch ${jsBridgeKey}Ready event:`, error);
     }
 
     // eslint-disable-next-line no-console
-    console.log(`TonConnect JS Bridge injected for ${walletName} - forwarding to extension`, window);
+    console.log(`TonConnect JS Bridge injected for ${jsBridgeKey} - forwarding to extension`, window);
 
     const injectContentScript = () => {
         if (typeof chrome === 'undefined') {

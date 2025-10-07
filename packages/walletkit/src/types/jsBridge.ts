@@ -83,6 +83,7 @@ export interface TonConnectBridge {
 export interface JSBridgeInjectOptions {
     deviceInfo?: Partial<DeviceInfo>;
     walletInfo?: WalletInfo;
+    jsBridgeKey?: string;
 }
 
 /**
