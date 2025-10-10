@@ -15,28 +15,7 @@ class WalletDAppConnectionViewModel: ObservableObject {
     
     @Published var link = ""
     @Published var isConnecting = false
-    @Published var alertPresented = false
-    
-    var approval: Approval? {
-        didSet {
-            alertPresented = approval != nil
-        }
-    }
-    
-    var connectionRequest: TONWalletConnectionRequest? {
-        didSet {
-            if connectionRequest == nil {
-                if approval == .connection {
-                    approval = nil
-                }
-            } else {
-                if approval == nil {
-                    approval = .connection
-                }
-            }
-        }
-    }
-    
+
     private var subscribers = Set<AnyCancellable>()
     
     init(wallet: TONWallet) {
@@ -63,44 +42,12 @@ class WalletDAppConnectionViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
                 switch event {
-                case .connectRequest(let event):
-                    self?.connectionRequest = event
+                case .connectRequest:
+                    self?.isConnecting = false
                 default: ()
                 }
             }
             .store(in: &subscribers)
-    }
-    
-    func approveConnection() {
-        guard let connectionRequest, let address = wallet.address else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await connectionRequest.approve(walletAddress: address)
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.connectionRequest = nil
-            self?.isConnecting = false
-        }
-    }
-    
-    func rejectConnection() {
-        guard let connectionRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await connectionRequest.reject(reason: "Test reason")
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.connectionRequest = nil
-            self?.isConnecting = false
-        }
     }
 }
 
