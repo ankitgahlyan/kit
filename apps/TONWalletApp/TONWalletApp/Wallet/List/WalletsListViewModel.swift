@@ -18,28 +18,7 @@ class WalletsListViewModel: ObservableObject {
     private var subscribers = Set<AnyCancellable>()
     
     @Published var event: Event?
-    @Published var alertPresented = false
-    
-    var approval: Approval? {
-        didSet {
-            alertPresented = approval != nil
-        }
-    }
-    
-    var signDataRequest: TONWalletSignDataRequest? {
-        didSet {
-            if signDataRequest == nil {
-                if approval == .signData {
-                    approval = nil
-                }
-            } else {
-                if approval == nil {
-                    approval = .signData
-                }
-            }
-        }
-    }
-    
+
     init(wallets: [WalletViewModel]) {
         self.wallets = wallets
     }
@@ -75,41 +54,11 @@ class WalletsListViewModel: ObservableObject {
                 case .transactionRequest(let request):
                     self?.event = Event(transactionRequest: request)
                 case .signDataRequest(let request):
-                    self?.signDataRequest = request
+                    self?.event = Event(signDataRequest: request)
                 default: ()
                 }
             }
             .store(in: &subscribers)
-    }
-    
-    func approveSignData() {
-        guard let signDataRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await signDataRequest.approve()
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.signDataRequest = nil
-        }
-    }
-    
-    func rejectSignData() {
-        guard let signDataRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await signDataRequest.reject(reason: "Test transaction rejection reason")
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.signDataRequest = nil
-        }
     }
     
     private func remove(walletID: WalletViewModel.ID) {
@@ -119,12 +68,17 @@ class WalletsListViewModel: ObservableObject {
 
 extension WalletsListViewModel {
     
-    enum Approval {
-        case signData
-    }
-    
     struct Event: Identifiable {
         let id = UUID()
-        let transactionRequest: TONWalletTransactionRequest
+        let transactionRequest: TONWalletTransactionRequest?
+        let signDataRequest: TONWalletSignDataRequest?
+        
+        init(
+            transactionRequest: TONWalletTransactionRequest? = nil,
+            signDataRequest: TONWalletSignDataRequest? = nil
+        ) {
+            self.transactionRequest = transactionRequest
+            self.signDataRequest = signDataRequest
+        }
     }
 }

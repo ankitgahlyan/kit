@@ -57,27 +57,14 @@ struct WalletsListView: View {
                 }
             }
         }
-        .alert(isPresented: $viewModel.alertPresented) { () -> Alert in
-            switch viewModel.approval {
-            case .none:
-                Alert(title: Text("Incorrect event"))
-            case .signData:
-                Alert(
-                    title: Text("dApp wants to sign data"),
-                    primaryButton: .default(
-                        Text("Approve"),
-                        action: { viewModel.approveSignData() }
-                    ),
-                    secondaryButton: .default(
-                        Text("Reject"),
-                        action: { viewModel.rejectSignData() }
-                    )
-                )
-            }
-        }
         .sheet(item: $viewModel.event) { event in
-            WalletTransactionRequestView(viewModel: .init(request: event.transactionRequest))
-                .automaticHeightPresentationDetents()
+            if let transactionRequest = event.transactionRequest {
+                WalletTransactionRequestView(viewModel: .init(request: transactionRequest))
+                    .automaticHeightPresentationDetents()
+            } else if let signDataRequest = event.signDataRequest {
+                WalletSignDataRequestView(viewModel: .init(request: signDataRequest))
+                    .automaticHeightPresentationDetents()
+            }
         }
     }
 }
