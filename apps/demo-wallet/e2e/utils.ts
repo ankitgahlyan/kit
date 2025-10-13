@@ -208,8 +208,9 @@ export async function getTestCaseData(
 }> {
     try {
         const testCaseData = await allureClient.getTestCaseById(allureId);
+        console.log('DEBUG: test case name:', testCaseData.name);
         const isPositiveCase = !String(testCaseData.name).toLowerCase().includes('error');
-
+        console.log('DEBUG: isPositiveCase:', isPositiveCase);
         return {
             isPositiveCase,
             ...testCaseData,
