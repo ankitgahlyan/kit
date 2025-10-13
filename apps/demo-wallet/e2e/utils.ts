@@ -1,3 +1,7 @@
+import { createComponentLogger } from '../src/utils/logger';
+
+const log = createComponentLogger('Allure');
+
 interface TokenResponse {
     access_token: string;
     token_type: string;
@@ -127,7 +131,7 @@ export class AllureApiClient {
     /**
      * Выполняет авторизованный запрос к Allure API
      */
-    private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    private async makeRequest(endpoint: string, options: { headers?: Record<string, string> } = {}): Promise<Response> {
         const token = await this.getValidToken();
 
         const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
@@ -150,7 +154,7 @@ export class AllureApiClient {
     /**
      * Получает информацию о тест-кейсе по allureId
      */
-    async getTestCase(allureId: string): Promise<any> {
+    async getTestCase(allureId: string): Promise<unknown> {
         const response = await this.makeRequest(`/api/rs/testcase/allureId/${allureId}`);
         return await response.json();
     }
@@ -158,7 +162,7 @@ export class AllureApiClient {
     /**
      * Получает информацию о проекте
      */
-    async getProject(): Promise<any> {
+    async getProject(): Promise<unknown> {
         const response = await this.makeRequest(`/api/rs/project/${this.config.projectId}`);
         return await response.json();
     }
@@ -166,7 +170,7 @@ export class AllureApiClient {
     /**
      * Получает список тест-планов
      */
-    async getTestPlans(): Promise<any> {
+    async getTestPlans(): Promise<unknown> {
         const response = await this.makeRequest(`/api/rs/project/${this.config.projectId}/testplan`);
         return await response.json();
     }
@@ -176,7 +180,7 @@ export class AllureApiClient {
      * @param id - ID тест-кейса
      * @returns Promise с данными тест-кейса
      */
-    async getTestCaseById(id: string): Promise<any> {
+    async getTestCaseById(id: string): Promise<unknown> {
         const response = await this.makeRequest(`/api/testcase/${id}`);
         return await response.json();
     }
@@ -208,15 +212,20 @@ export async function getTestCaseData(
 }> {
     try {
         const testCaseData = await allureClient.getTestCaseById(allureId);
-        console.log('DEBUG: test case name:', testCaseData.name);
+        if (typeof testCaseData !== 'object' || testCaseData === null || !('name' in testCaseData)) {
+            throw new Error('Test case data is not an object');
+        }
         const isPositiveCase = !String(testCaseData.name).toLowerCase().includes('error');
-        console.log('DEBUG: isPositiveCase:', isPositiveCase);
         return {
             isPositiveCase,
             ...testCaseData,
+        } as unknown as {
+            precondition: string;
+            expectedResult: string;
+            isPositiveCase: boolean;
         };
     } catch (error) {
-        console.error('Error getting test case data:', error);
+        log.error('Error getting test case data:', error);
         throw error;
     }
 }

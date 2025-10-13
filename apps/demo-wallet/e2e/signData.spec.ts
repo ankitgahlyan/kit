@@ -36,11 +36,11 @@ async function runSignDataTest(
     }
     let precondition: string = '';
     let expectedResult: string = '';
-    let isPositiveCase: boolean = true;
+    // let isPositiveCase: boolean = true;
 
-    if (allureId && allureClient) {
+    if (testAllureId && allureClient) {
         try {
-            const testCaseData = await getTestCaseData(allureClient, allureId);
+            const testCaseData = await getTestCaseData(allureClient, testAllureId);
             precondition = testCaseData.precondition;
             expectedResult = testCaseData.expectedResult;
             //isPositiveCase = testCaseData.isPositiveCase; will use it for negative cases later

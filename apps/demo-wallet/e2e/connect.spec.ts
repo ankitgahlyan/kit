@@ -8,9 +8,9 @@ import type { TestFixture } from './qa';
 import { AllureApiClient, createAllureConfig, getTestCaseData, extractAllureId } from './utils';
 config();
 
-const feature = {
-    jsBridge: Boolean(process.env.E2E_JS_BRIDGE),
-};
+// const feature = {
+//     jsBridge: Boolean(process.env.E2E_JS_BRIDGE),
+// };
 const test = testWithDemoWalletFixture({
     appUrl: process.env.DAPP_URL ?? 'https://allure-test-runner.vercel.app/e2e',
 });

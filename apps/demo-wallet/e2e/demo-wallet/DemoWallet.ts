@@ -65,9 +65,9 @@ export class DemoWallet extends WalletApp {
         await modal.waitFor({ state: 'detached', timeout });
         await this.close();
     }
-    
+
     async sendTransaction(isPositiveCase: boolean, confirm: boolean): Promise<void> {
-        const app = await this.open();
+        await this.open();
         if (isPositiveCase) {
             await this.accept(confirm);
         }
