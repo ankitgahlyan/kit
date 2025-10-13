@@ -22,13 +22,16 @@ public struct DAppView: View {
                     .textLG(weight: .semibold)
                     .foregroundStyle(Color.TON.gray900)
                     .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 Text(dAppInfo.url?.absoluteString ?? "")
                     .textSM()
                     .foregroundStyle(Color.TON.gray500)
                     .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .widget(style: .block(.regular))
     }
 }

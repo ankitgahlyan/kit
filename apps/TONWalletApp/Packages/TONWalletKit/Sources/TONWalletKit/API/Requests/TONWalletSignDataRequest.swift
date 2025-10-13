@@ -12,6 +12,7 @@ public class TONWalletSignDataRequest {
     let event: SignDataRequestEvent
     
     public var dAppInfo: DAppInfo? { event.dAppInfo }
+    public var walletAddress: String? { event.walletAddress }
     
     init(
         walletKit: any JSDynamicObject,

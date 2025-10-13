@@ -33,24 +33,6 @@ struct WalletDAppConnectionView: View {
             )
             .disabled(viewModel.link.isEmpty)
         }
-        .alert(isPresented: $viewModel.alertPresented) { () -> Alert in
-            switch viewModel.approval {
-            case .none:
-                Alert(title: Text("Incorrect event"))
-            case .connection:
-                Alert(
-                    title: Text("dApp wants to connect"),
-                    primaryButton: .default(
-                        Text("Approve"),
-                        action: { viewModel.approveConnection() }
-                    ),
-                    secondaryButton: .default(
-                        Text("Reject"),
-                        action: { viewModel.rejectConnection() }
-                    )
-                )
-            }
-        }
         .onAppear {
             viewModel.waitForEvent()
         }
