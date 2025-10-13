@@ -1,8 +1,17 @@
 // Wallet management with validation and persistence
 
-import type { WalletInterface } from '../types';
+import { keyPairFromSeed } from '@ton/crypto';
+
+import type {
+    WalletInitConfigMnemonicInterface,
+    WalletInitConfigPrivateKeyInterface,
+    WalletInitConfigSignerInterface,
+    WalletInterface,
+} from '../types';
 import type { StorageAdapter } from '../types/internal';
-import { WalletInitInterface } from '../types/wallet';
+import { createWalletInitConfigSigner, WalletInitInterface } from '../types/wallet';
+import { MnemonicToKeyPair } from '../utils/mnemonic';
+import { createWalletSigner } from '../utils/sign';
 import { validateWallet } from '../validation';
 import { globalLogger } from './Logger';
 
@@ -162,4 +171,30 @@ export class WalletManager {
     //         logger.warn('Failed to persist wallets to storage', { error });
     //     }
     // }
+}
+
+export async function CreateSignerFromMnemonic(
+    config: WalletInitConfigMnemonicInterface,
+): Promise<WalletInitConfigSignerInterface> {
+    const keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
+    const publicKey = keyPair.publicKey;
+    const signer = createWalletSigner(keyPair.secretKey);
+    return createWalletInitConfigSigner({
+        publicKey,
+        version: config.version,
+        network: config.network,
+        sign: signer,
+    });
+}
+
+export async function CreateSignerFromPrivateKey(
+    config: WalletInitConfigPrivateKeyInterface,
+): Promise<WalletInitConfigSignerInterface> {
+    const keyPair = await keyPairFromSeed(Buffer.from(config.privateKey));
+    return createWalletInitConfigSigner({
+        publicKey: keyPair.publicKey,
+        version: config.version,
+        network: config.network,
+        sign: createWalletSigner(keyPair.secretKey),
+    });
 }

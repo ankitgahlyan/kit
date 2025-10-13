@@ -11,7 +11,6 @@ import {
     storeMessage,
     storeStateInit,
 } from '@ton/core';
-import { keyPairFromSeed } from '@ton/crypto';
 import { external, internal } from '@ton/core';
 import { CHAIN, toHexString } from '@tonconnect/protocol';
 
@@ -19,22 +18,12 @@ import { WalletV5, WalletId } from './WalletV5R1';
 import { WalletV5R1CodeCell } from './WalletV5R1.source';
 import { globalLogger } from '../../core/Logger';
 import { WalletKitError, ERROR_CODES } from '../../errors';
-import { createWalletSigner, FakeSignature } from '../../utils/sign';
+import { FakeSignature } from '../../utils/sign';
 import { formatWalletAddress } from '../../utils/address';
-import { MnemonicToKeyPair } from '../../utils/mnemonic';
 import { CallForSuccess } from '../../utils/retry';
 import { ConnectTransactionParamContent } from '../../types/internal';
 import { ActionSendMsg, packActionsList } from './actions';
-import {
-    WalletInitInterface,
-    WalletInitConfigMnemonicInterface,
-    WalletInitConfigPrivateKeyInterface,
-    WalletInitConfigSignerInterface,
-    isWalletInitConfigSigner,
-    isWalletInitConfigMnemonic,
-    isWalletInitConfigPrivateKey,
-    WalletSigner,
-} from '../../types/wallet';
+import { WalletInitInterface, WalletInitConfigSignerInterface, WalletSigner } from '../../types/wallet';
 import { ApiClient } from '../../types/toncenter/ApiClient';
 import { Uint8ArrayToBigInt } from '../../utils/base64';
 import { PrepareSignDataResult } from '../../utils/signData/sign';
@@ -331,36 +320,41 @@ export class WalletV5R1Adapter implements WalletInitInterface {
  * Utility function to create WalletV5R1 from any supported configuration
  */
 export async function createWalletV5R1(
-    config: WalletInitConfigMnemonicInterface | WalletInitConfigPrivateKeyInterface | WalletInitConfigSignerInterface,
+    config: WalletInitConfigSignerInterface,
     options: {
         tonClient: ApiClient;
     },
 ): Promise<WalletInitInterface> {
-    let publicKey: Uint8Array;
-    let signer: WalletSigner;
-    if (isWalletInitConfigMnemonic(config)) {
-        const keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
-        publicKey = keyPair.publicKey;
-        signer = createWalletSigner(keyPair.secretKey);
-    } else if (isWalletInitConfigPrivateKey(config)) {
-        if (typeof config.privateKey === 'string') {
-            const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
-            publicKey = keyPair.publicKey;
-            signer = createWalletSigner(keyPair.secretKey);
-        } else {
-            const keyPair = keyPairFromSeed(config.privateKey as Buffer);
-            publicKey = keyPair.publicKey;
-            signer = createWalletSigner(config.privateKey);
-        }
-    } else if (isWalletInitConfigSigner(config)) {
-        publicKey =
-            typeof config.publicKey === 'string'
-                ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
-                : config.publicKey;
-        signer = config.sign;
-    } else {
-        throw new Error('Unsupported wallet configuration format');
-    }
+    // let publicKey: Uint8Array;
+    // let signer: WalletSigner;
+    // if (isWalletInitConfigMnemonic(config)) {
+    //     const keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
+    //     publicKey = keyPair.publicKey;
+    //     signer = createWalletSigner(keyPair.secretKey);
+    // } else if (isWalletInitConfigPrivateKey(config)) {
+    //     if (typeof config.privateKey === 'string') {
+    //         const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
+    //         publicKey = keyPair.publicKey;
+    //         signer = createWalletSigner(keyPair.secretKey);
+    //     } else {
+    //         const keyPair = keyPairFromSeed(config.privateKey as Buffer);
+    //         publicKey = keyPair.publicKey;
+    //         signer = createWalletSigner(config.privateKey);
+    //     }
+    // } else if (isWalletInitConfigSigner(config)) {
+    //     publicKey =
+    //         typeof config.publicKey === 'string'
+    //             ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
+    //             : config.publicKey;
+    //     signer = config.sign;
+    // } else {
+    //     throw new Error('Unsupported wallet configuration format');
+    // }
+    const publicKey =
+        typeof config.publicKey === 'string'
+            ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
+            : config.publicKey;
+    const signer = config.sign;
 
     return new WalletV5R1Adapter({
         publicKey: publicKey,

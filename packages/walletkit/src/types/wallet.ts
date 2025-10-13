@@ -43,11 +43,11 @@ export function createWalletInitConfigMnemonic(
     };
 }
 
-export function isWalletInitConfigMnemonic(
-    config: WalletInitConfig,
-): config is ReturnType<typeof createWalletInitConfigMnemonic> {
-    return 'mnemonic' in config;
-}
+// export function isWalletInitConfigMnemonic(
+//     config: WalletInitConfig,
+// ): config is ReturnType<typeof createWalletInitConfigMnemonic> {
+//     return 'mnemonic' in config;
+// }
 
 export interface WalletInitConfigPrivateKeyInterface {
     privateKey: string | Uint8Array;
@@ -67,11 +67,11 @@ export function createWalletInitConfigPrivateKey(
     };
 }
 
-export function isWalletInitConfigPrivateKey(
-    config: WalletInitConfig,
-): config is ReturnType<typeof createWalletInitConfigPrivateKey> {
-    return 'privateKey' in config;
-}
+// export function isWalletInitConfigPrivateKey(
+//     config: WalletInitConfig,
+// ): config is ReturnType<typeof createWalletInitConfigPrivateKey> {
+//     return 'privateKey' in config;
+// }
 
 export interface WalletInitConfigSignerInterface {
     publicKey: Uint8Array | Hash;
@@ -95,11 +95,11 @@ export function createWalletInitConfigSigner(params: WalletInitConfigSignerInter
     };
 }
 
-export function isWalletInitConfigSigner(
-    config: WalletInitConfig,
-): config is ReturnType<typeof createWalletInitConfigSigner> {
-    return 'publicKey' in config && 'sign' in config;
-}
+// export function isWalletInitConfigSigner(
+//     config: WalletInitConfig,
+// ): config is ReturnType<typeof createWalletInitConfigSigner> {
+//     return 'publicKey' in config && 'sign' in config;
+// }
 
 /**
  * Core wallet interface that all wallets must implement
@@ -188,11 +188,10 @@ export interface WalletNftInterface {
     getNft(address: Address | string): Promise<NftItem | null>;
 }
 
-export type WalletInitConfig =
-    | WalletInitInterface
-    | WalletInitConfigMnemonicInterface
-    | WalletInitConfigPrivateKeyInterface
-    | WalletInitConfigSignerInterface;
+export type WalletInitConfig = WalletInitInterface | WalletInitConfigSignerInterface;
+// | WalletInitConfigMnemonicInterface
+// | WalletInitConfigPrivateKeyInterface
+// | WalletInitConfigSignerInterface;
 
 export type WalletInterface = WalletInitInterface & WalletTonInterface & WalletJettonInterface & WalletNftInterface;
 

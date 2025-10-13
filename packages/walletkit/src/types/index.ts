@@ -23,9 +23,6 @@ export {
     createWalletInitConfigMnemonic,
     createWalletInitConfigPrivateKey,
     createWalletInitConfigSigner,
-    isWalletInitConfigMnemonic,
-    isWalletInitConfigPrivateKey,
-    isWalletInitConfigSigner,
 } from './wallet';
 
 // Transaction types (from validation module)

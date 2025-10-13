@@ -8,7 +8,6 @@ import {
     ExtensionStorageAdapter,
     type WalletInitConfig,
     createWalletInitConfigSigner,
-    createWalletInitConfigMnemonic,
     MnemonicToKeyPair,
     DefaultSignature,
     CHAIN,
@@ -17,6 +16,7 @@ import {
     createWalletManifest,
     type ToncenterTransaction,
     SEND_TRANSACTION_ERROR_CODES,
+    CreateSignerFromMnemonic,
 } from '@ton/walletkit';
 import { createWalletInitConfigLedger, createLedgerPath, createWalletV4R2Ledger } from '@ton/v4ledger-adapter';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
@@ -166,7 +166,7 @@ async function createWalletConfig(params: {
             if (!mnemonic) {
                 throw new Error('Mnemonic required for mnemonic wallet type');
             }
-            return createWalletInitConfigMnemonic({
+            return CreateSignerFromMnemonic({
                 mnemonic,
                 version: version,
                 mnemonicType: 'ton',
