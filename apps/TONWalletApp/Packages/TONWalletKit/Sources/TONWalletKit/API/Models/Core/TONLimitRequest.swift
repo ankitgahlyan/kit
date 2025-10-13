@@ -1,7 +1,7 @@
 //  TONLimitRequest.swift
 //  TONWalletKit
 //
-//  Created by AI on 14.10.2025.
+//  Created by Nikita Rodionov on 14.10.2025.
 //
 
 import Foundation

@@ -7,61 +7,23 @@
 import Foundation
 
 public struct TONMoneyFlowRow: Codable {
-    public var type: TONAssetType
-    public var jetton: String?
-    public var from: String
-    public var to: String
-    public var amount: String
-    
-    public init(
-        type: TONAssetType,
-        jetton: String? = nil,
-        from: String,
-        to: String,
-        amount: String
-    ) {
-        self.type = type
-        self.jetton = jetton
-        self.from = from
-        self.to = to
-        self.amount = amount
-    }
+    public let type: TONAssetType
+    public let jetton: String?
+    public let from: String?
+    public let to: String?
+    public let amount: String?
 }
 
 public struct TONMoneyFlowSelf: Codable {
-    public var type: TONAssetType
-    public var jetton: String?
-    public var amount: String
-    
-    public init(
-        type: TONAssetType,
-        jetton: String? = nil,
-        amount: String
-    ) {
-        self.type = type
-        self.jetton = jetton
-        self.amount = amount
-    }
+    public let type: TONAssetType
+    public let jetton: String?
+    public let amount: String
 }
 
 public struct TONMoneyFlow: Codable {
-    public var outputs: String
-    public var inputs: String
-    public var allJettonTransfers: [TONMoneyFlowRow]
-    public var ourTransfers: [TONMoneyFlowSelf]
-    public var ourAddress: String?
-
-    public init(
-        outputs: String,
-        inputs: String,
-        allJettonTransfers: [TONMoneyFlowRow],
-        ourTransfers: [TONMoneyFlowSelf],
-        ourAddress: String?
-    ) {
-        self.outputs = outputs
-        self.inputs = inputs
-        self.allJettonTransfers = allJettonTransfers
-        self.ourTransfers = ourTransfers
-        self.ourAddress = ourAddress
-    }
+    public let outputs: String?
+    public let inputs: String?
+    public let allJettonTransfers: [TONMoneyFlowRow]?
+    public let ourTransfers: [TONMoneyFlowSelf]?
+    public let ourAddress: String?
 }

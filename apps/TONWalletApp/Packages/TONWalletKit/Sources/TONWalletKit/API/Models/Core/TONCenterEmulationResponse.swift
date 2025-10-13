@@ -1,4 +1,4 @@
-//  TONToncenterEmulationResponse.swift
+//  TONCenterEmulationResponse.swift
 //  TONWalletKit
 //
 //  Created by Nikita Rodionov on 13.10.2025.
@@ -6,17 +6,17 @@
 
 import Foundation
 
-public struct TONToncenterEmulationResponse: Codable {
-    public var mcBlockSeqno: Int
-    public var trace: TONEmulationTraceNode
-    public var transactions: [String: TONToncenterTransaction]
-    public var actions: [TONEmulationAction]
-    public var codeCells: [String: String]
-    public var dataCells: [String: String]
-    public var addressBook: [String: TONEmulationAddressBookEntry]
-    public var metadata: [String: TONEmulationAddressMetadata]
-    public var randSeed: String
-    public var isIncomplete: Bool
+public struct TONCenterEmulationResponse: Codable {
+    public let mcBlockSeqno: Int?
+    public let trace: TONEmulationTraceNode?
+    public let transactions: [String: TONCenterTransaction]?
+    public let actions: [TONEmulationAction]?
+    public let codeCells: [String: String]?
+    public let dataCells: [String: String]?
+    public let addressBook: [String: TONEmulationAddressBookEntry]?
+    public let metadata: [String: TONEmulationAddressMetadata]?
+    public let randSeed: String?
+    public let isIncomplete: Bool?
 
     enum CodingKeys: String, CodingKey {
         case mcBlockSeqno = "mc_block_seqno"
@@ -33,9 +33,9 @@ public struct TONToncenterEmulationResponse: Codable {
 }
 
 public struct TONEmulationTraceNode: Codable {
-    public var txHash: String
-    public var inMsgHash: String?
-    public var children: [TONEmulationTraceNode]
+    public let txHash: String?
+    public let inMsgHash: String?
+    public let children: [TONEmulationTraceNode]?
 
     enum CodingKeys: String, CodingKey {
         case txHash = "tx_hash"
@@ -44,27 +44,27 @@ public struct TONEmulationTraceNode: Codable {
     }
 }
 
-public struct TONToncenterTransaction: Codable {
-    public var account: String
-    public var hash: String
-    public var lt: String
-    public var now: Int
-    public var mcBlockSeqno: Int
-    public var traceExternalHash: String
-    public var prevTransHash: String?
-    public var prevTransLt: String?
-    public var origStatus: String
-    public var endStatus: String
-    public var totalFees: String
-    public var totalFeesExtraCurrencies: [String: String]
-    public var description: TONEmulationTransactionDescription
-    public var blockRef: TONEmulationBlockRef
-    public var inMsg: TONEmulationMessage?
-    public var outMsgs: [TONEmulationMessage]
-    public var accountStateBefore: TONEmulationAccountState
-    public var accountStateAfter: TONEmulationAccountState
-    public var emulated: Bool
-    public var traceId: String?
+public struct TONCenterTransaction: Codable {
+    public let account: String?
+    public let hash: String?
+    public let lt: String?
+    public let now: Int?
+    public let mcBlockSeqno: Int?
+    public let traceExternalHash: String?
+    public let prevTransHash: String?
+    public let prevTransLt: String?
+    public let origStatus: String?
+    public let endStatus: String?
+    public let totalFees: String?
+    public let totalFeesExtraCurrencies: [String: String]?
+    public let description: TONEmulationTransactionDescription?
+    public let blockRef: TONEmulationBlockRef?
+    public let inMsg: TONEmulationMessage?
+    public let outMsgs: [TONEmulationMessage]?
+    public let accountStateBefore: TONEmulationAccountState?
+    public let accountStateAfter: TONEmulationAccountState?
+    public let emulated: Bool?
+    public let traceId: String?
 
     enum CodingKeys: String, CodingKey {
         case account
@@ -91,22 +91,22 @@ public struct TONToncenterTransaction: Codable {
 }
 
 public struct TONEmulationBlockRef: Codable {
-    public var workchain: Int
-    public var shard: String
-    public var seqno: Int
+    public let workchain: Int?
+    public let shard: String?
+    public let seqno: Int?
 }
 
 public struct TONEmulationTransactionDescription: Codable {
-    public var type: String
-    public var aborted: Bool
-    public var destroyed: Bool
-    public var creditFirst: Bool
-    public var isTock: Bool
-    public var installed: Bool
-    public var storagePh: TONEmulationStoragePh
-    public var creditPh: TONEmulationCreditPh?
-    public var computePh: TONEmulationComputePh
-    public var action: TONEmulationActionDescription
+    public let type: String
+    public let aborted: Bool
+    public let destroyed: Bool
+    public let creditFirst: Bool
+    public let isTock: Bool
+    public let installed: Bool
+    public let storagePh: TONEmulationStoragePh
+    public let creditPh: TONEmulationCreditPh
+    public let computePh: TONEmulationComputePh
+    public let action: TONEmulationActionDescription
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -123,8 +123,8 @@ public struct TONEmulationTransactionDescription: Codable {
 }
 
 public struct TONEmulationStoragePh: Codable {
-    public var storageFeesCollected: String
-    public var statusChange: String
+    public let storageFeesCollected: String?
+    public let statusChange: String?
 
     enum CodingKeys: String, CodingKey {
         case storageFeesCollected = "storage_fees_collected"
@@ -133,23 +133,23 @@ public struct TONEmulationStoragePh: Codable {
 }
 
 public struct TONEmulationCreditPh: Codable {
-    public var credit: String
+    public let credit: String?
 }
 
 public struct TONEmulationComputePh: Codable {
-    public var skipped: Bool
-    public var success: Bool
-    public var msgStateUsed: Bool
-    public var accountActivated: Bool
-    public var gasFees: String
-    public var gasUsed: String
-    public var gasLimit: String
-    public var gasCredit: String?
-    public var mode: Int
-    public var exitCode: Int
-    public var vmSteps: Int
-    public var vmInitStateHash: String
-    public var vmFinalStateHash: String
+    public let skipped: Bool?
+    public let success: Bool?
+    public let msgStateUsed: Bool?
+    public let accountActivated: Bool?
+    public let gasFees: String?
+    public let gasUsed: String?
+    public let gasLimit: String?
+    public let gasCredit: String?
+    public let mode: Int?
+    public let exitCode: Int?
+    public let vmSteps: Int?
+    public let vmInitStateHash: String?
+    public let vmFinalStateHash: String?
 
     enum CodingKeys: String, CodingKey {
         case skipped
@@ -169,19 +169,19 @@ public struct TONEmulationComputePh: Codable {
 }
 
 public struct TONEmulationActionDescription: Codable {
-    public var success: Bool
-    public var valid: Bool
-    public var noFunds: Bool
-    public var statusChange: String
-    public var totalFwdFees: String?
-    public var totalActionFees: String?
-    public var resultCode: Int
-    public var totActions: Int
-    public var specActions: Int
-    public var skippedActions: Int
-    public var msgsCreated: Int
-    public var actionListHash: String
-    public var totMsgSize: TONEmulationMsgSize
+    public let success: Bool?
+    public let valid: Bool?
+    public let noFunds: Bool?
+    public let statusChange: String?
+    public let totalFwdFees: String?
+    public let totalActionFees: String?
+    public let resultCode: Int?
+    public let totActions: Int?
+    public let specActions: Int?
+    public let skippedActions: Int?
+    public let msgsCreated: Int?
+    public let actionListHash: String?
+    public let totMsgSize: TONEmulationMsgSize?
 
     enum CodingKeys: String, CodingKey {
         case success
@@ -201,28 +201,28 @@ public struct TONEmulationActionDescription: Codable {
 }
 
 public struct TONEmulationMsgSize: Codable {
-    public var cells: String
-    public var bits: String
+    public let cells: String?
+    public let bits: String?
 }
 
 public struct TONEmulationMessage: Codable {
-    public var hash: String
-    public var source: String?
-    public var destination: String
-    public var value: String?
-    public var valueExtraCurrencies: [String: String]
-    public var fwdFee: String?
-    public var ihrFee: String?
-    public var createdLt: String?
-    public var createdAt: String?
-    public var opcode: String?
-    public var ihrDisabled: Bool?
-    public var bounce: Bool?
-    public var bounced: Bool?
-    public var importFee: String?
-    public var messageContent: TONEmulationMessageContent
-    public var initState: String?
-    public var hashNorm: String?
+    public let hash: String?
+    public let source: String?
+    public let destination: String
+    public let value: String?
+    public let valueExtraCurrencies: [String: String]?
+    public let fwdFee: String?
+    public let ihrFee: String?
+    public let createdLt: String?
+    public let createdAt: String?
+    public let opcode: String?
+    public let ihrDisabled: Bool?
+    public let bounce: Bool?
+    public let bounced: Bool?
+    public let importFee: String?
+    public let messageContent: TONEmulationMessageContent?
+    public let initState: String?
+    public let hashNorm: String?
 
     enum CodingKeys: String, CodingKey {
         case hash
@@ -246,19 +246,19 @@ public struct TONEmulationMessage: Codable {
 }
 
 public struct TONEmulationMessageContent: Codable {
-    public var hash: String
-    public var body: String
-    public var decoded: String?
+    public let hash: String?
+    public let body: String?
+    public let decoded: String?
 }
 
 public struct TONEmulationAccountState: Codable {
-    public var hash: String
-    public var balance: String
-    public var extraCurrencies: [String: String]?
-    public var accountStatus: String
-    public var frozenHash: String?
-    public var dataHash: String?
-    public var codeHash: String?
+    public let hash: String?
+    public let balance: String?
+    public let extraCurrencies: [String: String]?
+    public let accountStatus: String?
+    public let frozenHash: String?
+    public let dataHash: String?
+    public let codeHash: String?
 
     enum CodingKeys: String, CodingKey {
         case hash
@@ -272,21 +272,21 @@ public struct TONEmulationAccountState: Codable {
 }
 
 public struct TONEmulationAction: Codable {
-    public var traceId: String?
-    public var actionId: String
-    public var startLt: String
-    public var endLt: String
-    public var startUtime: Int
-    public var endUtime: Int
-    public var traceEndLt: String
-    public var traceEndUtime: Int
-    public var traceMcSeqnoEnd: Int
-    public var transactions: [String]
-    public var success: Bool
-    public var type: String
-    public var traceExternalHash: String
-    public var accounts: [String]
-    public var details: TONEmulationActionDetails
+    public let traceId: String?
+    public let actionId: String?
+    public let startLt: String?
+    public let endLt: String?
+    public let startUtime: Int?
+    public let endUtime: Int?
+    public let traceEndLt: String?
+    public let traceEndUtime: Int?
+    public let traceMcSeqnoEnd: Int?
+    public let transactions: [String]?
+    public let success: Bool?
+    public let type: String?
+    public let traceExternalHash: String?
+    public let accounts: [String]?
+    public let details: TONEmulationActionDetails?
 
     enum CodingKeys: String, CodingKey {
         case traceId = "trace_id"
@@ -346,13 +346,13 @@ public enum TONEmulationActionDetails: Codable {
 }
 
 public struct TONEmulationJettonSwapDetails: Codable {
-    public var dex: String
-    public var sender: String
-    public var assetIn: String
-    public var assetOut: String
-    public var dexIncomingTransfer: TONEmulationJettonTransfer
-    public var dexOutgoingTransfer: TONEmulationJettonTransfer
-    public var peerSwaps: [String] // unknown[]
+    public let dex: String?
+    public let sender: String?
+    public let assetIn: String?
+    public let assetOut: String?
+    public let dexIncomingTransfer: TONEmulationJettonTransfer?
+    public let dexOutgoingTransfer: TONEmulationJettonTransfer?
+    public let peerSwaps: [String]?
 
     enum CodingKeys: String, CodingKey {
         case dex
@@ -366,12 +366,12 @@ public struct TONEmulationJettonSwapDetails: Codable {
 }
 
 public struct TONEmulationJettonTransfer: Codable {
-    public var asset: String
-    public var source: String
-    public var destination: String
-    public var sourceJettonWallet: String?
-    public var destinationJettonWallet: String?
-    public var amount: String
+    public let asset: String?
+    public let source: String?
+    public let destination: String?
+    public let sourceJettonWallet: String?
+    public let destinationJettonWallet: String?
+    public let amount: String?
 
     enum CodingKeys: String, CodingKey {
         case asset
@@ -384,11 +384,11 @@ public struct TONEmulationJettonTransfer: Codable {
 }
 
 public struct TONEmulationCallContractDetails: Codable {
-    public var opcode: String
-    public var source: String
-    public var destination: String
-    public var value: String
-    public var extraCurrencies: [String: String]?
+    public let opcode: String?
+    public let source: String?
+    public let destination: String?
+    public let value: String?
+    public let extraCurrencies: [String: String]?
 
     enum CodingKeys: String, CodingKey {
         case opcode
@@ -400,8 +400,8 @@ public struct TONEmulationCallContractDetails: Codable {
 }
 
 public struct TONEmulationAddressBookEntry: Codable {
-    public var userFriendly: String
-    public var domain: String?
+    public let userFriendly: String?
+    public let domain: String?
 
     enum CodingKeys: String, CodingKey {
         case userFriendly = "user_friendly"
@@ -410,8 +410,8 @@ public struct TONEmulationAddressBookEntry: Codable {
 }
 
 public struct TONEmulationAddressMetadata: Codable {
-    public var isIndexed: Bool
-    public var tokenInfo: [TONEmulationTokenInfo]?
+    public let isIndexed: Bool?
+    public let tokenInfo: [TONEmulationTokenInfo]?
 
     enum CodingKeys: String, CodingKey {
         case isIndexed = "is_indexed"
@@ -420,20 +420,20 @@ public struct TONEmulationAddressMetadata: Codable {
 }
 
 public struct TONEmulationTokenInfo: Codable {
-    public var valid: Bool
-    public var type: String
-    public var extra: TONEmulationTokenInfoExtra?
+    public let valid: Bool?
+    public let type: String?
+    public let extra: TONEmulationTokenInfoExtra?
 }
 
 public struct TONEmulationTokenInfoExtra: Codable {
-    public var balance: String?
-    public var jetton: String?
-    public var owner: String?
-    public var name: String?
-    public var symbol: String?
-    public var description: String?
-    public var image: String?
-    public var decimals: String?
-    public var uri: String?
-    public var websites: [String]?
+    public let balance: String?
+    public let jetton: String?
+    public let owner: String?
+    public let name: String?
+    public let symbol: String?
+    public let description: String?
+    public let image: String?
+    public let decimals: String?
+    public let uri: String?
+    public let websites: [String]?
 }

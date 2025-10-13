@@ -1,7 +1,7 @@
 //  TONJettonTransferParams.swift
 //  TONWalletKit
 //
-//  Created by AI on 13.10.2025.
+//  Created by Nikita Rodionov on 13.10.2025.
 //
 
 import Foundation

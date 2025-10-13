@@ -43,12 +43,10 @@ public enum TONTransactionPreview: Codable {
 }
 
 public struct TONTransactionPreviewEmulationError: Codable {
-    public let result: String = "error"
     public let emulationError: TONEmulationError
 }
 
 public struct TONTransactionPreviewEmulationResult: Codable {
-    public let result: String = "success"
     public let moneyFlow: TONMoneyFlow
     public let emulationResult: TONToncenterEmulationResponse
 }
