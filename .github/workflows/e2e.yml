@@ -77,7 +77,7 @@ jobs:
         WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
         VITE_BRIDGE_URL: 'http://localhost:8081/bridge'
         ALLURE_BASE_URL: ${{ secrets.ALLURE_BASE_URL }}
-        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN }}
+        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN_CI }}
         ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
 
     - name: Run extension e2e specs
@@ -87,7 +87,7 @@ jobs:
         E2E_WALLET_SOURCE_EXTENSION: "${{ github.workspace }}/apps/demo-wallet/dist-extension"
         E2E_JS_BRIDGE: true
         ALLURE_BASE_URL: ${{ secrets.ALLURE_BASE_URL }}
-        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN }}
+        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN_CI }}
         ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
 
     # - name: Send report
