@@ -66,34 +66,34 @@ async function runSendTransactionTest(
     await expect(app.getByTestId('sendTransactionValidation')).toHaveText('Validation Passed');
 }
 
-test('[from] Error if invalid value @allureId(1848)', async ({ wallet, app, widget }) => {
+test('[from] Error if invalid value @allureId(2222)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in bounceable format @allureId(1878)', async ({ wallet, app, widget }) => {
+test('[from] Success if in bounceable format @allureId(2252)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in HEX format @allureId(1855)', async ({ wallet, app, widget }) => {
+test('[from] Success if in HEX format @allureId(2229)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in non-bounceable format @allureId(1862)', async ({ wallet, app, widget }) => {
+test('[from] Success if in non-bounceable format @allureId(2236)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[messages] Error if array is empty @allureId(1864)', async ({ wallet, app, widget }) => {
+test('[messages] Error if array is empty @allureId(2238)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if NULL @allureId(1868)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if NULL @allureId(2242)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if less then in 5 minutes @allureId(1851)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if less then in 5 minutes @allureId(2225)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if more then in 5 minutes @allureId(1858)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if more then in 5 minutes @allureId(2232)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });

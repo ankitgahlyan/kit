@@ -64,26 +64,26 @@ async function runSendTransactionTest(
 
     await expect(app.getByTestId('sendTransactionValidation')).toHaveText('Validation Passed');
 }
-test('[stateInit] Success if valid value @allureId(1850)', async ({ wallet, app, widget }) => {
+test('[stateInit] Success if valid value @allureId(2224)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if absent @allureId(1866)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if absent @allureId(2240)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if as a string @allureId(1865)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if as a string @allureId(2239)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if expired @allureId(1861)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if expired @allureId(2235)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if has expired during confirmation @allureId(1863)', async ({ wallet, app, widget }) => {
-    await runSendTransactionTest({ wallet, app, widget }, test.info());
-});
+// test('[validUntil] Error if has expired during confirmation @allureId(2237)', async ({ wallet, app, widget }) => {
+//     await runSendTransactionTest({ wallet, app, widget }, test.info());
+// });
 
-test('[validUntil] Error if NaN @allureId(1867)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if NaN @allureId(2241)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });

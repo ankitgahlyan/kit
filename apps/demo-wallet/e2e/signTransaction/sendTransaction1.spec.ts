@@ -67,40 +67,40 @@ async function runSendTransactionTest(
 }
 
 // SendTransaction validation tests
-test('[address] Error if absent @allureId(1847)', async ({ wallet, app, widget }) => {
+test('[address] Error if absent @allureId(2221)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[address] Error if in HEX format @allureId(1870)', async ({ wallet, app, widget }) => {
+test('[address] Error if in HEX format @allureId(2244)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[address] Error if invalid value @allureId(1856)', async ({ wallet, app, widget }) => {
+test('[address] Error if invalid value @allureId(2230)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[address] Success if in bounceable format @allureId(1852)', async ({ wallet, app, widget }) => {
+test('[address] Success if in bounceable format @allureId(2226)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[address] Success if in non-bounceable format @allureId(1853)', async ({ wallet, app, widget }) => {
+test('[address] Success if in non-bounceable format @allureId(2227)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[amount] Error if absent @allureId(1873)', async ({ wallet, app, widget }) => {
+test('[amount] Error if absent @allureId(2247)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
 // Merkle proof/update tests
-test('Send merkle proof @allureId(1916)', async ({ wallet, app, widget }) => {
+test('Send merkle proof @allureId(2256)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('Send merkle update @allureId(1917)', async ({ wallet, app, widget }) => {
+test('Send merkle update @allureId(2257)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
 // Jetton minting tests
-test('Minting Jetton with Deployed Contract @allureId(1899)', async ({ wallet, app, widget }) => {
+test('Minting Jetton with Deployed Contract @allureId(1898)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
