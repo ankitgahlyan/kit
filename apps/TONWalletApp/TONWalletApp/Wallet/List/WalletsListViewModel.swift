@@ -17,42 +17,8 @@ class WalletsListViewModel: ObservableObject {
     
     private var subscribers = Set<AnyCancellable>()
     
-    @Published var alertPresented = false
-    
-    var approval: Approval? {
-        didSet {
-            alertPresented = approval != nil
-        }
-    }
-    
-    var transactionRequest: TONWalletTransactionRequest? {
-        didSet {
-            if transactionRequest == nil {
-                if approval == .transaction {
-                    approval = nil
-                }
-            } else {
-                if approval == nil {
-                    approval = .transaction
-                }
-            }
-        }
-    }
-    
-    var signDataRequest: TONWalletSignDataRequest? {
-        didSet {
-            if signDataRequest == nil {
-                if approval == .signData {
-                    approval = nil
-                }
-            } else {
-                if approval == nil {
-                    approval = .signData
-                }
-            }
-        }
-    }
-    
+    @Published var event: Event?
+
     init(wallets: [WalletViewModel]) {
         self.wallets = wallets
     }
@@ -86,73 +52,13 @@ class WalletsListViewModel: ObservableObject {
             .sink { [weak self] event in
                 switch event {
                 case .transactionRequest(let request):
-                    self?.transactionRequest = request
+                    self?.event = Event(transactionRequest: request)
                 case .signDataRequest(let request):
-                    self?.signDataRequest = request
+                    self?.event = Event(signDataRequest: request)
                 default: ()
                 }
             }
             .store(in: &subscribers)
-    }
-    
-    func approveTransaction() {
-        guard let transactionRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await transactionRequest.approve()
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.transactionRequest = nil
-        }
-    }
-    
-    func rejectTransaction() {
-        guard let transactionRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await transactionRequest.reject(reason: "Test transaction rejection reason")
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.transactionRequest = nil
-        }
-    }
-    
-    func approveSignData() {
-        guard let signDataRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await signDataRequest.approve()
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.signDataRequest = nil
-        }
-    }
-    
-    func rejectSignData() {
-        guard let signDataRequest else {
-            return
-        }
-        
-        Task { [weak self] in
-            do {
-                try await signDataRequest.reject(reason: "Test transaction rejection reason")
-            } catch {
-                debugPrint(error.localizedDescription)
-            }
-            self?.signDataRequest = nil
-        }
     }
     
     private func remove(walletID: WalletViewModel.ID) {
@@ -162,8 +68,17 @@ class WalletsListViewModel: ObservableObject {
 
 extension WalletsListViewModel {
     
-    enum Approval {
-        case transaction
-        case signData
+    struct Event: Identifiable {
+        let id = UUID()
+        let transactionRequest: TONWalletTransactionRequest?
+        let signDataRequest: TONWalletSignDataRequest?
+        
+        init(
+            transactionRequest: TONWalletTransactionRequest? = nil,
+            signDataRequest: TONWalletSignDataRequest? = nil
+        ) {
+            self.transactionRequest = transactionRequest
+            self.signDataRequest = signDataRequest
+        }
     }
 }

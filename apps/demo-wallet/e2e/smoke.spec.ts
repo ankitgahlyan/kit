@@ -1,5 +1,4 @@
-//import * as allure from 'allure-js-commons';
-import { allure } from 'allure-playwright';
+import * as allure from 'allure-js-commons';
 
 import { testWithDemoWalletFixture } from './demo-wallet';
 

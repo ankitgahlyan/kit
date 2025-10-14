@@ -70,31 +70,37 @@ jobs:
         
         echo "🚀 TON Connect Bridge service is now running and accessible at http://localhost:8081/bridge"
       # uses: ton-connect/bridge/actions/local@master
- 
-    - name: Run extension e2e specs
-      run: xvfb-run pnpm --filter demo-wallet e2e
-      env:
-        WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
-        E2E_WALLET_SOURCE_EXTENSION: "${{ github.workspace }}/apps/demo-wallet/dist-extension"
-        E2E_JS_BRIDGE: true
 
     - name: Run web e2e specs
       run: xvfb-run pnpm --filter demo-wallet e2e
       env:
         WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
         VITE_BRIDGE_URL: 'http://localhost:8081/bridge'
-
-    - name: Send report
-      if: always()
-      run: |
-        wget https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O ./allurectl
-        chmod +x ./allurectl
-        ./allurectl upload --endpoint $ALLURE_BASE_URL \
-        --token $ALLURE_API_TOKEN \
-        --project-id $ALLURE_PROJECT_ID \
-        --launch-name "CI for rev:$(git rev-parse --short "$GITHUB_SHA")" \
-        apps/demo-wallet/allure-results
-      env:
         ALLURE_BASE_URL: ${{ secrets.ALLURE_BASE_URL }}
-        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN }}
+        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN_CI }}
         ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
+
+    - name: Run extension e2e specs
+      run: xvfb-run pnpm --filter demo-wallet e2e
+      env:
+        WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
+        E2E_WALLET_SOURCE_EXTENSION: "${{ github.workspace }}/apps/demo-wallet/dist-extension"
+        E2E_JS_BRIDGE: true
+        ALLURE_BASE_URL: ${{ secrets.ALLURE_BASE_URL }}
+        ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN_CI }}
+        ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
+
+    # - name: Send report
+    #   if: always()
+    #   run: |
+    #     wget https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -O ./allurectl
+    #     chmod +x ./allurectl
+    #     ./allurectl upload --endpoint $ALLURE_BASE_URL \
+    #     --token $ALLURE_API_TOKEN \
+    #     --project-id $ALLURE_PROJECT_ID \
+    #     --launch-name "CI for rev:$(git rev-parse --short "$GITHUB_SHA")" \
+    #     apps/demo-wallet/allure-results
+    #   env:
+    #     ALLURE_BASE_URL: ${{ secrets.ALLURE_BASE_URL }}
+    #     ALLURE_API_TOKEN: ${{ secrets.ALLURE_API_TOKEN }}
+    #     ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}

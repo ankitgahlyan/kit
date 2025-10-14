@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 import TONWalletKit
 
 @MainActor
@@ -15,6 +16,8 @@ class WalletConnectionRequestViewModel: ObservableObject {
     
     var dAppInfo: DAppInfo? { request.dAppInfo }
     var permissions: [ConnectRequestEvent.Preview.ConnectPermission] { request.permissions }
+    
+    let dismiss = PassthroughSubject<Void, Never>()
     
     init(request: TONWalletConnectionRequest, wallet: TONWallet) {
         self.request = request
@@ -29,6 +32,7 @@ class WalletConnectionRequestViewModel: ObservableObject {
         Task {
             do {
                 try await request.approve(walletAddress: address)
+                dismiss.send()
             } catch {
                 debugPrint(error.localizedDescription)
             }
@@ -39,6 +43,7 @@ class WalletConnectionRequestViewModel: ObservableObject {
         Task {
             do {
                 try await request.reject()
+                dismiss.send()
             } catch {
                 debugPrint(error.localizedDescription)
             }

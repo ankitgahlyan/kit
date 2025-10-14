@@ -10,6 +10,8 @@ import SwiftUI
 struct WalletConnectionRequestView: View {
     @StateObject var viewModel: WalletConnectionRequestViewModel
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         VStack(spacing: AppSpacing.spacing(4.0)) {
             VStack(spacing: AppSpacing.spacing(2.0)) {
@@ -20,6 +22,7 @@ struct WalletConnectionRequestView: View {
                 Text("A dApp wants to connect to your wallet")
                     .textSM()
                     .foregroundColor(Color.TON.gray600)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             if let dAppInfo = viewModel.dAppInfo {
@@ -39,12 +42,16 @@ struct WalletConnectionRequestView: View {
                             Text(permission.title ?? "")
                                 .textSM(weight: .medium)
                                 .foregroundStyle(Color.TON.gray900)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
                             
                             Text(permission.description ?? "")
                                 .textXS()
                                 .foregroundStyle(Color.TON.gray600)
                                 .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .widget(style: .block(.regular))
                     }
                 }
@@ -55,19 +62,21 @@ struct WalletConnectionRequestView: View {
                 .foregroundStyle(Color.TON.yellow800)
                 .multilineTextAlignment(.leading)
                 .widget(style: .block(.warning))
+                .fixedSize(horizontal: false, vertical: true)
             
             HStack(spacing: AppSpacing.spacing(2.0)) {
                 Button("Reject") {
                     viewModel.reject()
                 }
-                .buttonStyle(TONLinkButtonStyle(type: .secondary))
+                .buttonStyle(TONButtonStyle(type: .secondary))
                 
                 Button("Connect") {
                     viewModel.approve()
                 }
-                .buttonStyle(TONLinkButtonStyle(type: .primary))
+                .buttonStyle(TONButtonStyle(type: .primary))
             }
         }
         .padding(AppSpacing.spacing(4.0))
+        .onReceive(viewModel.dismiss) { dismiss() }
     }
 }
