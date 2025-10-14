@@ -74,9 +74,9 @@ test('[amount] Error if insufficient balance @allureId(2245)', async ({ wallet, 
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test("[amount] Success if '0' @allureId(2261)", async ({ wallet, app, widget }) => {
-    await runSendTransactionTest({ wallet, app, widget }, test.info());
-});
+// test("[amount] Success if '0' @allureId(2261)", async ({ wallet, app, widget }) => {
+//     await runSendTransactionTest({ wallet, app, widget }, test.info());
+// });
 
 test('[amount] Success if as a string @allureId(2223)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());

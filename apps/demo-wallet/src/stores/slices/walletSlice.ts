@@ -38,6 +38,8 @@ const ENV_TON_API_KEY_MAINNET =
 const ENV_TON_API_KEY_TESTNET =
     import.meta.env.VITE_TON_API_TESTNET_KEY ?? 'd852b54d062f631565761042cccea87fa6337c41eb19b075e6c7fb88898a3992';
 
+const DISABLE_NETWORK_SEND = import.meta.env?.VITE_DISABLE_NETWORK_SEND === 'true' || false;
+
 // Initialize wallet kit instance
 function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet'): ITonWalletKit {
     const walletKit = new TonWalletKit({
@@ -57,6 +59,10 @@ function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet'): IT
 
         analytics: {
             enabled: true,
+        },
+
+        dev: {
+            disableNetworkSend: DISABLE_NETWORK_SEND,
         },
     }) as ITonWalletKit;
 

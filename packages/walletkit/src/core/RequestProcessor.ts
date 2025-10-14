@@ -360,7 +360,9 @@ export class RequestProcessor {
     ): Promise<SendRequestResult<{ signedBoc: string }>> {
         try {
             if ('result' in event) {
-                await CallForSuccess(() => this.client.sendBoc(Buffer.from(event.result.signedBoc, 'base64')));
+                if (!this.walletKitOptions.dev?.disableNetworkSend) {
+                    await CallForSuccess(() => this.client.sendBoc(Buffer.from(event.result.signedBoc, 'base64')));
+                }
 
                 // Send approval response
                 const response: SendTransactionRpcResponseSuccess = {
@@ -395,7 +397,9 @@ export class RequestProcessor {
             } else {
                 const signedBoc = await this.signTransaction(event);
 
-                await CallForSuccess(() => this.client.sendBoc(Buffer.from(signedBoc, 'base64')));
+                if (!this.walletKitOptions.dev?.disableNetworkSend) {
+                    await CallForSuccess(() => this.client.sendBoc(Buffer.from(signedBoc, 'base64')));
+                }
 
                 // Send approval response
                 const response: SendTransactionRpcResponseSuccess = {
