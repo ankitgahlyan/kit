@@ -6,10 +6,6 @@ import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 
 declare global {
     interface Window {
-        walletKitSwiftBridge?: {
-            sendEvent: (eventType: string, data: any) => void;
-        };
-
         walletKit?: any;
         initWalletKit: (configuration, storage) => Promise<void>;
     }
@@ -51,35 +47,6 @@ window.initWalletKit = async (configuration, storage) => {
     // WalletKit is already constructed with config, just set up the bridge
     console.log('✅ WalletKit instance ready');
 
-    // Set up event listeners for wallet events
-    walletKit.onConnectRequest((event) => {
-        console.log('📨 Connect request received:', event);
-        if (window.walletKitSwiftBridge) {
-            window.walletKitSwiftBridge.sendEvent('connectRequest', event);
-        }
-    });
-
-    walletKit.onTransactionRequest((event) => {
-        console.log('📨 Transaction request received:', event);
-        if (window.walletKitSwiftBridge) {
-            window.walletKitSwiftBridge.sendEvent('transactionRequest', event);
-        }
-    });
-
-    walletKit.onSignDataRequest((event) => {
-        console.log('📨 Sign data request received:', event);
-        if (window.walletKitSwiftBridge) {
-            window.walletKitSwiftBridge.sendEvent('signDataRequest', event);
-        }
-    });
-
-    walletKit.onDisconnect((event) => {
-        console.log('📨 Disconnect event received:', event);
-        if (window.walletKitSwiftBridge) {
-            window.walletKitSwiftBridge.sendEvent('disconnect', event);
-        }
-    });
-
     initialized = true;
     console.log('✅ WalletKit Bridge initialized successfully');
 
@@ -89,6 +56,87 @@ window.initWalletKit = async (configuration, storage) => {
         // Check if initialized
         isReady() {
             return initialized && walletKit;
+        },
+
+        onConnectListener: null,
+        onTransactionListener: null,
+        onSignDataListener: null,
+        onDisconnectListener: null,
+
+        setEventsListeners(callback) {
+            if (!initialized) throw new Error('WalletKit Bridge not initialized');
+            console.log('🔔 Bridge: Adding event listeners');
+
+            if (this.onConnectListener) {
+                walletKit.removeConnectRequestCallback(this.onConnectListener);
+            }
+
+            this.onConnectListener = (event) => {
+                console.log('📨 Connect request received:', event);
+                callback('connectRequest', event);
+            };
+
+            walletKit.onConnectRequest(this.onConnectListener);
+
+            if (this.onTransactionListener) {
+                walletKit.removeTransactionRequestCallback(this.onTransactionListener);
+            }
+
+            this.onTransactionListener = (event) => {
+                console.log('📨 Transaction request received:', event);
+                callback('transactionRequest', event);
+            }
+            
+            walletKit.onTransactionRequest(this.onTransactionListener);
+
+            if (this.onSignDataListener) {
+                walletKit.removeSignDataRequestCallback(this.onSignDataListener);
+            }
+
+            this.onSignDataListener = (event) => {
+                console.log('📨 Sign data request received:', event);
+                callback('signDataRequest', event);
+            };
+
+            walletKit.onSignDataRequest(this.onSignDataListener);
+
+            if (this.onDisconnectListener) {
+                walletKit.removeDisconnectCallback(this.onDisconnectListener);
+            }
+
+            this.onDisconnectListener = (event) => {
+                console.log('📨 Disconnect event received:', event);
+                callback('disconnect', event);
+            };
+
+            walletKit.onDisconnect(this.onDisconnectListener);
+        },
+
+        removeEventListeners() {
+            if (!initialized) throw new Error('WalletKit Bridge not initialized');
+            console.log('🗑️ Bridge: Removing all event listeners');
+
+            if (this.onConnectListener) {
+                walletKit.removeConnectRequestCallback(this.onConnectListener);
+                this.onConnectListener = null;
+            }
+
+            if (this.onTransactionListener) {
+                walletKit.removeTransactionRequestCallback(this.onTransactionListener);
+                this.onTransactionListener = null;
+            }
+
+            if (this.onSignDataListener) {
+                walletKit.removeSignDataRequestCallback(this.onSignDataListener);
+                this.onSignDataListener = null;
+            }
+
+            if (this.onDisconnectListener) {
+                walletKit.removeDisconnectCallback(this.onDisconnectListener);
+                this.onDisconnectListener = null;
+            }
+
+            console.log('🗑️ All event listeners removed');
         },
 
         // Wallet management
