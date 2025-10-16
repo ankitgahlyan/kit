@@ -2,15 +2,7 @@
 
 import { CHAIN } from '@tonconnect/protocol';
 
-import {
-    TonWalletKitOptions,
-    WalletInterface,
-    WalletInitConfig,
-    DEFAULT_DURABLE_EVENTS_CONFIG,
-    isWalletInitConfigMnemonic,
-    isWalletInitConfigPrivateKey,
-    isWalletInitConfigSigner,
-} from '../types';
+import { TonWalletKitOptions, IWallet, DEFAULT_DURABLE_EVENTS_CONFIG } from '../types';
 import type { StorageAdapter } from '../storage';
 import { createStorageAdapter } from '../storage';
 import { WalletManager } from './WalletManager';
@@ -20,17 +12,14 @@ import { EventRouter } from './EventRouter';
 import { RequestProcessor } from './RequestProcessor';
 import { globalLogger } from './Logger';
 import type { EventEmitter } from './EventEmitter';
-import { createWalletV5R1 } from '../contracts/w5/WalletV5R1Adapter';
 import { StorageEventStore } from './EventStore';
 import { StorageEventProcessor } from './EventProcessor';
-import { WalletInitInterface } from '../types/wallet';
+import { IWalletAdapter } from '../types/wallet';
 import { WalletTonClass } from './wallet/extensions/ton';
 import { WalletJettonClass } from './wallet/extensions/jetton';
 import { WalletNftClass } from './wallet/extensions/nft';
 import { ApiClient } from '../types/toncenter/ApiClient';
 import { AnalyticsApi } from '../analytics/sender';
-import { WalletKitError, ERROR_CODES } from '../errors';
-import { createWalletV4R2 } from '../contracts/v4r2/WalletV4R2Adapter';
 
 const log = globalLogger.createChild('Initializer');
 
@@ -237,77 +226,8 @@ export class Initializer {
     }
 }
 
-function isWalletInterface(config: unknown): config is WalletInterface {
-    return (
-        typeof config === 'object' &&
-        config !== null &&
-        'publicKey' in config &&
-        'version' in config &&
-        typeof (config as WalletInterface)?.getAddress === 'function' &&
-        typeof (config as WalletInterface)?.getStateInit === 'function'
-    );
-}
-
-/**
- * Create a WalletInterface from various configuration types
- */
-export async function createWalletFromConfig(config: WalletInitConfig, tonClient: ApiClient): Promise<WalletInterface> {
-    let wallet: WalletInitInterface | undefined;
-
-    // Handle mnemonic configuration
-    if (
-        isWalletInitConfigMnemonic(config) ||
-        isWalletInitConfigPrivateKey(config) ||
-        isWalletInitConfigSigner(config)
-    ) {
-        if (config.version === 'v5r1') {
-            wallet = await createWalletV5R1(config, {
-                tonClient,
-            });
-        } else if (config.version === 'v4r2') {
-            wallet = await createWalletV4R2(config, {
-                tonClient,
-            });
-        } else {
-            throw new WalletKitError(
-                ERROR_CODES.WALLET_CREATION_FAILED,
-                `Unsupported wallet version: ${config.version}`,
-                undefined,
-                { version: config.version, configType: 'mnemonic' },
-            );
-        }
-    }
-    // else if (isWalletInitConfigLedger(config)) {
-    //     // Handle Ledger configuration
-    //     if (config.version === 'v4r2') {
-    //         wallet = await createWalletV4R2Ledger(config, {
-    //             tonClient,
-    //         });
-    //     } else {
-    //         throw new Error(`Unsupported wallet version for Ledger: ${config.version}`);
-    //     }
-    else if (isWalletInterface(config)) {
-        // If it's already a WalletInterface, use it as-is
-        wallet = config as WalletInitInterface;
-    }
-
-    if (!wallet) {
-        throw new WalletKitError(
-            ERROR_CODES.WALLET_CREATION_FAILED,
-            'Unsupported wallet configuration format',
-            undefined,
-            { config },
-        );
-    }
-
-    return wrapWalletInterface(wallet, tonClient);
-}
-
 // using proxy api to make wallet extension modular
-export async function wrapWalletInterface(
-    wallet: WalletInitInterface,
-    _tonClient: ApiClient,
-): Promise<WalletInterface> {
+export async function wrapWalletInterface(wallet: IWalletAdapter, _tonClient: ApiClient): Promise<IWallet> {
     const ourClassesToExtend = [WalletTonClass, WalletJettonClass, WalletNftClass];
     const newProxy = new Proxy(wallet, {
         get: (target, prop) => {
@@ -330,7 +250,7 @@ export async function wrapWalletInterface(
 
             return value;
         },
-    }) as WalletInterface;
+    }) as IWallet;
 
     return newProxy;
 }
