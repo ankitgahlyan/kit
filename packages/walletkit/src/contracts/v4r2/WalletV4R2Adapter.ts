@@ -14,21 +14,11 @@ import {
     internal,
 } from '@ton/core';
 import { CHAIN, toHexString } from '@tonconnect/protocol';
-import { keyPairFromSeed } from '@ton/crypto';
 
 import { WalletV4R2, WalletV4R2Config } from './WalletV4R2';
 import { WalletV4R2CodeCell } from './WalletV4R2.source';
 import { defaultWalletIdV4R2 } from './constants';
-import {
-    WalletInitInterface,
-    WalletSigner,
-    WalletInitConfigMnemonicInterface,
-    WalletInitConfigPrivateKeyInterface,
-    WalletInitConfigSignerInterface,
-    isWalletInitConfigSigner,
-    isWalletInitConfigMnemonic,
-    isWalletInitConfigPrivateKey,
-} from '../../types/wallet';
+import { IWalletAdapter, WalletSigner } from '../../types/wallet';
 import { ApiClient } from '../../types/toncenter/ApiClient';
 import { Uint8ArrayToBigInt } from '../../utils/base64';
 import { formatWalletAddress } from '../../utils/address';
@@ -38,8 +28,6 @@ import { PrepareSignDataResult } from '../../utils/signData/sign';
 import { Hash } from '../../types/primitive';
 import { CreateTonProofMessageBytes, TonProofParsedMessage } from '../../utils/tonProof';
 import { globalLogger } from '../../core/Logger';
-import { MnemonicToKeyPair } from '../../utils/mnemonic';
-import { createWalletSigner } from '../../utils/sign';
 import { WalletV4R2AdapterConfig } from './types';
 
 const log = globalLogger.createChild('WalletV4R2Adapter');
@@ -47,7 +35,7 @@ const log = globalLogger.createChild('WalletV4R2Adapter');
 /**
  * WalletV4R2 adapter that implements WalletInterface for WalletV4R2 contracts
  */
-export class WalletV4R2Adapter implements WalletInitInterface {
+export class WalletV4R2Adapter implements IWalletAdapter {
     private signer: WalletSigner;
     private config: WalletV4R2AdapterConfig;
 
@@ -55,6 +43,30 @@ export class WalletV4R2Adapter implements WalletInitInterface {
     readonly client: ApiClient;
     public readonly publicKey: Uint8Array;
     public readonly version = 'v4r2';
+
+    /**
+     * Static factory method to create a WalletV4R2Adapter
+     * @param signer - Signer function with publicKey property (from Signer utility)
+     * @param options - Configuration options for the wallet
+     */
+    static async create(
+        signer: WalletSigner,
+        options: {
+            client: ApiClient;
+            network: CHAIN;
+            walletId?: number | bigint;
+            workchain?: number;
+        },
+    ): Promise<WalletV4R2Adapter> {
+        return new WalletV4R2Adapter({
+            signer,
+            publicKey: signer.publicKey,
+            tonClient: options.client,
+            network: options.network,
+            walletId: typeof options.walletId === 'bigint' ? Number(options.walletId) : options.walletId,
+            workchain: options.workchain,
+        });
+    }
 
     constructor(config: WalletV4R2AdapterConfig) {
         this.config = config;
@@ -81,7 +93,7 @@ export class WalletV4R2Adapter implements WalletInitInterface {
      * Sign raw bytes with wallet's private key
      */
     async sign(bytes: Uint8Array): Promise<Uint8Array> {
-        return this.signer(bytes);
+        return this.signer.sign(bytes);
     }
 
     getNetwork(): CHAIN {
@@ -239,48 +251,4 @@ export class WalletV4R2Adapter implements WalletInitInterface {
 
         return ('0x' + toHexString(signature)) as Hash;
     }
-}
-
-/**
- * Utility function to create WalletV4R2 from any supported configuration
- */
-export async function createWalletV4R2(
-    config: WalletInitConfigMnemonicInterface | WalletInitConfigPrivateKeyInterface | WalletInitConfigSignerInterface,
-    options: {
-        tonClient: ApiClient;
-    },
-): Promise<WalletInitInterface> {
-    let publicKey: Uint8Array;
-    let signer: WalletSigner;
-    if (isWalletInitConfigMnemonic(config)) {
-        const keyPair = await MnemonicToKeyPair(config.mnemonic, config.mnemonicType);
-        publicKey = keyPair.publicKey;
-        signer = createWalletSigner(keyPair.secretKey);
-    } else if (isWalletInitConfigPrivateKey(config)) {
-        if (typeof config.privateKey === 'string') {
-            const keyPair = keyPairFromSeed(Buffer.from(config.privateKey, 'hex'));
-            publicKey = keyPair.publicKey;
-            signer = createWalletSigner(keyPair.secretKey);
-        } else {
-            const keyPair = keyPairFromSeed(config.privateKey as Buffer);
-            publicKey = keyPair.publicKey;
-            signer = createWalletSigner(config.privateKey);
-        }
-    } else if (isWalletInitConfigSigner(config)) {
-        publicKey =
-            typeof config.publicKey === 'string'
-                ? Uint8Array.from(Buffer.from(config.publicKey.replace('0x', ''), 'hex'))
-                : config.publicKey;
-        signer = config.sign;
-    } else {
-        throw new Error('Unsupported wallet configuration format');
-    }
-
-    return new WalletV4R2Adapter({
-        publicKey: publicKey,
-        signer: signer,
-        network: config.network || CHAIN.MAINNET,
-        tonClient: options.tonClient,
-        walletId: typeof config.walletId === 'bigint' ? Number(config.walletId) : config.walletId,
-    });
 }
