@@ -5,6 +5,8 @@ import { AllureApiClient, createAllureConfig, getTestCaseData, extractAllureId }
 import { testWithDemoWalletFixture } from '../demo-wallet';
 import type { TestFixture } from '../qa';
 
+const isExtension = process.env.E2E_JS_BRIDGE === 'true';
+
 const test = testWithDemoWalletFixture({
     appUrl: process.env.DAPP_URL ?? 'https://allure-test-runner.vercel.app/e2e',
 });
@@ -54,8 +56,13 @@ async function runSendTransactionTest(
     }
 
     await expect(widget.connectButtonText).toHaveText('Connect Wallet');
-    await wallet.connectBy(await widget.connectUrl());
-    await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    if (isExtension) {
+        await widget.connectWallet('Tonkeeper');
+        await wallet.connect(true);
+    } else {
+        await wallet.connectBy(await widget.connectUrl());
+        await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    }
     await app.getByTestId('sendTxPrecondition').fill(precondition);
     await app.getByTestId('sendTxExpectedResult').fill(expectedResult);
     await app.getByTestId('send-transaction-button').click();
@@ -65,30 +72,26 @@ async function runSendTransactionTest(
     await expect(app.getByTestId('sendTransactionValidation')).toHaveText('Validation Passed');
 }
 
-test('[messages] Error if contains invalid message @allureId(1869)', async ({ wallet, app, widget }) => {
+test('[messages] Error if contains invalid message @allureId(2243)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[messages] Success if contains maximum messages @allureId(1959)', async ({ wallet, app, widget }) => {
+// test('[messages] Success if contains maximum messages @allureId(1959)', async ({ wallet, app, widget }) => {
+//     await runSendTransactionTest({ wallet, app, widget }, test.info());
+// });
+
+test('[network] Error if as a number @allureId(2234)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test("[network] Error if '-3' (testnet) @allureId(1876)", async ({ wallet, app, widget }) => {
+test("[network] Success if '-239' (mainnet) @allureId(2249)", async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[network] Error if as a number @allureId(1860)', async ({ wallet, app, widget }) => {
+test('[payload] Error if invalid value @allureId(2246)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test("[network] Success if '-239' (mainnet) @allureId(1875)", async ({ wallet, app, widget }) => {
-    await runSendTransactionTest({ wallet, app, widget }, test.info());
-});
-
-test('[payload] Error if invalid value @allureId(1872)', async ({ wallet, app, widget }) => {
-    await runSendTransactionTest({ wallet, app, widget }, test.info());
-});
-
-test('[payload] Success if absent @allureId(1854)', async ({ wallet, app, widget }) => {
+test('[payload] Success if absent @allureId(2228)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });

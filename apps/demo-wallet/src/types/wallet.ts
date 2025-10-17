@@ -2,7 +2,7 @@ import type {
     EventConnectRequest,
     EventTransactionRequest,
     EventSignDataRequest,
-    WalletInterface,
+    IWallet,
     ITonWalletKit,
 } from '@ton/walletkit';
 
@@ -40,7 +40,7 @@ export interface WalletState {
         transactions: PreviewTransaction[];
 
         // Walletkit instance and current wallet
-        currentWallet?: WalletInterface;
+        currentWallet?: IWallet;
 
         // Connect request state
         pendingConnectRequest?: EventConnectRequest;
@@ -92,7 +92,7 @@ export interface DisconnectNotification {
 }
 
 export interface LedgerConfig {
-    publicKey: number[]; // Store as number array for JSON serialization
+    publicKey: string; // Store as number array for JSON serialization
     path: number[];
     walletId: number;
     version: string;

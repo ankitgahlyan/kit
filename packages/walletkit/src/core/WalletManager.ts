@@ -1,15 +1,15 @@
 // Wallet management with validation and persistence
 
-import type { WalletInterface } from '../types';
+import type { IWallet } from '../types';
 import type { StorageAdapter } from '../types/internal';
-import { WalletInitInterface } from '../types/wallet';
+import { IWalletAdapter } from '../types/wallet';
 import { validateWallet } from '../validation';
 import { globalLogger } from './Logger';
 
 const log = globalLogger.createChild('WalletManager');
 
 export class WalletManager {
-    private wallets: Map<string, WalletInterface> = new Map();
+    private wallets: Map<string, IWallet> = new Map();
     private storageAdapter: StorageAdapter;
     // private storageKey = 'wallets';
 
@@ -27,21 +27,21 @@ export class WalletManager {
     /**
      * Get all wallets as array
      */
-    getWallets(): WalletInterface[] {
+    getWallets(): IWallet[] {
         return Array.from(this.wallets.values());
     }
 
     /**
      * Get wallet by public key
      */
-    getWallet(address: string): WalletInterface | undefined {
+    getWallet(address: string): IWallet | undefined {
         return this.wallets.get(address) || undefined;
     }
 
     /**
      * Add a wallet with validation
      */
-    async addWallet(wallet: WalletInterface): Promise<boolean> {
+    async addWallet(wallet: IWallet): Promise<boolean> {
         const validation = validateWallet(wallet);
         if (!validation.isValid) {
             throw new Error(`Invalid wallet: ${validation.errors.join(', ')}`);
@@ -58,7 +58,7 @@ export class WalletManager {
     /**
      * Remove wallet by public key
      */
-    async removeWallet(addressOrWallet: string | WalletInitInterface): Promise<boolean> {
+    async removeWallet(addressOrWallet: string | IWalletAdapter): Promise<boolean> {
         const address = typeof addressOrWallet === 'string' ? addressOrWallet : addressOrWallet.getAddress();
 
         const removed = this.wallets.delete(address);
@@ -72,7 +72,7 @@ export class WalletManager {
     /**
      * Update existing wallet
      */
-    async updateWallet(wallet: WalletInterface): Promise<void> {
+    async updateWallet(wallet: IWallet): Promise<void> {
         if (!this.wallets.has(wallet.getAddress())) {
             throw new Error(`Wallet with address ${wallet.getAddress()} not found`);
         }
@@ -97,7 +97,7 @@ export class WalletManager {
     /**
      * Find wallet by address (async since getAddress is async)
      */
-    async findWalletByAddress(address: string): Promise<WalletInterface | null> {
+    async findWalletByAddress(address: string): Promise<IWallet | null> {
         for (const wallet of this.wallets.values()) {
             try {
                 const walletAddress = wallet.getAddress();

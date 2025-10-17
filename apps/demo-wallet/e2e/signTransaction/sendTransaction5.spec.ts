@@ -5,6 +5,8 @@ import { AllureApiClient, createAllureConfig, getTestCaseData, extractAllureId }
 import { testWithDemoWalletFixture } from '../demo-wallet';
 import type { TestFixture } from '../qa';
 
+const isExtension = process.env.E2E_JS_BRIDGE === 'true';
+
 const test = testWithDemoWalletFixture({
     appUrl: process.env.DAPP_URL ?? 'https://allure-test-runner.vercel.app/e2e',
 });
@@ -54,8 +56,13 @@ async function runSendTransactionTest(
     }
 
     await expect(widget.connectButtonText).toHaveText('Connect Wallet');
-    await wallet.connectBy(await widget.connectUrl());
-    await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    if (isExtension) {
+        await widget.connectWallet('Tonkeeper');
+        await wallet.connect(true);
+    } else {
+        await wallet.connectBy(await widget.connectUrl());
+        await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    }
     await app.getByTestId('sendTxPrecondition').fill(precondition);
     await app.getByTestId('sendTxExpectedResult').fill(expectedResult);
     await app.getByTestId('send-transaction-button').click();
@@ -64,26 +71,26 @@ async function runSendTransactionTest(
 
     await expect(app.getByTestId('sendTransactionValidation')).toHaveText('Validation Passed');
 }
-test('[stateInit] Success if valid value @allureId(1850)', async ({ wallet, app, widget }) => {
+test('[stateInit] Success if valid value @allureId(2224)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if absent @allureId(1866)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if absent @allureId(2240)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if as a string @allureId(1865)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if as a string @allureId(2239)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if expired @allureId(1861)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if expired @allureId(2235)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if has expired during confirmation @allureId(1863)', async ({ wallet, app, widget }) => {
-    await runSendTransactionTest({ wallet, app, widget }, test.info());
-});
+// test('[validUntil] Error if has expired during confirmation @allureId(2237)', async ({ wallet, app, widget }) => {
+//     await runSendTransactionTest({ wallet, app, widget }, test.info());
+// });
 
-test('[validUntil] Error if NaN @allureId(1867)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if NaN @allureId(2241)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });

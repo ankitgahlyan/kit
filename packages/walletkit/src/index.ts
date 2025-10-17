@@ -39,7 +39,6 @@ export { WalletV5, WalletId, Opcodes } from './contracts/w5/WalletV5R1';
 export type { WalletV5Config } from './contracts/w5/WalletV5R1';
 export { WalletV5R1CodeCell, WalletV5R1CodeBoc } from './contracts/w5/WalletV5R1.source';
 export { WalletV5R1Adapter } from './contracts/w5/WalletV5R1Adapter';
-export { createWalletV5R1 } from './contracts/w5/WalletV5R1Adapter';
 export { defaultWalletIdV5R1 } from './contracts/w5/WalletV5R1Adapter';
 
 export { WalletV4R2 } from './contracts/v4r2/WalletV4R2';
@@ -62,19 +61,23 @@ export {
     Base64Normalize,
     Base64NormalizeUrl,
     ParseBase64,
-    Base64ToHash,
+    Base64ToHex,
     Base64ToUint8Array,
     Uint8ArrayToBase64,
     Base64ToBigInt,
     BigIntToBase64,
     Uint8ArrayToBigInt,
+    HexToBigInt,
+    HexToBase64,
+    Uint8ArrayToHex,
+    HexToUint8Array,
 } from './utils/base64';
 
 export type { ToncenterTransaction } from './types/toncenter/emulation';
 
 export { PrepareSignDataResult } from './utils/signData/sign';
 
-export { Hash } from './types/primitive';
+export { Hex } from './types/primitive';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
 
@@ -108,3 +111,5 @@ export { DefaultSignature, FakeSignature } from './utils/sign';
 
 export { wrapWalletInterface } from './core/Initializer';
 export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+
+export { Signer } from './utils/Signer';

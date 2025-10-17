@@ -1,7 +1,7 @@
 import { storeJettonTransferMessage } from '@ton-community/assets-sdk';
 import { Address, beginCell, SendMode } from '@ton/core';
 
-import { WalletInterface } from '../../../types';
+import { IWallet } from '../../../types';
 import { WalletJettonInterface } from '../../../types/wallet';
 import { JettonTransferParams } from '../../../types/jettons';
 import { validateTransactionMessage } from '../../../validation';
@@ -11,7 +11,7 @@ import { CallForSuccess } from '../../../utils/retry';
 
 export class WalletJettonClass implements WalletJettonInterface {
     async createTransferJettonTransaction(
-        this: WalletInterface,
+        this: IWallet,
         jettonTransferParams: JettonTransferParams,
     ): Promise<ConnectTransactionParamContent> {
         // Validate input parameters
@@ -71,7 +71,7 @@ export class WalletJettonClass implements WalletJettonInterface {
         };
     }
 
-    async getJettonBalance(this: WalletInterface, jettonAddress: string): Promise<bigint> {
+    async getJettonBalance(this: IWallet, jettonAddress: string): Promise<string> {
         // Get jetton wallet address for this user
         const jettonWalletAddress = await this.getJettonWalletAddress(jettonAddress);
 
@@ -81,14 +81,14 @@ export class WalletJettonClass implements WalletJettonInterface {
 
             // The balance is the first return value from get_wallet_data
             const balance = result.stack.readBigNumber();
-            return balance;
+            return balance.toString();
         } catch (_error) {
             // Failed to get jetton balance, return 0
-            return 0n;
+            return '0';
         }
     }
 
-    async getJettonWalletAddress(this: WalletInterface, jettonAddress: string): Promise<string> {
+    async getJettonWalletAddress(this: IWallet, jettonAddress: string): Promise<string> {
         if (!isValidAddress(jettonAddress)) {
             throw new Error(`Invalid jetton address: ${jettonAddress}`);
         }

@@ -15,15 +15,17 @@ import { CHAIN, toHexString } from '@tonconnect/protocol';
 import { TonTransport } from '@ton-community/ton-ledger';
 import Transport from '@ledgerhq/hw-transport';
 import {
-    WalletInitInterface,
+    IWalletAdapter,
     ApiClient,
     formatWalletAddress,
     CallForSuccess,
     ConnectTransactionParamContent,
     PrepareSignDataResult,
-    Hash,
+    Hex,
     TonProofParsedMessage,
-    Uint8ArrayToBigInt,
+    HexToBigInt,
+    Uint8ArrayToHex,
+    HexToUint8Array,
 } from '@ton/walletkit';
 
 import { WalletV4R2, WalletV4R2Config } from './WalletV4R2';
@@ -54,14 +56,14 @@ export function createWalletInitConfigLedger(params: WalletInitConfigLedgerInter
  * WalletV4R2 Ledger adapter that implements WalletInterface for WalletV4R2 contracts
  * using Ledger hardware wallet for signing
  */
-export class WalletV4R2LedgerAdapter implements WalletInitInterface {
+export class WalletV4R2LedgerAdapter implements IWalletAdapter {
     private createTransport: () => Promise<Transport>;
     private config: WalletV4R2LedgerAdapterConfig;
     private derivationPath: number[];
 
     readonly walletContract: WalletV4R2;
     readonly client: ApiClient;
-    public readonly publicKey: Uint8Array;
+    public readonly publicKey: Hex;
     public readonly version = 'v4r2';
 
     constructor(config: WalletV4R2LedgerAdapterConfig) {
@@ -70,10 +72,10 @@ export class WalletV4R2LedgerAdapter implements WalletInitInterface {
         this.createTransport = config.createTransport;
         this.derivationPath = config.path;
 
-        this.publicKey = Uint8Array.from(this.config.publicKey);
+        this.publicKey = Uint8ArrayToHex(this.config.publicKey);
 
         const walletConfig: WalletV4R2Config = {
-            publicKey: Uint8ArrayToBigInt(this.publicKey),
+            publicKey: HexToBigInt(this.publicKey),
             workchain: config.workchain ?? 0,
             seqno: 0,
             subwalletId: config.walletId ?? defaultWalletIdV4R2,
@@ -161,7 +163,7 @@ export class WalletV4R2LedgerAdapter implements WalletInitInterface {
     /**
      * Get wallet's current balance in nanotons
      */
-    async getBalance(): Promise<bigint> {
+    async getBalance(): Promise<string> {
         try {
             const balance = await CallForSuccess(
                 async () => this.client.getBalance(this.walletContract.address),
@@ -233,11 +235,11 @@ export class WalletV4R2LedgerAdapter implements WalletInitInterface {
         }
     }
 
-    async getSignedSignData(_input: PrepareSignDataResult): Promise<Hash> {
+    async getSignedSignData(_input: PrepareSignDataResult): Promise<Hex> {
         throw new Error('Not implemented');
     }
 
-    async getSignedTonProof(input: TonProofParsedMessage): Promise<Hash> {
+    async getSignedTonProof(input: TonProofParsedMessage): Promise<Hex> {
         // todo - add ledger max len checks
         let transport: Transport | undefined;
         try {
@@ -252,7 +254,7 @@ export class WalletV4R2LedgerAdapter implements WalletInitInterface {
                 timestamp: input.timstamp,
                 payload: Buffer.from(input.payload),
             });
-            return ('0x' + toHexString(signature)) as Hash;
+            return ('0x' + toHexString(signature)) as Hex;
         } finally {
             if (transport) {
                 await transport.close();
@@ -270,7 +272,8 @@ export class WalletV4R2LedgerAdapter implements WalletInitInterface {
         if (!addressResponse.publicKey) {
             return false;
         }
-        if (!isUint8ArrayEqual(this.publicKey, addressResponse.publicKey)) {
+        const publicKey = HexToUint8Array(this.publicKey);
+        if (!isUint8ArrayEqual(publicKey, addressResponse.publicKey)) {
             return false;
         }
         return true;

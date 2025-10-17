@@ -5,6 +5,8 @@ import { AllureApiClient, createAllureConfig, getTestCaseData, extractAllureId }
 import { testWithDemoWalletFixture } from '../demo-wallet';
 import type { TestFixture } from '../qa';
 
+const isExtension = process.env.E2E_JS_BRIDGE === 'true';
+
 const test = testWithDemoWalletFixture({
     appUrl: process.env.DAPP_URL ?? 'https://allure-test-runner.vercel.app/e2e',
 });
@@ -55,8 +57,13 @@ async function runSendTransactionTest(
     }
 
     await expect(widget.connectButtonText).toHaveText('Connect Wallet');
-    await wallet.connectBy(await widget.connectUrl());
-    await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    if (isExtension) {
+        await widget.connectWallet('Tonkeeper');
+        await wallet.connect(true);
+    } else {
+        await wallet.connectBy(await widget.connectUrl());
+        await expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+    }
     await app.getByTestId('sendTxPrecondition').fill(precondition);
     await app.getByTestId('sendTxExpectedResult').fill(expectedResult);
     await app.getByTestId('send-transaction-button').click();
@@ -66,34 +73,34 @@ async function runSendTransactionTest(
     await expect(app.getByTestId('sendTransactionValidation')).toHaveText('Validation Passed');
 }
 
-test('[from] Error if invalid value @allureId(1848)', async ({ wallet, app, widget }) => {
+test('[from] Error if invalid value @allureId(2222)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in bounceable format @allureId(1878)', async ({ wallet, app, widget }) => {
+test('[from] Success if in bounceable format @allureId(2252)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in HEX format @allureId(1855)', async ({ wallet, app, widget }) => {
+test('[from] Success if in HEX format @allureId(2229)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[from] Success if in non-bounceable format @allureId(1862)', async ({ wallet, app, widget }) => {
+test('[from] Success if in non-bounceable format @allureId(2236)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[messages] Error if array is empty @allureId(1864)', async ({ wallet, app, widget }) => {
+test('[messages] Error if array is empty @allureId(2238)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Error if NULL @allureId(1868)', async ({ wallet, app, widget }) => {
+test('[validUntil] Error if NULL @allureId(2242)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if less then in 5 minutes @allureId(1851)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if less then in 5 minutes @allureId(2225)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
 
-test('[validUntil] Success if more then in 5 minutes @allureId(1858)', async ({ wallet, app, widget }) => {
+test('[validUntil] Success if more then in 5 minutes @allureId(2232)', async ({ wallet, app, widget }) => {
     await runSendTransactionTest({ wallet, app, widget }, test.info());
 });
