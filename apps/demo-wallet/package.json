@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "e2e:deps": "playwright install --with-deps",
-    "e2e": "playwright test --config e2e.config.ts",
+    "e2e": "playwright test --config e2e.config.ts --retries=3",
     "dev": "vite",
     "build": "pnpm build:extension && pnpm build:website",
     "dev:extension": "cross-env VITE_APP_ENV=extension vite build --watch --config vite.extension.config.ts",

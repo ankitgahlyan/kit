@@ -1,4 +1,4 @@
-import { Hash, asHash } from '../types/primitive';
+import { Hex, asHex } from '../types/primitive';
 import { WalletKitError, ERROR_CODES } from '../errors';
 
 /**
@@ -37,24 +37,42 @@ export function ParseBase64(data: string): string {
 }
 
 /**
- * Convert base64 string to hash
+ * Convert base64 string to hex
  * @param data Base64 string
- * @returns Hash
+ * @returns Hex
  */
-export function Base64ToHash(data?: string | null): Hash | null {
+export function Base64ToHex(data: string): Hex {
+    if (!data) throw new WalletKitError(ERROR_CODES.VALIDATION_ERROR, 'Invalid hash: data is required');
+
     const binary = Base64ToUint8Array(data);
-    if (!binary) return null;
+    if (!binary) throw new WalletKitError(ERROR_CODES.VALIDATION_ERROR, 'Invalid hash: binary is required');
 
-    if (binary.length !== 32) {
-        throw new WalletKitError(ERROR_CODES.VALIDATION_ERROR, 'Invalid hash length: expected 32 bytes', undefined, {
-            actualLength: binary.length,
-            expectedLength: 32,
-        });
-    }
+    // if (binary.length !== 32 && binary.length !== 64) {
+    //     throw new WalletKitError(
+    //         ERROR_CODES.VALIDATION_ERROR,
+    //         'Invalid hex length: expected 32 or 64 bytes',
+    //         undefined,
+    //         {
+    //             actualLength: binary.length,
+    //             expectedLength: [32, 64],
+    //         },
+    //     );
+    // }
+    return Uint8ArrayToHex(binary);
+}
 
-    const hex = [...binary].map((b) => b.toString(16).padStart(2, '0')).join('');
-
-    return asHash(`0x${hex}`);
+export function Uint8ArrayToHex(data: Iterable<number>): Hex {
+    return asHex(
+        `0x${[...data]
+            .map((b) => {
+                if (b < 0 || b > 255)
+                    throw new WalletKitError(ERROR_CODES.VALIDATION_ERROR, 'Invalid byte: expected 0-255', undefined, {
+                        actualByte: b,
+                    });
+                return b.toString(16).padStart(2, '0');
+            })
+            .join('')}`,
+    );
 }
 
 /**
@@ -138,4 +156,31 @@ export function Uint8ArrayToBigInt(data: Uint8Array): bigint {
         result = (result << 8n) + BigInt(data[i]);
     }
     return result;
+}
+
+export function HexToBigInt(data: Hex): bigint {
+    return BigInt(data);
+}
+
+/**
+ * Convert hash to Uint8Array
+ * @param data Hash (hex string starting with 0x)
+ * @returns Uint8Array
+ */
+export function HexToUint8Array(data: Hex): Uint8Array {
+    const hex = data.slice(2); // Remove 0x prefix
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+    }
+    return bytes;
+}
+
+/**
+ * Convert hex to base64 string
+ * @param data Hex (hex string starting with 0x)
+ * @returns Base64 string
+ */
+export function HexToBase64(data: Hex): string {
+    return Uint8ArrayToBase64(HexToUint8Array(data));
 }

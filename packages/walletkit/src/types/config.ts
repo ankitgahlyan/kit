@@ -45,6 +45,10 @@ export interface TonWalletKitOptions {
         | ApiClient;
 
     analytics?: AnalyticsConfig;
+
+    dev?: {
+        disableNetworkSend?: boolean;
+    };
 }
 
 export interface AnalyticsConfig {

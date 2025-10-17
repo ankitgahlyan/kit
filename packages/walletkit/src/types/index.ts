@@ -2,10 +2,9 @@
 
 // Wallet types
 export type {
-    WalletInterface,
+    IWallet,
     WalletMetadata,
     WalletVersion,
-    WalletInitConfig,
     TonTransferParams,
     TonTransferManyParams,
     TonTransferParamsBody,
@@ -13,19 +12,8 @@ export type {
     WalletTonInterface,
     WalletJettonInterface,
     WalletNftInterface,
-    WalletInitInterface,
-    WalletInitConfigSignerInterface,
-    WalletInitConfigMnemonicInterface,
-    WalletInitConfigPrivateKeyInterface,
-} from './wallet';
-
-export {
-    createWalletInitConfigMnemonic,
-    createWalletInitConfigPrivateKey,
-    createWalletInitConfigSigner,
-    isWalletInitConfigMnemonic,
-    isWalletInitConfigPrivateKey,
-    isWalletInitConfigSigner,
+    IWalletAdapter,
+    WalletSigner,
 } from './wallet';
 
 // Transaction types (from validation module)

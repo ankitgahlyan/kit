@@ -2,17 +2,18 @@
 
 import { CHAIN, SendTransactionRpcResponseError } from '@tonconnect/protocol';
 
-import type { WalletInterface, WalletInitConfig, WalletInitInterface } from './wallet';
+import type { IWallet, IWalletAdapter } from './wallet';
 import type {
     EventConnectRequest,
     EventTransactionRequest,
     EventSignDataRequest,
     EventDisconnect,
     EventRequestError,
+    EventSignDataResponse,
+    EventTransactionResponse,
 } from './events';
 import type { JettonsAPI } from './jettons';
-import { ConnectTransactionParamContent, SendRequestResult } from './internal';
-import { Hash } from './primitive';
+import { ConnectTransactionParamContent } from './internal';
 import { ApiClient } from './toncenter/ApiClient';
 
 /**
@@ -32,16 +33,16 @@ export interface ITonWalletKit {
     // === Wallet Management ===
 
     /** Get all registered wallets */
-    getWallets(): WalletInterface[];
+    getWallets(): IWallet[];
 
     /** Get wallet by address */
-    getWallet(address: string): WalletInterface | undefined;
+    getWallet(address: string): IWallet | undefined;
 
     /** Add a new wallet */
-    addWallet(walletConfig: WalletInitConfig): Promise<WalletInterface | undefined>;
+    addWallet(adapter: IWalletAdapter): Promise<IWallet | undefined>;
 
     /** Remove a wallet */
-    removeWallet(wallet: WalletInitInterface): Promise<void>;
+    removeWallet(wallet: IWalletAdapter): Promise<void>;
 
     /** Clear all wallets */
     clearWallets(): Promise<void>;
@@ -60,29 +61,29 @@ export interface ITonWalletKit {
     handleTonConnectUrl(url: string): Promise<void>;
 
     /** Handle new transaction */
-    handleNewTransaction(wallet: WalletInterface, data: ConnectTransactionParamContent): Promise<void>;
+    handleNewTransaction(wallet: IWallet, data: ConnectTransactionParamContent): Promise<void>;
 
     // === Request Processing ===
 
     /** Approve a connect request */
-    approveConnectRequest(event: EventConnectRequest): Promise<SendRequestResult>;
+    approveConnectRequest(event: EventConnectRequest): Promise<void>;
     /** Reject a connect request */
-    rejectConnectRequest(event: EventConnectRequest, reason?: string): Promise<SendRequestResult>;
+    rejectConnectRequest(event: EventConnectRequest, reason?: string): Promise<void>;
 
     /** Approve a transaction request */
-    approveTransactionRequest(event: EventTransactionRequest): Promise<SendRequestResult<{ signedBoc: string }>>;
+    approveTransactionRequest(event: EventTransactionRequest): Promise<EventTransactionResponse>;
 
     /** Reject a transaction request */
     rejectTransactionRequest(
         event: EventTransactionRequest,
         reason?: string | SendTransactionRpcResponseError['error'],
-    ): Promise<SendRequestResult>;
+    ): Promise<void>;
 
     /** Approve a sign data request */
-    signDataRequest(event: EventSignDataRequest): Promise<SendRequestResult<{ signature: Hash }>>;
+    signDataRequest(event: EventSignDataRequest): Promise<EventSignDataResponse>;
 
     /** Reject a sign data request */
-    rejectSignDataRequest(event: EventSignDataRequest, reason?: string): Promise<SendRequestResult>;
+    rejectSignDataRequest(event: EventSignDataRequest, reason?: string): Promise<void>;
 
     // === Event Handlers ===
 
