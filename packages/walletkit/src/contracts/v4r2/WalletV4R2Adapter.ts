@@ -244,7 +244,7 @@ export class WalletV4R2Adapter implements IWalletAdapter {
     }
 
     async getSignedSignData(input: PrepareSignDataResult): Promise<Hex> {
-        const signature = await this.sign(input.hash);
+        const signature = await this.sign(HexToUint8Array(input.hash));
         return signature;
     }
 

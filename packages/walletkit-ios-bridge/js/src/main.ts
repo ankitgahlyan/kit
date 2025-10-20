@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { 
-    MemoryStorageAdapter, 
-    Signer, 
-    WalletV4R2Adapter, 
-    WalletV5R1Adapter, 
-    WalletSigner, 
-    TonWalletKit 
+import {
+    MemoryStorageAdapter,
+    Signer,
+    WalletV4R2Adapter,
+    WalletV5R1Adapter,
+    WalletSigner,
+    TonWalletKit,
 } from '@ton/walletkit';
 
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';
@@ -142,7 +142,7 @@ window.initWalletKit = async (configuration, storage) => {
 
         async createV4R2WalletUsingSigner(signer, parameters) {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
-            
+
             console.log('➕ Bridge: Creating V4R2 wallet');
 
             if (!signer) {
@@ -150,7 +150,7 @@ window.initWalletKit = async (configuration, storage) => {
             }
 
             const customSigner: WalletSigner = {
-                sign: async (bytes: Uint8Array) => {
+                sign: async (bytes: Iterable<number>) => {
                     return await signer.sign(bytes);
                 },
                 publicKey: signer.publicKey(),
@@ -203,7 +203,7 @@ window.initWalletKit = async (configuration, storage) => {
 
         async createV5R1WalletUsingSigner(signer, parameters) {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
-            
+
             console.log('➕ Bridge: Creating V5R1 wallet');
 
             if (!signer) {
@@ -211,7 +211,7 @@ window.initWalletKit = async (configuration, storage) => {
             }
 
             const customSigner: WalletSigner = {
-                sign: async (bytes: Uint8Array) => {
+                sign: async (bytes: Iterable<number>) => {
                     return await signer.sign(bytes);
                 },
                 publicKey: signer.publicKey(),
@@ -223,23 +223,19 @@ window.initWalletKit = async (configuration, storage) => {
                 network: parameters.network,
             });
         },
-            
+
         // Wallet management
         async addWallet(walletAdapter) {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('➕ Bridge: Adding wallet:');
 
-            try {
-                const wallet = await walletKit.addWallet(walletAdapter);
-                if (wallet) {
-                    console.log('✅ Wallet added:', wallet.getAddress());
-                } else {
-                    console.log('✅ Wallet added: undefined');
-                }
-                return wallet;
-            } catch (error) {
-                throw error;
+            const wallet = await walletKit.addWallet(walletAdapter);
+            if (wallet) {
+                console.log('✅ Wallet added:', wallet.getAddress());
+            } else {
+                console.log('✅ Wallet added: undefined');
             }
+            return wallet;
         },
 
         async removeWallet(address) {

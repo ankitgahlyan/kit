@@ -18,7 +18,7 @@ import {
 } from './internal';
 import { MoneyFlow } from '../utils/toncenterEmulation';
 import { ToncenterEmulationResponse } from './toncenter/emulation';
-import { Hex } from './primitive';
+import { Base64String, Hex } from './primitive';
 import { ErrorInfo } from '../errors';
 
 // export type EventConnectRequest = ConnectRequest;
@@ -55,12 +55,10 @@ export type EventTransactionRequest = RawBridgeEventTransaction & {
 
     /** dApp information */
     dAppInfo: DAppInfo;
-
-    error?: string;
 };
 
 export interface EventTransactionResponse {
-    signedBoc: string;
+    signedBoc: Base64String;
 }
 
 /**

@@ -275,7 +275,7 @@ export interface EmulationTokenInfoMasters extends EmulationTokenInfoBase {
         _image_big?: string;
         _image_medium?: string;
         _image_small?: string;
-        decimals: string | number;
+        decimals: string;
         image_data?: string; // base64 encoded image data
         social?: string[];
         uri?: string;

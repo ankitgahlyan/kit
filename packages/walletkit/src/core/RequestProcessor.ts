@@ -30,8 +30,13 @@ import { PrepareTonConnectData } from '../utils/signData/sign';
 import { ApiClient } from '../types/toncenter/ApiClient';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
 import { WalletManager } from './WalletManager';
-import { EventConnectApproval, EventTransactionApproval } from '../types/events';
-import { asHex, Hex } from '../types/primitive';
+import {
+    EventConnectApproval,
+    EventSignDataResponse,
+    EventTransactionApproval,
+    EventTransactionResponse,
+} from '../types/events';
+import { asHex } from '../types/primitive';
 import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { uuidv7 } from '../utils/uuid';
@@ -325,7 +330,7 @@ export class RequestProcessor {
      */
     async approveTransactionRequest(
         event: EventTransactionRequest | EventTransactionApproval,
-    ): Promise<{ signedBoc: string }> {
+    ): Promise<EventTransactionResponse> {
         try {
             if ('result' in event) {
                 if (!this.walletKitOptions.dev?.disableNetworkSend) {
@@ -477,7 +482,7 @@ export class RequestProcessor {
     /**
      * Process sign data request approval
      */
-    async approveSignDataRequest(event: EventSignDataRequest | EventSignDataApproval): Promise<{ signature: Hex }> {
+    async approveSignDataRequest(event: EventSignDataRequest | EventSignDataApproval): Promise<EventSignDataResponse> {
         try {
             if ('result' in event) {
                 // Send approval response
