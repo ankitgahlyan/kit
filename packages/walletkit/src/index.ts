@@ -113,3 +113,5 @@ export { wrapWalletInterface } from './core/Initializer';
 export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
 
 export { Signer } from './utils/Signer';
+
+export { ParseStack, SerializeStack } from './utils/tvmStack';

@@ -13,7 +13,7 @@ import {
     storeMessageRelaxed,
 } from '@ton/core';
 import { Maybe } from '@ton/core/dist/utils/maybe';
-import { ApiClient } from '@ton/walletkit';
+import { ApiClient, ParseStack } from '@ton/walletkit';
 
 // const log = globalLogger.createChild('WalletV4R2');
 const log = {
@@ -99,7 +99,12 @@ export class WalletV4R2 implements Contract {
             if (state.exitCode !== 0) {
                 return 0;
             }
-            return state.stack.readNumber();
+            const parsedStack = ParseStack(state.stack);
+            if (parsedStack[0]?.type === 'int') {
+                return Number(parsedStack[0].value);
+            } else {
+                throw new Error('Stack is not an int');
+            }
         } catch (error) {
             log.error('Failed to get seqno', { error });
             return 0;
@@ -122,7 +127,12 @@ export class WalletV4R2 implements Contract {
             if (state.exitCode !== 0) {
                 return this.subwalletId;
             }
-            return state.stack.readNumber();
+            const parsedStack = ParseStack(state.stack);
+            if (parsedStack[0]?.type === 'int') {
+                return Number(parsedStack[0].value);
+            } else {
+                throw new Error('Stack is not an int');
+            }
         } catch (error) {
             log.error('Failed to get subwallet id', { error });
             return this.subwalletId;

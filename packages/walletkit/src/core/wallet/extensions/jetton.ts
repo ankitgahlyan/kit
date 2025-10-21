@@ -8,6 +8,7 @@ import { validateTransactionMessage } from '../../../validation';
 import { ConnectTransactionParamContent, ConnectTransactionParamMessage } from '../../../types/internal';
 import { isValidAddress } from '../../../utils/address';
 import { CallForSuccess } from '../../../utils/retry';
+import { ParseStack, SerializeStack } from '../../../utils/tvmStack';
 
 export class WalletJettonClass implements WalletJettonInterface {
     async createTransferJettonTransaction(
@@ -80,7 +81,8 @@ export class WalletJettonClass implements WalletJettonInterface {
             const result = await this.client.runGetMethod(Address.parse(jettonWalletAddress), 'get_wallet_data');
 
             // The balance is the first return value from get_wallet_data
-            const balance = result.stack.readBigNumber();
+            const parsedStack = ParseStack(result.stack);
+            const balance = parsedStack[0].type === 'int' ? parsedStack[0].value : 0n;
             return balance.toString();
         } catch (_error) {
             // Failed to get jetton balance, return 0
@@ -95,12 +97,23 @@ export class WalletJettonClass implements WalletJettonInterface {
 
         try {
             // Call get_wallet_address method on jetton master contract
-            const result = await this.client.runGetMethod(Address.parse(jettonAddress), 'get_wallet_address', [
-                { type: 'slice', cell: beginCell().storeAddress(Address.parse(this.getAddress())).endCell() },
-            ]);
+            const result = await this.client.runGetMethod(
+                Address.parse(jettonAddress),
+                'get_wallet_address',
+                SerializeStack([
+                    { type: 'slice', cell: beginCell().storeAddress(Address.parse(this.getAddress())).endCell() },
+                ]),
+            );
 
+            const parsedStack = ParseStack(result.stack);
             // Extract the jetton wallet address from the result
-            const jettonWalletAddress = result.stack.readAddress();
+            const jettonWalletAddress =
+                parsedStack[0].type === 'slice' || parsedStack[0].type === 'cell'
+                    ? parsedStack[0].cell.asSlice().loadAddress()
+                    : null;
+            if (!jettonWalletAddress) {
+                throw new Error('Failed to get jetton wallet address');
+            }
             return jettonWalletAddress.toString();
         } catch (error) {
             throw new Error(
