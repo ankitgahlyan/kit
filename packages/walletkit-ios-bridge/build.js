@@ -7,7 +7,7 @@ const { build } = require('vite');
 const libraries = [
     {
         entry: path.resolve(__dirname, 'js/src/index.ts'),
-        fileName: 'index',
+        fileName: 'walletkit-ios-bridge',
     },
     {
         entry: path.resolve(__dirname, 'js/src/inject.ts'),
@@ -57,7 +57,7 @@ async function buildAll() {
                     entry: lib.entry,
                     name: lib.fileName,
                     formats: ['es'],
-                    fileName: () => `${lib.fileName}.js`,
+                    fileName: (format) => `${lib.fileName}.${format === 'es' ? 'mjs' : 'js'}`,
                 },
                 assetsDir: '',
                 assetsInlineLimit: () => true,
@@ -70,7 +70,7 @@ async function buildAll() {
                 cssCodeSplit: false,
                 minify: false,
                 sourcemap: true,
-                emptyOutDir: i === 0,
+                emptyOutDir: false,
             },
         });
     }
