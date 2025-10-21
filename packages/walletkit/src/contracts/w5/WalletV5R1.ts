@@ -14,6 +14,7 @@ import {
 import { ApiClient } from '../../types/toncenter/ApiClient';
 import { WalletOptions } from '../Wallet';
 import { defaultWalletIdV5R1 } from './WalletV5R1Adapter';
+import { ParseStack } from '../../utils/tvmStack';
 
 export type WalletV5Config = {
     signatureAllowed: boolean;
@@ -140,7 +141,12 @@ export class WalletV5 implements Contract {
     get publicKey(): Promise<bigint> {
         return this.client.runGetMethod(this.address, 'get_public_key').then((data) => {
             if (data.exitCode === 0) {
-                return data.stack.readBigNumber();
+                const parsedStack = ParseStack(data.stack);
+                if (parsedStack[0]?.type === 'int') {
+                    return parsedStack[0].value;
+                } else {
+                    throw new Error('Stack is not an int');
+                }
             } else if (this.init) {
                 return this.init.data
                     .asSlice()
@@ -159,7 +165,12 @@ export class WalletV5 implements Contract {
     get seqno() {
         return this.client.runGetMethod(this.address, 'seqno').then((data) => {
             if (data.exitCode === 0) {
-                return data.stack.readNumber();
+                const parsedStack = ParseStack(data.stack);
+                if (parsedStack[0]?.type === 'int') {
+                    return Number(parsedStack[0].value);
+                } else {
+                    throw new Error('Stack is not an int');
+                }
             } else {
                 return 0;
             }
@@ -169,7 +180,12 @@ export class WalletV5 implements Contract {
     get isSignatureAuthAllowed(): Promise<boolean> {
         return this.client.runGetMethod(this.address, 'is_signature_allowed').then((data) => {
             if (data.exitCode === 0) {
-                return data.stack.readBoolean();
+                const parsedStack = ParseStack(data.stack);
+                if (parsedStack[0]?.type === 'int') {
+                    return Boolean(parsedStack[0].value);
+                } else {
+                    throw new Error('Stack is not an int');
+                }
             } else {
                 return false;
             }
@@ -184,7 +200,12 @@ export class WalletV5 implements Contract {
         } else {
             return this.client.runGetMethod(this.address, 'get_subwallet_id').then((data) => {
                 if (data.exitCode === 0) {
-                    this.subwalletId = data.stack.readNumber();
+                    const parsedStack = ParseStack(data.stack);
+                    if (parsedStack[0]?.type === 'int') {
+                        this.subwalletId = Number(parsedStack[0].value);
+                    } else {
+                        throw new Error('Stack is not an int');
+                    }
                     return WalletId.deserialize(this.subwalletId);
                 } else {
                     return WalletId.deserialize(defaultWalletIdV5R1);
@@ -193,21 +214,21 @@ export class WalletV5 implements Contract {
         }
     }
 
-    get extensions(): Promise<Address[]> {
-        return this.client.runGetMethod(this.address, 'get_extensions').then((data) => {
-            if (data.exitCode === 0) {
-                const dict: Dictionary<bigint, bigint> = Dictionary.loadDirect(
-                    Dictionary.Keys.BigUint(256),
-                    Dictionary.Values.BigInt(1),
-                    data.stack.readCellOpt(),
-                );
-                const wc = this.address.workChain;
-                return dict.keys().map((key) => {
-                    return Address.parseRaw(`${wc}:${key.toString(16).padStart(64, '0')}`);
-                });
-            } else {
-                return [];
-            }
-        });
-    }
+    // get extensions(): Promise<Address[]> {
+    //     return this.client.runGetMethod(this.address, 'get_extensions').then((data) => {
+    //         if (data.exitCode === 0) {
+    //             const dict: Dictionary<bigint, bigint> = Dictionary.loadDirect(
+    //                 Dictionary.Keys.BigUint(256),
+    //                 Dictionary.Values.BigInt(1),
+    //                 data.stack.readCellOpt(),
+    //             );
+    //             const wc = this.address.workChain;
+    //             return dict.keys().map((key) => {
+    //                 return Address.parseRaw(`${wc}:${key.toString(16).padStart(64, '0')}`);
+    //             });
+    //         } else {
+    //             return [];
+    //         }
+    //     });
+    // }
 }

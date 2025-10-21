@@ -2,6 +2,9 @@ import { Address } from '@ton/core';
 import { SignDataPayload } from '@tonconnect/protocol';
 
 import { createTextBinaryHash, createCellHash } from './hash';
+import { Hex } from '../../types/primitive';
+import { Uint8ArrayToHex } from '../base64';
+import { EventSignDataResponse } from '../../types/events';
 
 export interface SignDataParams {
     payload: SignDataPayload;
@@ -15,12 +18,10 @@ export interface PrepareSignDataResult {
     timestamp: number;
     domain: string;
     payload: SignDataPayload;
-    hash: Uint8Array;
+    hash: Hex;
 }
 
-export type SignDataResult = PrepareSignDataResult & {
-    signature: string;
-};
+export type SignDataResult = PrepareSignDataResult & EventSignDataResponse;
 
 /**
  * Signs data according to TON Connect sign-data protocol.
@@ -49,6 +50,6 @@ export function PrepareTonConnectData(params: SignDataParams): PrepareSignDataRe
         timestamp,
         domain,
         payload,
-        hash: new Uint8Array(finalHash),
+        hash: Uint8ArrayToHex(finalHash),
     };
 }

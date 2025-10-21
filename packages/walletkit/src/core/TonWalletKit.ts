@@ -41,8 +41,7 @@ import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } 
 import { IWalletAdapter } from '../types/wallet';
 import { ApiClient } from '../types/toncenter/ApiClient';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
-import { Hex } from '../types/primitive';
-import { EventRequestError } from '../types/events';
+import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../types/events';
 import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { ApiClientToncenter } from './ApiClientToncenter';
@@ -545,7 +544,7 @@ export class TonWalletKit implements ITonWalletKit {
         return this.requestProcessor.rejectConnectRequest(event, reason);
     }
 
-    async approveTransactionRequest(event: EventTransactionRequest): Promise<{ signedBoc: string }> {
+    async approveTransactionRequest(event: EventTransactionRequest): Promise<EventTransactionResponse> {
         await this.ensureInitialized();
         return this.requestProcessor.approveTransactionRequest(event);
     }
@@ -558,7 +557,7 @@ export class TonWalletKit implements ITonWalletKit {
         return this.requestProcessor.rejectTransactionRequest(event, reason);
     }
 
-    async signDataRequest(event: EventSignDataRequest): Promise<{ signature: Hex }> {
+    async signDataRequest(event: EventSignDataRequest): Promise<EventSignDataResponse> {
         await this.ensureInitialized();
         return this.requestProcessor.approveSignDataRequest(event);
     }

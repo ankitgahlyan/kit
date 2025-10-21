@@ -5,6 +5,9 @@ import { Address } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
 import { ed25519 } from '@noble/curves/ed25519';
 
+import { Hex } from '../types/primitive';
+import { Base64ToHex, HexToUint8Array, Uint8ArrayToHex } from './base64';
+
 interface Domain {
     lengthBytes: number; // uint32 `json:"lengthBytes"`
     value: string; // string `json:"value"`
@@ -12,13 +15,13 @@ interface Domain {
 
 export interface TonProofParsedMessage {
     workchain: number; // int32
-    address: Uint8Array; // []byte
+    address: Hex; // []byte
     timstamp: number; // int64
     domain: Domain; // Domain
     payload: string; // string
     stateInit: string; // string
 
-    signature?: Uint8Array; // []byte
+    signature?: Hex; // []byte
 }
 
 export function SignatureVerify(pubkey: Uint8Array, message: Uint8Array, signature: Uint8Array): boolean {
@@ -41,7 +44,7 @@ export async function CreateTonProofMessageBytes(message: TonProofParsedMessage)
     const m = Buffer.concat([
         Buffer.from(tonProofPrefix),
         wc,
-        message.address,
+        HexToUint8Array(message.address),
         dl,
         Buffer.from(message.domain.value),
         ts,
@@ -60,12 +63,12 @@ export function ConvertTonProofMessage(walletInfo: Wallet, tp: TonProofItemReply
 
     const res: TonProofParsedMessage = {
         workchain: address.workChain,
-        address: address.hash,
+        address: Uint8ArrayToHex(address.hash),
         domain: {
             lengthBytes: tp.proof.domain.lengthBytes,
             value: tp.proof.domain.value,
         },
-        signature: Buffer.from(tp.proof.signature, 'base64'),
+        signature: Base64ToHex(tp.proof.signature),
         payload: tp.proof.payload,
         stateInit: walletInfo.account.walletStateInit,
         timstamp: tp.proof.timestamp,
@@ -88,7 +91,7 @@ export function createTonProofMessage({
 }): TonProofParsedMessage {
     const res: TonProofParsedMessage = {
         workchain: address.workChain,
-        address: address.hash,
+        address: Uint8ArrayToHex(address.hash),
         domain: {
             lengthBytes: domain.lengthBytes,
             value: domain.value,

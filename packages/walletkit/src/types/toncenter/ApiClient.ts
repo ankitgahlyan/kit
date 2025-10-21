@@ -1,4 +1,4 @@
-import { Address, TupleItem } from '@ton/core';
+import { Address } from '@ton/core';
 
 import type { ConnectTransactionParamMessage } from '../internal';
 import type {
@@ -10,6 +10,7 @@ import type {
 } from './emulation';
 import type { FullAccountState, GetResult } from './api';
 import type { NftItemsResponse } from './NftItemsResponse';
+import { RawStackItem } from '../../utils/tvmStack';
 
 export interface LimitRequest {
     limit?: number;
@@ -74,7 +75,7 @@ export interface ApiClient {
         seqno?: number,
     ): Promise<ToncenterEmulationResponse>;
     sendBoc(boc: string | Uint8Array): Promise<string>;
-    runGetMethod(address: Address | string, method: string, stack?: TupleItem[], seqno?: number): Promise<GetResult>; // TODO - Make serializable
+    runGetMethod(address: Address | string, method: string, stack?: RawStackItem[], seqno?: number): Promise<GetResult>; // TODO - Make serializable
     getAccountState(address: Address | string, seqno?: number): Promise<FullAccountState>;
     getBalance(address: Address | string, seqno?: number): Promise<string>;
 

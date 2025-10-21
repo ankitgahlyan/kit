@@ -1,11 +1,11 @@
-import { Address, ExtraCurrency, AccountStatus, TupleItem } from '@ton/core';
+import { Address, ExtraCurrency, AccountStatus } from '@ton/core';
 import { CHAIN } from '@tonconnect/protocol';
 
 import { Base64ToBigInt, Uint8ArrayToBase64, Base64Normalize, Base64ToHex } from '../utils/base64';
 import { FullAccountState, GetResult, TransactionId } from '../types/toncenter/api';
 import { ToncenterEmulationResponse } from '../types';
 import { ConnectTransactionParamMessage } from '../types/internal';
-import { serializeStack, parseStack, RawStackItem } from '../utils/tvmStack';
+import { RawStackItem } from '../utils/tvmStack';
 import {
     ApiClient,
     GetJettonsByOwnerRequest,
@@ -140,7 +140,7 @@ export class ApiClientToncenter implements ApiClient {
     async runGetMethod(
         address: Address | string,
         method: string,
-        stack: TupleItem[] = [],
+        stack: RawStackItem[] = [],
         seqno?: number,
     ): Promise<GetResult> {
         if (address instanceof Address) {
@@ -149,13 +149,13 @@ export class ApiClientToncenter implements ApiClient {
         const props: Record<string, unknown> = {
             address,
             method,
-            stack: serializeStack(stack),
+            stack: stack, //serializeStack(stack),
         };
         if (typeof seqno === 'number') props.seqno = seqno;
         const raw = await this.postJson<V3RunGetMethodRequest>('/api/v3/runGetMethod', props);
         return {
             gasUsed: raw.gas_used,
-            stack: parseStack(raw.stack),
+            stack: raw.stack,
             exitCode: raw.exit_code,
         };
     }

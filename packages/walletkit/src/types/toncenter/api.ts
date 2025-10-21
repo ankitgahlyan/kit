@@ -1,6 +1,7 @@
-import { AccountStatus, ExtraCurrency, TupleReader } from '@ton/core';
+import { AccountStatus, ExtraCurrency } from '@ton/core';
 
 import { Hex } from '../primitive';
+import { RawStackItem } from '../../utils/tvmStack';
 
 export interface TransactionId {
     lt: string;
@@ -19,6 +20,6 @@ export interface FullAccountState {
 
 export interface GetResult {
     gasUsed: number;
-    stack: TupleReader;
+    stack: RawStackItem[];
     exitCode: number;
 }

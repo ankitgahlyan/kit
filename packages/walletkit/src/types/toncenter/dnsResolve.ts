@@ -4,6 +4,7 @@ import { toHexString } from '@tonconnect/protocol';
 
 import { ApiClient } from './ApiClient';
 import { toStringTail } from '../primitive';
+import { ParseStack, SerializeStack } from '../../utils/tvmStack';
 
 export const ROOT_DNS_RESOLVER_MAINNET = 'Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq'; // TODO getting from config#4
 export const ROOT_DNS_RESOLVER_TESTNET = 'kf_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oEkd'; // TODO getting from config#4
@@ -107,12 +108,16 @@ export async function dnsLookup(
         { type: 'slice', cell: toStringTail(internal) },
         { type: 'int', value: toTonDnsCategory(category) },
     ];
-    const { stack, exitCode } = await client.runGetMethod(resolver, 'dnsresolve', param);
+    const { stack, exitCode } = await client.runGetMethod(resolver, 'dnsresolve', SerializeStack(param));
+    if (stack?.length !== 2) {
+        return null;
+    }
+    const parsedStack = ParseStack(stack);
 
     if (exitCode !== 0) {
         return null;
     }
-    const resolvedBit = stack.readNumber();
+    const resolvedBit = parsedStack[0].type === 'int' ? Number(parsedStack[0].value) : 0; // stack.length > 0 ? (stack[0].type === 'num' ? Numberstack[0].value : 0) : 0; // stack.readNumber();
     if (resolvedBit === 0 || resolvedBit % 8 !== 0) {
         return null;
     }
@@ -125,7 +130,7 @@ export async function dnsLookup(
         // TODO implement all categories are requested
         throw new Error('not implemented all categories are requested');
     }
-    const cell = stack.readCellOpt();
+    const cell = parsedStack[1].type === 'cell' ? parsedStack[1].cell : null;
     if (!cell) {
         return result;
     }

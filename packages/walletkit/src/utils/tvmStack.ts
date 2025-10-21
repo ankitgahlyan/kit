@@ -1,11 +1,11 @@
-import { Cell, TupleItem, TupleReader } from '@ton/core';
+import { Cell, TupleItem } from '@ton/core';
 
 export type RawStackItem =
     | { type: 'null' }
     | { type: 'num' | 'cell' | 'slice' | 'builder'; value: string }
     | { type: 'tuple' | 'list'; value: RawStackItem[] };
 
-function parseStackItem(item: RawStackItem): TupleItem {
+function ParseStackItem(item: RawStackItem): TupleItem {
     switch (item.type) {
         case 'num':
             if (item.value.startsWith('-')) {
@@ -22,23 +22,23 @@ function parseStackItem(item: RawStackItem): TupleItem {
             if (item.value.length === 0) {
                 return { type: 'null' };
             }
-            return { type: 'tuple', items: item.value.map((value) => parseStackItem(value)) };
+            return { type: 'tuple', items: item.value.map((value) => ParseStackItem(value)) };
         default:
             throw Error(`Unsupported parse stack item type: ${JSON.stringify(item)}`);
     }
 }
 
 // todo - add support for all types
-export function parseStack(list: RawStackItem[]): TupleReader {
+export function ParseStack(list: RawStackItem[]): TupleItem[] {
     let stack: TupleItem[] = [];
     for (let item of list) {
-        stack.push(parseStackItem(item));
+        stack.push(ParseStackItem(item));
     }
-    return new TupleReader(stack);
+    return stack;
 }
 
 // todo - add support for all types
-function serializeStackItem(item: TupleItem): RawStackItem {
+function SerializeStackItem(item: TupleItem): RawStackItem {
     switch (item.type) {
         case 'int':
             return { type: 'num', value: `${item.value < 0 ? '-' : ''}0x${item.value.toString(16)}` };
@@ -51,10 +51,10 @@ function serializeStackItem(item: TupleItem): RawStackItem {
     }
 }
 
-export function serializeStack(list: TupleItem[]): RawStackItem[] {
+export function SerializeStack(list: TupleItem[]): RawStackItem[] {
     let stack: RawStackItem[] = [];
     for (let item of list) {
-        stack.push(serializeStackItem(item));
+        stack.push(SerializeStackItem(item));
     }
     return stack;
 }
