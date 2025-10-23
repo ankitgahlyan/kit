@@ -12,7 +12,11 @@ jobs:
   # Build JavaScript bundles for WebView and QuickJS
   build-js:
     name: Build JS Bundles
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, k8s, linux]
+    container:
+      image: node:22
+      options: --user root
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,7 +54,11 @@ jobs:
   # Code formatting check with Spotless
   spotless:
     name: Spotless Check
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, k8s, linux]
+    container:
+      image: cimg/android:2025.10-node
+      options: --user root
     needs: build-js
     steps:
       - name: Checkout code
@@ -62,6 +70,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
 
       - name: Download JS bundles
         uses: actions/download-artifact@v4
@@ -80,7 +90,11 @@ jobs:
   # Build and test SDK
   test-sdk:
     name: Test & Build SDK
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, k8s, linux]
+    container:
+      image: cimg/android:2025.10-node
+      options: --user root
     needs: build-js
     steps:
       - name: Checkout code
@@ -92,6 +106,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
 
       - name: Download JS bundles
         uses: actions/download-artifact@v4
@@ -129,7 +145,11 @@ jobs:
   # Build Demo App
   build-demo:
     name: Build Demo App
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, k8s, linux]
+    container:
+      image: cimg/android:2025.10-node
+      options: --user root
     needs: build-js
     steps:
       - name: Checkout code
@@ -141,6 +161,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
 
       - name: Download JS bundles
         uses: actions/download-artifact@v4

@@ -11,7 +11,12 @@ on:
 jobs:
   base:
     name: e2e extension
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, k8s, linux]
+    container:
+      image: node:22
+      options: --user root
+
     steps:
     - uses: actions/checkout@v5
     - uses: pnpm/action-setup@v4
@@ -38,7 +43,11 @@ jobs:
 
     - name: Setup dependencies
       run: |
-        sudo apt-get install --no-install-recommends -y xvfb
+        if [ "$(id -u)" -ne 0 ]; then
+          sudo apt-get update && sudo apt-get install --no-install-recommends -y xvfb xauth
+        else
+          apt-get update && apt-get install --no-install-recommends -y xvfb xauth
+        fi
         pnpm install --frozen-lockfile
         pnpm --filter demo-wallet e2e:deps
 
@@ -46,7 +55,7 @@ jobs:
       run: |
         pnpm build
         cd apps/demo-wallet
-        xvfb-run pnpm e2e
+        pnpm e2e
       env:
         WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
         E2E_WALLET_SOURCE_EXTENSION: "${{ github.workspace }}/apps/demo-wallet/dist-extension"
