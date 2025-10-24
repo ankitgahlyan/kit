@@ -43,7 +43,7 @@ export function demoWalletFixture(config: ConfigFixture, slowMo = 0) {
                 app = await context.newPage();
                 // @ts-expect-error - custom property on context
                 context._app = app;
-                app.onReady = app.goto(config.appUrl, {
+                app.onReady = await app.goto(config.appUrl, {
                     waitUntil: 'load',
                 });
             }
@@ -61,13 +61,12 @@ export function demoWalletFixture(config: ConfigFixture, slowMo = 0) {
             const widget = new TonConnectWidget(app);
             await use(widget);
         },
-        wallet: async ({ context, app: _app }, use) => {
+        wallet: async ({ context }, use) => {
             const source = isExtension ? await getExtensionId(context) : walletSource;
             const app = new DemoWallet(context, source);
 
             const importPromise = app.importWallet(mnemonic ?? '');
-            // @ts-expect-error - custom property on context
-            await _app.onReady;
+            // await _app.onReady;
             await importPromise;
             await use(app);
         },
