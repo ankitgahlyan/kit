@@ -301,19 +301,44 @@ export class TonWalletKit implements ITonWalletKit {
         await this.ensureInitialized();
 
         const removeSession = async (sessionId: string) => {
-            await this.bridgeManager.sendResponse(
-                {
-                    sessionId: sessionId,
-                    isJsBridge: false,
-                    id: Date.now(),
-                } as unknown as BridgeEventBase,
-                {
-                    event: 'disconnect',
-                    id: Date.now(),
-                    payload: {},
-                } as DisconnectEvent,
-            );
+            // Get session to check if it's a JS bridge session
+            const session = await this.sessionManager.getSession(sessionId);
+            
+            // Remove the session from storage FIRST (before sending disconnect event)
+            // This prevents the WebView from reconnecting if it reloads
             await this.sessionManager.removeSession(sessionId);
+            
+            // Send disconnect notification to dApp AFTER removing the session
+            if (session?.isJsBridge && session?.tabId) {
+                // For JS bridge sessions, send as an event (not a response)
+                // Include the session ID in the payload so the dApp knows which session to disconnect
+                await this.bridgeManager.sendJsBridgeEvent(
+                    session.tabId,
+                    {
+                        event: 'disconnect',
+                        id: Date.now(),
+                        payload: {
+                            items: [sessionId], // Array of session IDs to disconnect
+                        },
+                    },
+                );
+            } else if (session) {
+                // For HTTP bridge sessions, send as a response
+                await this.bridgeManager.sendResponse(
+                    {
+                        sessionId: sessionId,
+                        isJsBridge: false,
+                        id: Date.now(),
+                        from: sessionId,
+                    } as unknown as BridgeEventBase,
+                    {
+                        event: 'disconnect',
+                        id: Date.now(),
+                        payload: {},
+                    } as DisconnectEvent,
+                    session,
+                );
+            }
         };
         if (sessionId) {
             try {

@@ -34,6 +34,10 @@ export interface SessionData {
     dAppDescription: string;
     domain: string;
     dAppIconUrl: string;
+
+    // JS Bridge fields (for injected bridge sessions)
+    isJsBridge?: boolean; // true if this session uses JS Bridge (injected), false/undefined for HTTP Bridge
+    tabId?: string; // Tab/WebView ID for JS Bridge sessions
 }
 
 export interface BridgeConfig {
@@ -88,6 +92,11 @@ export type EventApprovalBase = {
     walletAddress: string;
 
     messageId?: string;
+
+    // JS Bridge fields for internal browser
+    isJsBridge?: boolean;
+    tabId?: number;
+    domain?: string;
 
     traceId?: string;
 };
