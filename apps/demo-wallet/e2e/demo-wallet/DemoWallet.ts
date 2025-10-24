@@ -37,10 +37,14 @@ export class DemoWallet extends WalletApp {
         await this.close();
     }
 
-    async connectBy(url: string): Promise<void> {
+    async connectBy(url: string, shouldSkipConnect: boolean = false): Promise<void> {
         const app = await this.open();
         await app.getByTestId('tonconnect-url').fill(url);
         await app.getByTestId('tonconnect-process').click();
+
+        if (shouldSkipConnect) {
+            return;
+        }
         await this.connect();
     }
 

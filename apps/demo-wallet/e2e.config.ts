@@ -10,10 +10,11 @@ export default defineConfig({
     expect: {
         timeout: 60_000,
     },
+    fullyParallel: true,
     reporter: process.env.CI
         ? [['list'], ['html'], ['allure-playwright']]
         : [['list'], ['html'], ['allure-playwright']],
-    // workers: process.env.CI ? 2 : undefined,
+    workers: process.env.WORKERS_COUNT ? parseInt(process.env.WORKERS_COUNT) : undefined,
     use: {
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',

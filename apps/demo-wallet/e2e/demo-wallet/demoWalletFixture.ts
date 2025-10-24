@@ -19,7 +19,8 @@ export function detectWalletSource() {
     if (process.env.E2E_WALLET_SOURCE_EXTENSION) {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = path.dirname(__filename);
-        return path.resolve(__dirname, process.env.E2E_WALLET_SOURCE_EXTENSION);
+        const result = path.resolve(__dirname, process.env.E2E_WALLET_SOURCE_EXTENSION);
+        return result;
     }
     return source;
 }

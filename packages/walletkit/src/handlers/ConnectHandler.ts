@@ -191,7 +191,13 @@ export class ConnectHandler
     }> {
         try {
             // try to parse url
-            new URL(manifestUrl);
+            const parsedUrl = new URL(manifestUrl);
+            if (parsedUrl.host.indexOf('.') === -1) {
+                return {
+                    manifest: null,
+                    manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR,
+                };
+            }
         } catch (_) {
             return {
                 manifest: null,
@@ -220,7 +226,7 @@ export class ConnectHandler
         } catch (_) {
             return {
                 manifest: null,
-                manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR,
+                manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR,
             };
         }
     }

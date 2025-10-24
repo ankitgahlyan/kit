@@ -3,7 +3,7 @@ import type { TestInfo } from '@playwright/test';
 import { allureId, suite, tags, label } from 'allure-js-commons';
 
 // Загружаем переменные окружения
-config();
+config({ quiet: true });
 
 import { testWithDemoWalletFixture } from './demo-wallet';
 import type { TestFixture } from './qa';
@@ -53,8 +53,11 @@ async function runConnectTest(
         widget.connectWallet('Tonkeeper', true);
         wallet.connect(true, shouldSkipConnect);
     } else {
-        wallet.connectBy(await widget.connectUrl(await app.getByTestId('connect-button')));
-        expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+        const connectUrl = await widget.connectUrl(await app.getByTestId('connect-button'));
+        await wallet.connectBy(connectUrl, shouldSkipConnect);
+        if (!shouldSkipConnect) {
+            expect(widget.connectButtonText).not.toHaveText('Connect Wallet');
+        }
     }
 
     await app.getByTestId('connectValidation').waitFor({ state: 'visible' });
@@ -73,6 +76,6 @@ test('[ERROR] Connect with invalid manifest url@allureId(2254)', async ({ wallet
     await runConnectTest({ wallet, app, widget }, test.info());
 });
 
-test('[ERROR]Connect with invalid app url in the manifest @allureId(2255)', async ({ wallet, app, widget }) => {
+test('[ERROR] Connect with invalid app url in the manifest @allureId(2255)', async ({ wallet, app, widget }) => {
     await runConnectTest({ wallet, app, widget }, test.info());
 });
