@@ -102,4 +102,112 @@ describe('AccountEvent', () => {
             },
         ]);
     });
+
+    it('contract call', async () => {
+        const traces = loadData<ToncenterTracesResponse>('contract-call-traces');
+        const actual = toEvent(traces.traces[0], account, addressBook);
+        expect(actual.actions).toEqual([
+            {
+                id: '0xed0059d3002e0a3738c8d874a98c6cab6647dc055ff904717335f74e21c427cf',
+                TonTransfer: {
+                    amount: 90000000n,
+                    comment: undefined,
+                    recipient: {
+                        address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                        isScam: false,
+                        isWallet: true,
+                    },
+                    sender: {
+                        address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                        isScam: false,
+                        isWallet: true,
+                        name: 'tolya.ton',
+                    },
+                },
+                baseTransactions: ['0xed0059d3002e0a3738c8d874a98c6cab6647dc055ff904717335f74e21c427cf'],
+                simplePreview: {
+                    accounts: [
+                        {
+                            address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                            isScam: false,
+                            isWallet: true,
+                            name: 'tolya.ton',
+                        },
+                        {
+                            address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                            isScam: false,
+                            isWallet: true,
+                        },
+                    ],
+                    description: 'Transferring 0.09 TON',
+                    name: 'Ton Transfer',
+                    value: '0.09 TON',
+                },
+                status: 'success',
+                type: 'TonTransfer',
+            },
+            {
+                id: '0xed0059d3002e0a3738c8d874a98c6cab6647dc055ff904717335f74e21c427cf',
+                type: 'SmartContractExec',
+                status: 'success',
+                SmartContractExec: {
+                    executor: {
+                        address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                        name: 'tolya.ton',
+                        isScam: false,
+                        isWallet: true,
+                    },
+                    contract: {
+                        address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                        isScam: false,
+                        isWallet: true, // FIXME must be false
+                    },
+                    tonAttached: 90000000n,
+                    operation: '0x3dc680ae',
+                    payload: '',
+                },
+                simplePreview: {
+                    name: 'Smart Contract Execution',
+                    description: 'Execution of smart contract',
+                    value: '0.09 TON',
+                    accounts: [
+                        {
+                            address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                            name: 'tolya.ton',
+                            isScam: false,
+                            isWallet: true,
+                        },
+                        {
+                            address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                            isScam: false,
+                            isWallet: true, // FIXME must be false
+                        },
+                    ],
+                },
+                baseTransactions: ['0xdd3fd249b31515b60d4ff242820e7eda0ceca49d7a42a2c874ac31dcfb43cb9c'],
+            },
+            {
+                id: '0xdd3fd249b31515b60d4ff242820e7eda0ceca49d7a42a2c874ac31dcfb43cb9c',
+                type: 'ContractDeploy',
+                status: 'success',
+                ContractDeploy: {
+                    address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                    interfaces: [],
+                },
+                simplePreview: {
+                    name: 'Contract Deploy',
+                    description: 'Deploying a contract',
+                    value: '',
+                    accounts: [
+                        {
+                            address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
+                            isScam: false,
+                            isWallet: true, // FIXME must be false
+                        },
+                    ],
+                },
+                baseTransactions: ['0xdd3fd249b31515b60d4ff242820e7eda0ceca49d7a42a2c874ac31dcfb43cb9c'],
+            },
+        ]);
+    });
 });
