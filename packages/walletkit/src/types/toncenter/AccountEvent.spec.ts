@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import { toEvent } from './AccountEvent';
 import { loadData } from '../../../data';
 import { ToncenterTracesResponse } from './emulation';
@@ -5,9 +13,26 @@ import { AddressBook } from './AccountEvent';
 
 const account = 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9';
 const addressBook: AddressBook = {
-    EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9: 'tolya.ton',
-    'EQCLcEJJ4Bj6pZvcNW9GOno0_AIB27-nRBo4e-g-n_-_xDjd': 'pumpanddump.ton',
-    EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs: 'usdt-minter.ton',
+    EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9: {
+        domain: 'tolya.ton',
+        isScam: false,
+        isWallet: true,
+    },
+    'EQCLcEJJ4Bj6pZvcNW9GOno0_AIB27-nRBo4e-g-n_-_xDjd': {
+        domain: 'pumpanddump.ton',
+        isScam: false,
+        isWallet: true,
+    },
+    EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs: {
+        domain: 'usdt-minter.ton',
+        isScam: false,
+        isWallet: false,
+    },
+    EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne: {
+        domain: 'usdt-minter.ton',
+        isScam: false,
+        isWallet: false,
+    },
 };
 
 describe('AccountEvent', () => {
@@ -116,7 +141,8 @@ describe('AccountEvent', () => {
                     recipient: {
                         address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
                         isScam: false,
-                        isWallet: true,
+                        isWallet: false,
+                        name: 'usdt-minter.ton',
                     },
                     sender: {
                         address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
@@ -137,7 +163,8 @@ describe('AccountEvent', () => {
                         {
                             address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
                             isScam: false,
-                            isWallet: true,
+                            isWallet: false,
+                            name: 'usdt-minter.ton',
                         },
                     ],
                     description: 'Transferring 0.09 TON',
@@ -161,7 +188,8 @@ describe('AccountEvent', () => {
                     contract: {
                         address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
                         isScam: false,
-                        isWallet: true, // FIXME must be false
+                        isWallet: false,
+                        name: 'usdt-minter.ton',
                     },
                     tonAttached: 90000000n,
                     operation: '0x3dc680ae',
@@ -181,7 +209,8 @@ describe('AccountEvent', () => {
                         {
                             address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
                             isScam: false,
-                            isWallet: true, // FIXME must be false
+                            isWallet: false,
+                            name: 'usdt-minter.ton',
                         },
                     ],
                 },
@@ -203,7 +232,8 @@ describe('AccountEvent', () => {
                         {
                             address: 'EQAOevdCKKtPvNCvVd1M8rqLcYERrMSY39jou5U_gQdXwCne',
                             isScam: false,
-                            isWallet: true, // FIXME must be false
+                            isWallet: false,
+                            name: 'usdt-minter.ton',
                         },
                     ],
                 },
@@ -272,11 +302,10 @@ describe('AccountEvent', () => {
                         },
                     ],
                 },
-                base_transactions: [
-                    '0x55a1273fb40df01f189902c8ea0a9f49dbc4b5858a0b3e3d88b67e8bbd8f7fd9',
-                    '0x027f35335ad0de2d64a62d6ee066f7c85b42bb26667c1e1c922c45bf7060aece',
+                baseTransactions: [
                     '0xf61b0d813f307936901292b8e7681b9a44d63825e408efca77e54fd56c68f3a9',
-                    '0x33f7326c8a709967f5611a1c88b9f4c52e2ec95fe59b5f09a2bf89162945bb71',
+                    '0x027f35335ad0de2d64a62d6ee066f7c85b42bb26667c1e1c922c45bf7060aece',
+                    '0x55a1273fb40df01f189902c8ea0a9f49dbc4b5858a0b3e3d88b67e8bbd8f7fd9',
                 ],
             },
         ]);
@@ -315,7 +344,7 @@ describe('AccountEvent', () => {
                         score: 100,
                     },
                 },
-                simple_preview: {
+                simplePreview: {
                     name: 'Jetton Transfer',
                     description: 'Transferring 3 USD₮',
                     value: '3 USD₮',
@@ -341,11 +370,11 @@ describe('AccountEvent', () => {
                         },
                     ],
                 },
-                base_transactions: [
-                    '0x1f749e3135d21971ad64978a1b5964ad50ea798d174c5a3febab06842af79c14',
+                baseTransactions: [
+                    '0x63ca0d794bd993043441e0a58108b9004c7bfda04844cb534f1423eebf80173f',
                     '0x37927129a79cdc7461aaeb302f4e60858744aa4b779ee94e97e2de848d5feac2',
+                    '0x1f749e3135d21971ad64978a1b5964ad50ea798d174c5a3febab06842af79c14',
                     '0x7e56951504c267cff862abec672eaa4c9b92188422c51b22e45c9653f8254675',
-                    '0x723851abd85c7ed7e7be4ecc4ed2b4496f81851b8ae18bdf178af0397d36a9df',
                 ],
             },
         ]);

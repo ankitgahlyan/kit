@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import { fromNano } from '@ton/core';
 
 import { AddressBook, toAccount, TonTransferAction, StatusAction } from '../AccountEvent';
@@ -19,13 +27,16 @@ export function parseOutgoingTonTransfers(
         const recipient = msg.destination;
         const amount = BigInt(valueNum);
 
+        const recipientAccount = msg.init_state
+            ? toContractAccount(recipient, addressBook)
+            : toAccount(recipient, addressBook);
         actions.push({
             type: 'TonTransfer',
             id: Base64ToHex(tx.hash),
             status,
             TonTransfer: {
                 sender: toAccount(sender, addressBook),
-                recipient: toAccount(recipient, addressBook),
+                recipient: recipientAccount,
                 amount,
                 comment: extractComment(msg) ?? undefined,
             },
@@ -33,7 +44,7 @@ export function parseOutgoingTonTransfers(
                 name: 'Ton Transfer',
                 description: `Transferring ${fromNano(String(amount))} TON`,
                 value: `${fromNano(String(amount))} TON`,
-                accounts: [toAccount(sender, addressBook), toAccount(recipient, addressBook)],
+                accounts: [toAccount(sender, addressBook), recipientAccount],
             },
             baseTransactions: [Base64ToHex(tx.hash)],
         });
@@ -59,13 +70,16 @@ export function parseIncomingTonTransfers(
     const recipient = msg.destination;
     const amount = BigInt(valueNum);
 
+    const recipientAccount = msg.init_state
+        ? toContractAccount(recipient, addressBook)
+        : toAccount(recipient, addressBook);
     actions.push({
         type: 'TonTransfer',
         id: Base64ToHex(tx.hash),
         status,
         TonTransfer: {
             sender: toAccount(sender, addressBook),
-            recipient: toAccount(recipient, addressBook),
+            recipient: recipientAccount,
             amount,
             comment: extractComment(msg) ?? undefined,
         },
@@ -73,7 +87,7 @@ export function parseIncomingTonTransfers(
             name: 'Ton Transfer',
             description: `Transferring ${fromNano(String(amount))} TON`,
             value: `${fromNano(String(amount))} TON`,
-            accounts: [toAccount(sender, addressBook), toAccount(recipient, addressBook)],
+            accounts: [toAccount(sender, addressBook), recipientAccount],
         },
         baseTransactions: [Base64ToHex(tx.hash)],
     });
@@ -111,4 +125,9 @@ function extractComment(msg: EmulationMessage): string | null {
         }
     }
     return null;
+}
+
+function toContractAccount(address: string, addressBook: AddressBook) {
+    const acc = toAccount(address, addressBook);
+    return { ...acc, isWallet: false };
 }

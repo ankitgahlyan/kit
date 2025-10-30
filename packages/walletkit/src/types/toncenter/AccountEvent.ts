@@ -1,16 +1,17 @@
-import { fromNano } from '@ton/core';
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
-import {
-    EmulationAction,
-    EmulationAddressBookEntry,
-    EmulationTonTransferDetails,
-    ToncenterTraceItem,
-    ToncenterTransaction,
-} from './emulation';
+import { EmulationAddressBookEntry, ToncenterTraceItem, ToncenterTransaction } from './emulation';
 import { AddressFriendly, asAddressFriendly, Hex } from '../primitive';
 import { Base64ToHex } from '../../utils/base64';
 import { computeStatus, parseIncomingTonTransfers, parseOutgoingTonTransfers } from './parsers/TonTransfer';
 import { parseContractActions } from './parsers/Contract';
+import { parseJettonActions } from './parsers/Jetton';
 
 export interface AddressBookItem {
     domain?: string;
@@ -74,6 +75,20 @@ export interface JettonSwapAction extends TypedAction {
     type: 'JettonSwap';
     JettonSwap: JettonSwap;
 }
+export interface JettonTransferAction extends TypedAction {
+    type: 'JettonTransfer';
+    JettonTransfer: JettonTransfer;
+}
+
+export interface JettonTransfer {
+    sender: Account;
+    recipient: Account;
+    sendersWallet: string;
+    recipientsWallet: string;
+    amount: bigint;
+    comment?: string;
+    jetton: JettonMasterOut;
+}
 
 export interface JettonSwap {
     dex: string;
@@ -107,6 +122,7 @@ export type Action =
     | TypedAction
     | TonTransferAction
     | SmartContractExecAction
+    | JettonTransferAction
     | ContractDeployAction
     | JettonSwapAction;
 
@@ -128,6 +144,24 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
     }
     // Smart-contract related actions (exec + deploy)
     actions.push(...parseContractActions(accountFriendly, transactions, addressBook));
+    // Jetton transfers (sent/received)
+    actions.push(...parseJettonActions(accountFriendly, data, addressBook));
+
+    // If jetton actions exist, drop TonTransfer/SmartContractExec noise tied to same flow
+    const hasJetton = actions.some((a) => a.type === 'JettonTransfer');
+    if (hasJetton) {
+        const filtered: Action[] = actions.filter((a) => a.type === 'JettonTransfer');
+        return {
+            eventId: Base64ToHex(data.trace_id),
+            account: toAccount(account, addressBook),
+            timestamp: data.start_utime,
+            actions: filtered,
+            isScam: false,
+            lt: Number(data.start_lt),
+            inProgress: data.is_incomplete,
+            transactions: data.transactions,
+        };
+    }
     return {
         eventId: Base64ToHex(data.trace_id),
         account: toAccount(account, addressBook),
@@ -137,57 +171,6 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
         lt: Number(data.start_lt),
         inProgress: data.is_incomplete,
         transactions: data.transactions,
-    };
-}
-
-export function toAction(data: EmulationAction, addressBook: AddressBook = {}): Action {
-    switch (data.type) {
-        case 'ton_transfer':
-            return createTonTransferAction(data, addressBook);
-        case 'jetton_mint': // TODO jetton_mint
-        default:
-            return createDefaultAction(data, addressBook);
-    }
-}
-
-export function createDefaultAction(data: EmulationAction, addressBook: AddressBook = {}): TypedAction {
-    return {
-        type: 'Unknown',
-        id: Base64ToHex(data.action_id),
-        status: data.success ? 'success' : 'failure',
-        simplePreview: {
-            name: 'Unknown',
-            description: 'Transferring unknown',
-            value: 'unknown',
-            accounts: (data.accounts || []).map((item) => {
-                return toAccount(item, addressBook);
-            }),
-        },
-        baseTransactions: data.transactions.map(Base64ToHex),
-    };
-}
-
-export function createTonTransferAction(data: EmulationAction, addressBook: AddressBook = {}): TonTransferAction {
-    const details = data.details as EmulationTonTransferDetails;
-    return {
-        type: 'TonTransfer',
-        id: Base64ToHex(data.action_id),
-        status: data.success ? 'success' : 'failure',
-        TonTransfer: {
-            sender: toAccount(details.source, addressBook),
-            recipient: toAccount(details.destination, addressBook),
-            amount: BigInt(details.value),
-            comment: details.comment ? details.comment : undefined,
-        },
-        simplePreview: {
-            name: 'Ton Transfer',
-            description: `Transferring ${fromNano(details.value)} TON`,
-            value: `${fromNano(details.value)} TON`,
-            accounts: (data.accounts || []).map((item) => {
-                return toAccount(item, addressBook);
-            }),
-        },
-        baseTransactions: data.transactions.map(Base64ToHex),
     };
 }
 
@@ -203,6 +186,7 @@ export interface SimplePreview {
     description: string;
     value: string;
     accounts: Account[];
+    valueImage?: string;
 }
 
 export interface Account {

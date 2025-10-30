@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import { fromNano } from '@ton/core';
 
 import {
@@ -42,7 +50,7 @@ export function parseContractActions(
                 status,
                 SmartContractExec: {
                     executor: toAccount(ownerFriendly, addressBook),
-                    contract: toAccount(contractAddress, addressBook),
+                    contract: toContractAccount(contractAddress, addressBook),
                     tonAttached,
                     operation,
                     payload: '',
@@ -51,7 +59,7 @@ export function parseContractActions(
                     name: 'Smart Contract Execution',
                     description: 'Execution of smart contract',
                     value: `${fromNano(String(tonAttached))} TON`,
-                    accounts: [toAccount(ownerFriendly, addressBook), toAccount(contractAddress, addressBook)],
+                    accounts: [toAccount(ownerFriendly, addressBook), toContractAccount(contractAddress, addressBook)],
                 },
                 baseTransactions: [baseTx],
             };
@@ -69,7 +77,7 @@ export function parseContractActions(
                         name: 'Contract Deploy',
                         description: 'Deploying a contract',
                         value: '',
-                        accounts: [toAccount(contractAddress, addressBook)],
+                        accounts: [toContractAccount(contractAddress, addressBook)],
                     },
                     baseTransactions: [baseTx],
                 };
@@ -95,4 +103,9 @@ function findChildTransactionByInMsgHash(
         if (t.in_msg && t.in_msg.hash === inMsgHashBase64) return t;
     }
     return null;
+}
+
+function toContractAccount(address: string, addressBook: AddressBook) {
+    const acc = toAccount(address, addressBook);
+    return { ...acc, isWallet: false };
 }
