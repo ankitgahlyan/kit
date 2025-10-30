@@ -22,7 +22,10 @@ export interface NftItem {
     dataHash: Hex | null;
     collection: NftCollection | null;
     collectionAddress: AddressFriendly | null;
-    content?: { [key: string]: string }; // uri - meta json
+    content?: {
+        uri?: string;
+        [key: string]: unknown;
+    };
     metadata?: TokenInfo;
     index: string;
     init: boolean;

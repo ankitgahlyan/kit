@@ -18,7 +18,10 @@ export interface NftItemV3 {
     code_hash?: string;
     collection: NFTCollectionV3 | null;
     collection_address: string | null;
-    content?: { [key: string]: string }; // uri - meta json
+    content?: {
+        uri?: string;
+        [key: string]: unknown;
+    };
     data_hash?: string;
     index: string;
     init: boolean;
@@ -48,5 +51,6 @@ export function toNftItem(data: NftItemV3): NftItem {
     if (data.last_transaction_lt) out.lastTransactionLt = BigInt(data.last_transaction_lt);
     if (data.content) out.content = data.content;
     if (data.is_sbt !== undefined) out.isSbt = data.is_sbt;
+
     return out;
 }
