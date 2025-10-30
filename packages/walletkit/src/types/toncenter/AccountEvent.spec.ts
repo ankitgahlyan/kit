@@ -485,4 +485,89 @@ describe('AccountEvent', () => {
             },
         ]);
     });
+
+    it('contract call unknown', async () => {
+        const traces = loadData<ToncenterTracesResponse>('contract-call-unknown-traces');
+        const actual = toEvent(traces.traces[0], account, addressBook);
+        expect(actual.actions).toEqual([
+            {
+                TonTransfer: {
+                    amount: 15000000n,
+                    recipient: {
+                        address: 'EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e',
+                        isScam: false,
+                        isWallet: true,
+                    },
+                    sender: {
+                        address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                        isScam: false,
+                        isWallet: true,
+                        name: 'tolya.ton',
+                    },
+                },
+                baseTransactions: ['0xb142f5e55f70cfc21ea19dd43727e675109327d63a0ed8486f30b9143c8a8b34'],
+                id: '0xb142f5e55f70cfc21ea19dd43727e675109327d63a0ed8486f30b9143c8a8b34',
+                simplePreview: {
+                    accounts: [
+                        {
+                            address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                            isScam: false,
+                            isWallet: true,
+                            name: 'tolya.ton',
+                        },
+                        {
+                            address: 'EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e',
+                            isScam: false,
+                            isWallet: true,
+                        },
+                    ],
+                    description: 'Transferring 0.015 TON',
+                    name: 'Ton Transfer',
+                    value: '0.015 TON',
+                },
+                status: 'success',
+                type: 'TonTransfer',
+            },
+            {
+                SmartContractExec: {
+                    contract: {
+                        address: 'EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e',
+                        isScam: false,
+                        isWallet: false,
+                    },
+                    executor: {
+                        address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                        isScam: false,
+                        isWallet: true,
+                        name: 'tolya.ton',
+                    },
+                    operation: '0x4eb1f0f9',
+                    payload: '',
+                    tonAttached: 15000000n,
+                },
+                baseTransactions: ['0x4405d2add96306dc732867de45621b3d67bbd04682b1c36be01361106e4c25c1'],
+                id: '0xb142f5e55f70cfc21ea19dd43727e675109327d63a0ed8486f30b9143c8a8b34',
+                simplePreview: {
+                    accounts: [
+                        {
+                            address: 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9',
+                            isScam: false,
+                            isWallet: true,
+                            name: 'tolya.ton',
+                        },
+                        {
+                            address: 'EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e',
+                            isScam: false,
+                            isWallet: false,
+                        },
+                    ],
+                    description: 'Execution of smart contract',
+                    name: 'Smart Contract Execution',
+                    value: '0.015 TON',
+                },
+                status: 'success',
+                type: 'SmartContractExec',
+            },
+        ]);
+    });
 });
