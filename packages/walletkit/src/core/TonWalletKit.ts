@@ -317,6 +317,10 @@ export class TonWalletKit implements ITonWalletKit {
                             items: [sessionId],
                         },
                     },
+                    {
+                        traceId: undefined,
+                        session: session, // Pass session for disconnect event routing on emit
+                    },
                 );
             } else if (session) {
                 // For HTTP bridge sessions, send as a response
