@@ -18,7 +18,10 @@ export interface NftItemV3 {
     code_hash?: string;
     collection: NFTCollectionV3 | null;
     collection_address: string | null;
-    content?: { [key: string]: string }; // uri - meta json
+    content?: {
+        uri?: string;
+        [key: string]: unknown;
+    };
     data_hash?: string;
     index: string;
     init: boolean;
