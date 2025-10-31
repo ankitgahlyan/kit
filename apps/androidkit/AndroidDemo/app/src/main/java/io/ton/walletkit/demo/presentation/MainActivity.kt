@@ -74,6 +74,7 @@ private fun AppNavigation(viewModel: WalletKitViewModel) {
                 state = state,
                 onAddWalletClick = viewModel::openAddWalletSheet,
                 onUrlPromptClick = viewModel::showUrlPrompt,
+                onOpenBrowser = { url -> viewModel.openBrowser(url) },
                 onRefresh = viewModel::refreshAll,
                 onDismissSheet = viewModel::dismissSheet,
                 onWalletDetails = viewModel::showWalletDetails,

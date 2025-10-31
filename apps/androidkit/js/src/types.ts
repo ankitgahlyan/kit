@@ -11,13 +11,17 @@ export type WalletKitBridgeEvent = {
     | 'signDataRequest'
     | 'disconnect'
     | 'signerSignRequest'
+    | 'browserPageStarted'
+    | 'browserPageFinished'
+    | 'browserError'
+    | 'browserBridgeRequest'
     | string;
   data?: any;
 };
 
 // Bridge configuration
 export type WalletKitBridgeInitConfig = {
-  network?: 'mainnet' | 'testnet';
+  network?: string;
   apiUrl?: string;
   apiBaseUrl?: string;
   tonApiUrl?: string;
@@ -40,7 +44,7 @@ export interface WalletKitNativeBridgeType {
 
 export interface WalletKitBridgeApi {
   init: (config?: WalletKitBridgeInitConfig) => Promise<unknown>;
-  addWalletFromMnemonic: (args: { words: string[]; version: 'v5r1' | 'v4r2'; network?: 'mainnet' | 'testnet' | '-239' | '-3' }) => Promise<unknown>;
+  addWalletFromMnemonic: (args: { words: string[]; version: 'v5r1' | 'v4r2'; network?: string }) => Promise<unknown>;
   getWallets: () => Promise<unknown>;
   getWalletState: (args: { address: string }) => Promise<unknown>;
   handleTonConnectUrl: (args: { url: string }) => Promise<unknown>;

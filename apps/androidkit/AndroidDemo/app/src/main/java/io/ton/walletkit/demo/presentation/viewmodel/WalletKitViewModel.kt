@@ -1,7 +1,6 @@
 package io.ton.walletkit.demo.presentation.viewmodel
 
 import android.app.Application
-import android.os.Build
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
@@ -21,17 +20,20 @@ import io.ton.walletkit.demo.presentation.model.ConnectPermissionUi
 import io.ton.walletkit.demo.presentation.model.ConnectRequestUi
 import io.ton.walletkit.demo.presentation.model.SessionSummary
 import io.ton.walletkit.demo.presentation.model.SignDataRequestUi
-import io.ton.walletkit.demo.presentation.model.TransactionDetailUi
 import io.ton.walletkit.demo.presentation.model.TransactionMessageUi
 import io.ton.walletkit.demo.presentation.model.TransactionRequestUi
 import io.ton.walletkit.demo.presentation.model.WalletSummary
 import io.ton.walletkit.demo.presentation.state.SheetState
 import io.ton.walletkit.demo.presentation.state.WalletUiState
+import io.ton.walletkit.demo.presentation.util.TimestampParser
+import io.ton.walletkit.demo.presentation.util.TonFormatter
+import io.ton.walletkit.demo.presentation.util.TransactionDetailMapper
 import io.ton.walletkit.demo.presentation.util.TransactionDiffUtil
+import io.ton.walletkit.demo.presentation.util.UrlSanitizer
 import io.ton.walletkit.domain.model.TONNetwork
 import io.ton.walletkit.domain.model.TONWalletData
-import io.ton.walletkit.domain.model.Transaction
-import io.ton.walletkit.domain.model.TransactionType
+import io.ton.walletkit.domain.model.WalletSession
+import io.ton.walletkit.domain.model.WalletSigner
 import io.ton.walletkit.presentation.TONWallet
 import io.ton.walletkit.presentation.event.TONWalletKitEvent
 import io.ton.walletkit.presentation.extensions.disconnect
@@ -39,6 +41,8 @@ import io.ton.walletkit.presentation.request.TONWalletConnectionRequest
 import io.ton.walletkit.presentation.request.TONWalletSignDataRequest
 import io.ton.walletkit.presentation.request.TONWalletTransactionRequest
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,12 +51,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.util.Locale
-import java.util.TimeZone
 import kotlin.collections.ArrayDeque
 import kotlin.collections.firstOrNull
 
@@ -94,9 +92,6 @@ class WalletKitViewModel(
     private fun logEvent(@StringRes messageRes: Int, vararg args: Any) {
         logEvent(uiString(messageRes, *args))
     }
-
-    private val demoWalletName: String
-        get() = uiString(R.string.wallet_demo_default_name)
 
     init {
         // Check password state on initialization (FIRST)
@@ -150,10 +145,7 @@ class WalletKitViewModel(
             return
         }
 
-        // Migrate legacy wallets if needed (this will add them to SDK)
-        migrateLegacyWallets()
-
-        // Reload wallets after potential migration
+        // Reload wallets from SDK (after any external changes)
         val walletsAfterMigration = TONWallet.wallets()
         tonWallets.clear()
         walletsAfterMigration.forEach { wallet ->
@@ -165,12 +157,13 @@ class WalletKitViewModel(
 
         _state.update { it.copy(initialized = true, status = uiString(R.string.wallet_status_ready), error = null) }
 
-        // Load wallets first, then fetch transactions for active wallet
-        refreshWallets()
-        refreshSessions()
-
-        // Add delay after wallet loading to avoid rate limiting
-        delay(1000)
+        // Load wallets and sessions concurrently and wait for both to complete
+        coroutineScope {
+            val walletsJob = async { refreshWallets() }
+            val sessionsJob = async { refreshSessions() }
+            walletsJob.await()
+            sessionsJob.await()
+        }
 
         // Restore saved active wallet after wallets are loaded
         // Only restore if the saved wallet actually exists in the loaded wallets
@@ -218,73 +211,15 @@ class WalletKitViewModel(
                 Log.d(LOG_TAG, "Session disconnected: ${event.event.sessionId}")
                 viewModelScope.launch { refreshSessions() }
             }
-        }
-    }
-
-    /**
-     * Restore wallet metadata from demo storage.
-     * If SDK has no wallets, migrate them from legacy storage.
-     */
-    private suspend fun migrateLegacyWallets() {
-        try {
-            val storedWallets = storage.loadAllWallets()
-
-            if (storedWallets.isEmpty()) {
-                Log.d(LOG_TAG, "No legacy wallets to migrate")
-                return
+            // Browser events - logged but not handled here as BrowserSheet manages WebView directly
+            is TONWalletKitEvent.BrowserPageStarted,
+            is TONWalletKitEvent.BrowserPageFinished,
+            is TONWalletKitEvent.BrowserError,
+            is TONWalletKitEvent.BrowserBridgeRequest,
+            -> {
+                // These events are informational only - BrowserSheet manages the WebView lifecycle
+                Log.d(LOG_TAG, "Browser event: ${event::class.simpleName}")
             }
-
-            Log.d(LOG_TAG, "Loading metadata for ${storedWallets.size} wallets from demo storage")
-
-            // Check if we need to migrate wallets to SDK
-            val sdkWallets = TONWallet.wallets()
-            val needsMigration = sdkWallets.isEmpty() && storedWallets.isNotEmpty()
-
-            if (needsMigration) {
-                Log.d(LOG_TAG, "Migrating ${storedWallets.size} wallets from legacy storage to SDK")
-            }
-
-            storedWallets.forEach { (address, record) ->
-                try {
-                    val network = record.network.toTonNetwork(currentNetwork)
-                    val version = record.version ?: DEFAULT_WALLET_VERSION
-                    val displayName = record.name ?: defaultWalletName(walletMetadata.size)
-
-                    // Store metadata for UI
-                    walletMetadata[address] = WalletMetadata(
-                        name = displayName,
-                        network = network,
-                        version = version,
-                    )
-
-                    // Migrate wallet to SDK if needed
-                    if (needsMigration && record.mnemonic != null) {
-                        Log.d(LOG_TAG, "Migrating wallet to SDK: $address ($displayName)")
-                        try {
-                            val wallet = TONWallet.add(
-                                TONWalletData(
-                                    mnemonic = record.mnemonic,
-                                    name = displayName,
-                                    version = version,
-                                    network = network,
-                                ),
-                            )
-                            wallet.address?.let { tonWallets[it] = wallet }
-                            Log.d(LOG_TAG, "Successfully migrated wallet: $address")
-                        } catch (e: Exception) {
-                            Log.e(LOG_TAG, "Failed to migrate wallet to SDK: $address", e)
-                        }
-                    }
-
-                    Log.d(LOG_TAG, "Loaded metadata for wallet: $address ($displayName)")
-                } catch (e: Exception) {
-                    Log.e(LOG_TAG, "Failed to load metadata for wallet: $address", e)
-                }
-            }
-
-            Log.d(LOG_TAG, "Metadata loaded for ${walletMetadata.size} wallets")
-        } catch (e: Exception) {
-            Log.e(LOG_TAG, "Migration failed", e)
         }
     }
 
@@ -336,68 +271,66 @@ class WalletKitViewModel(
         _state.update { it.copy(isLoadingWallets = false) }
     }
 
-    fun refreshSessions() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoadingSessions = true) }
+    private suspend fun refreshSessions() {
+        _state.update { it.copy(isLoadingSessions = true) }
 
-            // Aggregate sessions from all wallets
-            val allSessions = mutableListOf<io.ton.walletkit.domain.model.WalletSession>()
-            tonWallets.values.forEach { wallet ->
-                runCatching {
-                    val walletSessions = wallet.sessions()
-                    allSessions.addAll(walletSessions)
-                }.onFailure {
-                    Log.w(LOG_TAG, "Failed to get sessions for wallet ${wallet.address}", it)
-                }
+        // Aggregate sessions from all wallets
+        val allSessions = mutableListOf<WalletSession>()
+        tonWallets.values.forEach { wallet ->
+            runCatching {
+                val walletSessions = wallet.sessions()
+                allSessions.addAll(walletSessions)
+            }.onFailure {
+                Log.w(LOG_TAG, "Failed to get sessions for wallet ${wallet.address}", it)
             }
-
-            Log.d(LOG_TAG, "Loaded ${allSessions.size} sessions from ${tonWallets.size} wallets")
-            allSessions.forEach { session ->
-                Log.d(
-                    LOG_TAG,
-                    "Session: id=${session.sessionId}, dApp=${session.dAppName}, " +
-                        "wallet=${session.walletAddress}, url=${session.dAppUrl}",
-                )
-            }
-
-            val mapped = allSessions.mapNotNull { session ->
-                val sessionUrl = sanitizeUrl(session.dAppUrl)
-                val sessionManifest = sanitizeUrl(session.manifestUrl)
-                val sessionIcon = sanitizeUrl(session.iconUrl)
-
-                // Skip sessions with no metadata (appears disconnected)
-                val appearsDisconnected = sessionUrl == null && sessionManifest == null
-                if (appearsDisconnected && session.sessionId.isNotBlank()) {
-                    Log.d(
-                        LOG_TAG,
-                        "Empty metadata for session ${session.sessionId}",
-                    )
-                    return@mapNotNull null
-                }
-
-                val displayName = session.dAppName.ifBlank { uiString(R.string.wallet_event_unknown_dapp) }
-
-                SessionSummary(
-                    sessionId = session.sessionId,
-                    dAppName = displayName,
-                    walletAddress = session.walletAddress,
-                    dAppUrl = sessionUrl,
-                    manifestUrl = sessionManifest,
-                    iconUrl = sessionIcon,
-                    createdAt = parseTimestamp(session.createdAtIso),
-                    lastActivity = parseTimestamp(session.lastActivityIso),
-                )
-            }
-            val finalSessions = mapped
-            finalSessions.forEach { summary ->
-                Log.d(
-                    LOG_TAG,
-                    "Mapped session summary: id=${summary.sessionId}, dApp=${summary.dAppName}, " +
-                        "url=${summary.dAppUrl}, icon=${summary.iconUrl}",
-                )
-            }
-            _state.update { it.copy(sessions = finalSessions, error = null, isLoadingSessions = false) }
         }
+
+        Log.d(LOG_TAG, "Loaded ${allSessions.size} sessions from ${tonWallets.size} wallets")
+        allSessions.forEach { session ->
+            Log.d(
+                LOG_TAG,
+                "Session: id=${session.sessionId}, dApp=${session.dAppName}, " +
+                    "wallet=${session.walletAddress}, url=${session.dAppUrl}",
+            )
+        }
+
+        val mapped = allSessions.mapNotNull { session ->
+            val sessionUrl = UrlSanitizer.sanitize(session.dAppUrl)
+            val sessionManifest = UrlSanitizer.sanitize(session.manifestUrl)
+            val sessionIcon = UrlSanitizer.sanitize(session.iconUrl)
+
+            // Skip sessions with no metadata (appears disconnected)
+            val appearsDisconnected = sessionUrl == null && sessionManifest == null
+            if (appearsDisconnected && session.sessionId.isNotBlank()) {
+                Log.d(
+                    LOG_TAG,
+                    "Empty metadata for session ${session.sessionId}",
+                )
+                return@mapNotNull null
+            }
+
+            val displayName = session.dAppName.ifBlank { uiString(R.string.wallet_event_unknown_dapp) }
+
+            SessionSummary(
+                sessionId = session.sessionId,
+                dAppName = displayName,
+                walletAddress = session.walletAddress,
+                dAppUrl = sessionUrl,
+                manifestUrl = sessionManifest,
+                iconUrl = sessionIcon,
+                createdAt = TimestampParser.parse(session.createdAtIso),
+                lastActivity = TimestampParser.parse(session.lastActivityIso),
+            )
+        }
+        val finalSessions = mapped
+        finalSessions.forEach { summary ->
+            Log.d(
+                LOG_TAG,
+                "Mapped session summary: id=${summary.sessionId}, dApp=${summary.dAppName}, " +
+                    "url=${summary.dAppUrl}, icon=${summary.iconUrl}",
+            )
+        }
+        _state.update { it.copy(sessions = finalSessions, error = null, isLoadingSessions = false) }
     }
 
     fun openAddWalletSheet() {
@@ -421,6 +354,10 @@ class WalletKitViewModel(
 
     fun hideUrlPrompt() {
         _state.update { it.copy(isUrlPromptVisible = false) }
+    }
+
+    fun openBrowser(url: String) {
+        setSheet(SheetState.Browser(url))
     }
 
     fun importWallet(
@@ -519,10 +456,11 @@ class WalletKitViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isGeneratingMnemonic = true) }
             val words = try {
-                // Use suspend generator that delegates to TONWallet or falls back
-                generateMnemonicSuspend()
-            } catch (_: Exception) {
-                List(24) { DEMO_WORDS.random() }
+                TONWallet.generateMnemonic(24)
+            } catch (e: Exception) {
+                Log.e(LOG_TAG, "Mnemonic generation failed", e)
+                _state.update { it.copy(isGeneratingMnemonic = false, error = uiString(R.string.wallet_error_generate_failed)) }
+                return@launch
             } finally {
                 _state.update { it.copy(isGeneratingMnemonic = false) }
             }
@@ -630,7 +568,16 @@ class WalletKitViewModel(
             }
 
             result.onSuccess {
-                dismissSheet()
+                // Check if we should restore the browser sheet
+                val previousSheet = _state.value.previousSheet
+                if (previousSheet is SheetState.Browser) {
+                    // Restore browser so dApp can show connection confirmation
+                    _state.update { it.copy(sheetState = previousSheet, previousSheet = null) }
+                } else {
+                    // No browser to restore, dismiss the sheet
+                    dismissSheet()
+                }
+
                 refreshSessions()
                 logEvent(R.string.wallet_event_approved_connect, request.dAppName)
             }.onFailure { error ->
@@ -648,7 +595,16 @@ class WalletKitViewModel(
             }
 
             result.onSuccess {
-                dismissSheet()
+                // Check if we should restore the browser sheet
+                val previousSheet = _state.value.previousSheet
+                if (previousSheet is SheetState.Browser) {
+                    // Restore browser so user can see the dApp
+                    _state.update { it.copy(sheetState = previousSheet, previousSheet = null) }
+                } else {
+                    // No browser to restore, dismiss the sheet
+                    dismissSheet()
+                }
+
                 logEvent(R.string.wallet_event_rejected_connect, request.dAppName)
             }.onFailure { error ->
                 val fallback = uiString(R.string.wallet_error_reject_connect)
@@ -734,7 +690,7 @@ class WalletKitViewModel(
 
                 // Auto-hide success message after 10 seconds
                 launch {
-                    delay(10000)
+                    delay(HIDE_MESSAGE_MS)
                     _state.update { currentState ->
                         // Only clear if the status is still the success message
                         val successStatus = uiString(R.string.wallet_status_signed_success)
@@ -770,7 +726,7 @@ class WalletKitViewModel(
 
                 // Auto-hide rejection message after 10 seconds
                 launch {
-                    delay(10000)
+                    delay(HIDE_MESSAGE_MS)
                     _state.update { currentState ->
                         val rejectedStatus = uiString(R.string.wallet_status_sign_rejected)
                         if (currentState.status == rejectedStatus) {
@@ -821,7 +777,6 @@ class WalletKitViewModel(
 
                 // Update transaction details after signing
                 launch {
-                    delay(200)
                     request.walletAddress?.let { address ->
                         if (state.value.activeWalletAddress == address) {
                             refreshTransactions(address)
@@ -865,7 +820,7 @@ class WalletKitViewModel(
 
                 // Auto-hide cancellation message
                 launch {
-                    delay(10000)
+                    delay(HIDE_MESSAGE_MS)
                     _state.update { currentState ->
                         val cancelledStatus = uiString(R.string.wallet_status_sign_cancelled)
                         if (currentState.status == cancelledStatus) {
@@ -939,8 +894,7 @@ class WalletKitViewModel(
 
             // Convert TON to nanoTON
             val amountInNano = try {
-                val tonAmount = amount.toBigDecimal()
-                (tonAmount * BigDecimal(NANO_TON_MULTIPLIER)).toBigInteger().toString()
+                TonFormatter.tonToNano(amount)
             } catch (e: Exception) {
                 _state.update {
                     val reason = e.message ?: uiString(R.string.wallet_error_unknown)
@@ -997,8 +951,7 @@ class WalletKitViewModel(
             refreshWallets()
             logEvent(R.string.wallet_event_switched_wallet, wallet.name)
 
-            // Add delay before fetching transactions to avoid rate limiting
-            delay(1000)
+            // Immediately fetch transactions after wallets refresh completes
             refreshTransactions(address)
         }
     }
@@ -1098,36 +1051,14 @@ class WalletKitViewModel(
         val tx = transactions.firstOrNull { it.hash == transactionHash } ?: return
 
         // Parse transaction details
-        val detail = parseTransactionDetail(tx, walletAddress)
-        _state.update { it.copy(sheetState = SheetState.TransactionDetail(detail)) }
-    }
-
-    private fun parseTransactionDetail(tx: Transaction, walletAddress: String): TransactionDetailUi {
-        val isOutgoing = tx.type == TransactionType.OUTGOING
-        val unknownAddressLabel = uiString(R.string.wallet_transaction_unknown_party)
-
-        // Transaction already has parsed data from the bridge
-        return TransactionDetailUi(
-            hash = tx.hash,
-            timestamp = tx.timestamp,
-            amount = formatNanoTon(tx.amount),
-            fee = tx.fee?.let { formatNanoTon(it) } ?: uiString(R.string.wallet_transaction_fee_default),
-            fromAddress = tx.sender ?: (if (isOutgoing) walletAddress else unknownAddressLabel),
-            toAddress = tx.recipient ?: (if (!isOutgoing) walletAddress else unknownAddressLabel),
-            comment = tx.comment,
-            status = uiString(R.string.wallet_transaction_status_success), // Transactions from bridge are already filtered/successful
-            lt = tx.lt ?: "0",
-            blockSeqno = tx.blockSeqno ?: 0,
-            isOutgoing = isOutgoing,
+        val detail = TransactionDetailMapper.toDetailUi(
+            tx = tx,
+            walletAddress = walletAddress,
+            unknownAddressLabel = uiString(R.string.wallet_transaction_unknown_party),
+            defaultFeeLabel = uiString(R.string.wallet_transaction_fee_default),
+            successStatusLabel = uiString(R.string.wallet_transaction_status_success),
         )
-    }
-
-    private fun formatNanoTon(nanoTon: String): String = try {
-        val value = nanoTon.toLongOrNull() ?: 0L
-        val ton = value.toDouble() / 1_000_000_000.0
-        String.format(Locale.US, "%.4f", ton)
-    } catch (e: Exception) {
-        DEFAULT_TON_FORMAT
+        _state.update { it.copy(sheetState = SheetState.TransactionDetail(detail)) }
     }
 
     fun removeWallet(address: String) {
@@ -1247,7 +1178,7 @@ class WalletKitViewModel(
             }.getOrNull()
 
             Log.d(LOG_TAG, "loadWalletSummaries: balance for $address = $balance")
-            val formatted = balance?.let(::formatTon)
+            val formatted = balance?.let { TonFormatter.formatTon(it) }
 
             // Use cached transactions only - don't fetch on every balance refresh
             // Transactions will be fetched explicitly via refreshTransactions()
@@ -1279,12 +1210,6 @@ class WalletKitViewModel(
                 interfaceType = interfaceType,
             )
             result.add(summary)
-
-            // Add small delay between wallets to avoid rate limiting (429 errors)
-            // Only delay if there are more wallets to process
-            if (wallet != wallets.last()) {
-                delay(300) // 300ms delay between wallet API calls
-            }
         }
         return result
     }
@@ -1338,46 +1263,6 @@ class WalletKitViewModel(
         return metadata
     }
 
-    private suspend fun ensureWallet() {
-        val existing = TONWallet.wallets()
-        if (existing.isNotEmpty()) {
-            // Update cache
-            existing.forEach { wallet ->
-                wallet.address?.let { address ->
-                    tonWallets[address] = wallet
-                    ensureMetadataForAddress(address, "")
-                }
-            }
-            return
-        }
-
-        val metadata = WalletMetadata(
-            name = demoWalletName,
-            network = currentNetwork,
-            version = DEFAULT_WALLET_VERSION,
-        )
-        val pendingRecord = PendingWalletRecord(metadata = metadata, mnemonic = DEMO_MNEMONIC)
-        pendingWallets.addLast(pendingRecord)
-
-        val walletData = TONWalletData(
-            mnemonic = DEMO_MNEMONIC,
-            name = demoWalletName,
-            version = DEFAULT_WALLET_VERSION,
-            network = currentNetwork,
-        )
-
-        runCatching {
-            val wallet = TONWallet.add(walletData)
-            wallet.address?.let { address ->
-                tonWallets[address] = wallet
-            }
-        }.onFailure { error ->
-            pendingWallets.remove(pendingRecord)
-            val fallback = uiString(R.string.wallet_error_prepare_demo_wallet)
-            _state.update { it.copy(error = error.message ?: fallback) }
-        }
-    }
-
     private suspend fun reinitializeForNetwork(
         target: TONNetwork,
     ) {
@@ -1386,9 +1271,6 @@ class WalletKitViewModel(
         currentNetwork = target
         walletMetadata.clear()
         pendingWallets.clear()
-
-        // Ensure we have at least one wallet for demo purposes
-        ensureWallet()
     }
 
     private suspend fun switchNetworkIfNeeded(target: TONNetwork) {
@@ -1397,8 +1279,11 @@ class WalletKitViewModel(
         refreshAll()
     }
 
-    private fun setSheet(sheet: SheetState) {
-        _state.update { it.copy(sheetState = sheet) }
+    private fun setSheet(sheet: SheetState, savePrevious: Boolean = false) {
+        _state.update { currentState ->
+            val previousSheet = if (savePrevious) currentState.sheetState else null
+            currentState.copy(sheetState = sheet, previousSheet = previousSheet)
+        }
     }
 
     /**
@@ -1429,7 +1314,11 @@ class WalletKitViewModel(
             connectRequest = request, // Store for direct approve/reject
         )
 
-        setSheet(SheetState.Connect(uiRequest))
+        // Save previous sheet (e.g., Browser) so we can restore it after approval/rejection
+        val currentSheet = _state.value.sheetState
+        val shouldSavePrevious = currentSheet is SheetState.Browser
+        setSheet(SheetState.Connect(uiRequest), savePrevious = shouldSavePrevious)
+
         val eventDAppName = dAppInfo?.name ?: fallbackDAppName
         logEvent(R.string.wallet_event_connect_request, eventDAppName)
     }
@@ -1504,9 +1393,6 @@ class WalletKitViewModel(
         logEvent(R.string.wallet_event_sign_data_request, eventDAppName)
     }
 
-    // Old bridge event handler - no longer used with public API
-    // Event handling now happens via handleSdkEvent() which processes TONWalletKitEvent
-
     private fun logEvent(message: String) {
         _state.update {
             val events = listOf(message) + it.events
@@ -1522,108 +1408,32 @@ class WalletKitViewModel(
 
     private fun defaultWalletName(index: Int): String = uiString(R.string.wallet_default_name, index + 1)
 
-    private fun parseTimestamp(value: String?): Long? {
-        if (value.isNullOrBlank()) return null
-        return runCatching {
-            when {
-                value.matches(NUMERIC_PATTERN) -> value.toLong()
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> Instant.parse(value).toEpochMilli()
-                else -> parseIso8601Timestamp(value)
-            }
-        }.getOrNull()
-    }
-
-    private fun parseIso8601Timestamp(value: String): Long {
-        val candidates = buildList {
-            add(value)
-            normalizeIso8601Fraction(value)?.let { add(it) }
-        }
-
-        candidates.forEach { candidate ->
-            ISO8601_PATTERNS.forEach { pattern ->
-                val parsed = runCatching {
-                    SimpleDateFormat(pattern, Locale.US).apply {
-                        timeZone = TimeZone.getTimeZone("UTC")
-                    }.parse(candidate)?.time
-                }.getOrNull()
-
-                if (parsed != null) {
-                    return parsed
-                }
-            }
-        }
-
-        throw IllegalArgumentException("Unsupported timestamp format: $value")
-    }
-
-    private fun normalizeIso8601Fraction(value: String): String? {
-        val timeSeparator = value.indexOf('T')
-        if (timeSeparator == -1) return null
-
-        val fractionStart = value.indexOf('.', startIndex = timeSeparator)
-        if (fractionStart == -1) return null
-
-        val zoneStart = value.indexOfAny(charArrayOf('Z', '+', '-'), startIndex = fractionStart)
-        if (zoneStart == -1) return null
-
-        val fraction = value.substring(fractionStart + 1, zoneStart)
-        if (fraction.isEmpty()) return null
-
-        val normalized = when {
-            fraction.length == 3 -> return null
-            fraction.length < 3 -> fraction.padEnd(3, '0')
-            else -> fraction.substring(0, 3)
-        }
-
-        val prefix = value.substring(0, fractionStart)
-        val suffix = value.substring(zoneStart)
-        return "$prefix.$normalized$suffix"
-    }
-
-    private fun formatTon(raw: String): String = runCatching {
-        BigDecimal(raw)
-            .movePointLeft(9)
-            .setScale(4, RoundingMode.DOWN)
-            .stripTrailingZeros()
-            .toPlainString()
-    }.getOrElse { raw }
-
-    private data class NetworkEndpoints(
-        val tonClientEndpoint: String,
-        val tonApiUrl: String,
-        val bridgeUrl: String,
-        val bridgeName: String,
-    )
-
-    private suspend fun generateMnemonicSuspend(): List<String> = try {
-        TONWallet.generateMnemonic(24)
-    } catch (_: Exception) {
-        List(24) { DEMO_WORDS.random() }
-    }
-
     /**
-     * Creates a hardware wallet signer using WalletConnect.
+     * Create a custom signer that requires explicit user confirmation for each signing operation.
+     *
+     * This demonstrates the WalletSigner interface for external/remote signing scenarios:
+     * - Watch-only wallets (where private keys are stored elsewhere)
+     * - Multi-signature wallet coordinators
+     * - Remote signing services
+     * - Custom authorization flows
+     *
+     * NOTE: This interface is NOT suitable for hardware wallets like Ledger, which:
+     * - Only sign complete transactions (not arbitrary data)
+     * - Work at a higher level (transaction-level, not raw bytes)
+     * - Cannot sign arbitrary payloads from signData requests
+     *
+     * For hardware wallet integration, use transaction-only signing at the wallet adapter level.
      *
      * This is called when user selects "SIGNER" interface type during wallet import.
-     * It launches the WalletConnect flow to connect to a hardware wallet like SafePal.
-     *
-     * Note: mnemonic parameter is ignored for hardware wallets (no need for seed phrase).
-     */
-
-    /**
-     * Create a custom signer that requires user confirmation for each signing operation.
-     * This demonstrates the WalletSigner interface for external/hardware wallet integration.
-     *
-     * In production, this would connect to a real hardware wallet like Ledger or SafePal.
      * For the demo, it derives the public key from mnemonic but requires explicit user confirmation via UI.
      */
-    private suspend fun createDemoSigner(mnemonic: List<String>, walletName: String): io.ton.walletkit.domain.model.WalletSigner {
+    private suspend fun createDemoSigner(mnemonic: List<String>, walletName: String): WalletSigner {
         Log.d(LOG_TAG, "Creating custom signer for wallet: $walletName")
 
         // In production, you would:
-        // 1. Connect to hardware wallet (Ledger, SafePal, etc.)
-        // 2. Get public key from hardware device
-        // 3. Return a signer that forwards sign requests to the device
+        // 1. Connect to remote signing service or watch-only wallet backend
+        // 2. Get public key from the remote service
+        // 3. Return a signer that forwards sign requests to the service
         //
         // For demo purposes, we derive the public key from mnemonic using SDK's utility method.
         // This avoids creating and immediately deleting a temporary wallet.
@@ -1633,70 +1443,24 @@ class WalletKitViewModel(
 
         Log.d(LOG_TAG, "Derived public key for signer wallet: ${publicKey.take(16)}...")
 
-        // Create and return custom signer
-        // The SDK's WalletSigner interface will handle the actual signing
-        // and our UI confirmation flow will trigger before each signature
-        return object : io.ton.walletkit.domain.model.WalletSigner {
+        val signerMnemonic = mnemonic.toList()
+
+        // Create and return custom signer backed by the provided mnemonic
+        // so the demo app can satisfy TonProof/transaction signatures.
+        return object : WalletSigner {
             override val publicKey: String = publicKey
 
             override suspend fun sign(data: ByteArray): ByteArray {
-                // This will never actually be called directly -
-                // The SDK manages the signing through the bridge
-                // User confirmation happens via the pendingSignerConfirmation UI flow
-                throw UnsupportedOperationException(ERROR_DIRECT_SIGNING_UNSUPPORTED)
+                Log.d(
+                    LOG_TAG,
+                    "Demo signer signing ${data.size} bytes for wallet=$walletName (used for TonProof/transactions)",
+                )
+                return TONWallet.signDataWithMnemonic(
+                    mnemonic = signerMnemonic,
+                    data = data,
+                    mnemonicType = "ton",
+                )
             }
-        }
-    }
-
-    private fun sanitizeUrl(value: String?): String? {
-        if (value.isNullOrBlank()) return null
-        if (value.equals("null", ignoreCase = true)) return null
-        return value
-    }
-
-    companion object {
-        private val NUMERIC_PATTERN = Regex("^-?\\d+")
-        private val ISO8601_PATTERNS = listOf(
-            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
-            "yyyy-MM-dd'T'HH:mm:ssXXX",
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",
-        )
-        private const val BALANCE_REFRESH_MS = 20_000L
-        private const val MAX_EVENT_LOG = 12
-        private const val DEFAULT_WALLET_VERSION = "v4r2"
-        private const val TRANSACTION_FETCH_LIMIT = 20
-        private val DEFAULT_NETWORK = TONNetwork.MAINNET
-        private const val LOG_TAG = "WalletKitVM"
-        private const val NANO_TON_MULTIPLIER = "1000000000"
-        private const val DEFAULT_TON_FORMAT = "0.0000"
-        private const val ERROR_REQUEST_OBJECT_NOT_AVAILABLE = "Request object not available"
-        private const val DEFAULT_REJECTION_REASON = "User rejected"
-        private const val SIGNER_CONFIRMATION_CANCEL_REASON = "User cancelled signer confirmation"
-        private const val ERROR_DIRECT_SIGNING_UNSUPPORTED = "Direct signing not supported - use SDK's transaction/signData methods"
-
-        private val DEMO_WORDS = listOf(
-            "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract",
-            "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid",
-            "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual",
-            "adapt", "addict", "address", "adjust", "admit", "adult", "advance", "advice",
-        )
-
-        private val DEMO_MNEMONIC = listOf(
-            "canvas", "puzzle", "ski", "divide", "crime", "arrow",
-            "object", "canvas", "point", "cover", "method", "bargain",
-            "siren", "bean", "shrimp", "found", "gravity", "vivid",
-            "pelican", "replace", "tuition", "screen", "orange", "album",
-        )
-
-        fun factory(
-            application: Application,
-            storage: DemoAppStorage,
-            sdkEvents: SharedFlow<TONWalletKitEvent>,
-            sdkInitialized: SharedFlow<Boolean>,
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T = WalletKitViewModel(application, storage, sdkEvents, sdkInitialized) as T
         }
     }
 
@@ -1712,7 +1476,6 @@ class WalletKitViewModel(
 
                 // Wait for SDK to initialize and wallets to load
                 sdkInitialized.first { it }
-                delay(500) // Give time for wallets to load
 
                 // If no wallets exist, automatically open add wallet sheet
                 if (_state.value.wallets.isEmpty()) {
@@ -1733,8 +1496,6 @@ class WalletKitViewModel(
         // If no wallets exist, automatically open add wallet sheet
         viewModelScope.launch {
             sdkInitialized.first { it }
-            delay(500) // Give time for wallets to load
-
             if (_state.value.wallets.isEmpty()) {
                 _state.update { it.copy(sheetState = SheetState.AddWallet) }
             }
@@ -1785,6 +1546,30 @@ class WalletKitViewModel(
                 val reason = e.message ?: uiString(R.string.wallet_error_unknown)
                 _state.update { it.copy(error = uiString(R.string.wallet_error_reset_wallet, reason)) }
             }
+        }
+    }
+
+    companion object {
+        private const val BALANCE_REFRESH_MS = 20_000L
+        private const val HIDE_MESSAGE_MS = 10_000L
+        private const val MAX_EVENT_LOG = 12
+        private const val DEFAULT_WALLET_VERSION = "v4r2"
+        private const val TRANSACTION_FETCH_LIMIT = 20
+        private val DEFAULT_NETWORK = TONNetwork.MAINNET
+        private const val LOG_TAG = "WalletKitVM"
+        private const val ERROR_REQUEST_OBJECT_NOT_AVAILABLE = "Request object not available"
+        private const val DEFAULT_REJECTION_REASON = "User rejected"
+        private const val SIGNER_CONFIRMATION_CANCEL_REASON = "User cancelled signer confirmation"
+        private const val ERROR_DIRECT_SIGNING_UNSUPPORTED = "Direct signing not supported - use SDK's transaction/signData methods"
+
+        fun factory(
+            application: Application,
+            storage: DemoAppStorage,
+            sdkEvents: SharedFlow<TONWalletKitEvent>,
+            sdkInitialized: SharedFlow<Boolean>,
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T = WalletKitViewModel(application, storage, sdkEvents, sdkInitialized) as T
         }
     }
 }

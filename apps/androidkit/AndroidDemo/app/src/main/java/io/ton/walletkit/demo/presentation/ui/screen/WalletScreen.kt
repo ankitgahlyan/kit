@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -53,12 +56,16 @@ import io.ton.walletkit.demo.presentation.ui.sections.SessionsSection
 import io.ton.walletkit.demo.presentation.ui.sections.TransactionHistorySection
 import io.ton.walletkit.demo.presentation.ui.sections.WalletsSection
 import io.ton.walletkit.demo.presentation.ui.sheet.AddWalletSheet
+import io.ton.walletkit.demo.presentation.ui.sheet.BrowserSheet
 import io.ton.walletkit.demo.presentation.ui.sheet.ConnectRequestSheet
 import io.ton.walletkit.demo.presentation.ui.sheet.SignDataSheet
 import io.ton.walletkit.demo.presentation.ui.sheet.TransactionDetailSheet
 import io.ton.walletkit.demo.presentation.ui.sheet.TransactionRequestSheet
 import io.ton.walletkit.demo.presentation.ui.sheet.WalletDetailsSheet
 import io.ton.walletkit.domain.model.TONNetwork
+import io.ton.walletkit.presentation.browser.cleanupTonConnect
+
+private const val DEFAULT_DAPP_URL = "https://tonconnect-sdk-demo-dapp.vercel.app/iframe/iframe"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +73,7 @@ fun WalletScreen(
     state: WalletUiState,
     onAddWalletClick: () -> Unit,
     onUrlPromptClick: () -> Unit,
+    onOpenBrowser: (String) -> Unit,
     onRefresh: () -> Unit,
     onDismissSheet: () -> Unit,
     onWalletDetails: (String) -> Unit,
@@ -93,6 +101,23 @@ fun WalletScreen(
 ) {
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Keep browser WebView alive across sheet changes to prevent destruction during TonConnect requests
+    // This WebView persists even when switching to Connect/Transaction sheets
+    val browserWebViewHolder = remember { mutableStateOf<android.webkit.WebView?>(null) }
+
+    // Cleanup WebView when WalletScreen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            browserWebViewHolder.value?.let { webView ->
+                // Clean up TonConnect resources before destroying WebView
+                webView.cleanupTonConnect()
+                webView.destroy()
+            }
+            browserWebViewHolder.value = null
+        }
+    }
+
     LaunchedEffect(state.error) {
         val error = state.error ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(error)
@@ -163,6 +188,12 @@ fun WalletScreen(
                     onDismiss = onDismissSheet,
                 )
 
+                is SheetState.Browser -> BrowserSheet(
+                    url = sheet.url,
+                    onClose = onDismissSheet,
+                    webViewHolder = browserWebViewHolder,
+                )
+
                 SheetState.None -> Unit
             }
         }
@@ -195,6 +226,9 @@ fun WalletScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { onOpenBrowser(DEFAULT_DAPP_URL) }) {
+                        Icon(Icons.Default.Language, contentDescription = "Open dApp Browser")
+                    }
                     IconButton(onClick = onRefresh) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
                     }
@@ -283,6 +317,7 @@ private fun WalletScreenPreview() {
         state = PreviewData.uiState,
         onAddWalletClick = {},
         onUrlPromptClick = {},
+        onOpenBrowser = {},
         onRefresh = {},
         onDismissSheet = {},
         onWalletDetails = {},

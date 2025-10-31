@@ -321,6 +321,18 @@ internal class QuickJsWalletKitEngine(
         return result.getString("publicKey")
     }
 
+    override suspend fun signDataWithMnemonic(
+        words: List<String>,
+        data: ByteArray,
+        mnemonicType: String,
+    ): ByteArray {
+        throw UnsupportedOperationException("QuickJS engine does not support mnemonic-based signing. Use WebView engine.")
+    }
+
+    override suspend fun createTonMnemonic(wordCount: Int): List<String> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun addWalletWithSigner(
         signer: io.ton.walletkit.domain.model.WalletSigner,
         version: String,
@@ -639,6 +651,22 @@ internal class QuickJsWalletKitEngine(
         val params = JSONObject()
         sessionId?.let { params.put("sessionId", it) }
         call("disconnectSession", if (params.length() == 0) null else params)
+    }
+
+    override suspend fun callBridgeMethod(method: String, params: JSONObject?): JSONObject {
+        return call(method, params)
+    }
+
+    override suspend fun handleTonConnectRequest(
+        messageId: String,
+        method: String,
+        paramsJson: String?,
+        url: String?,
+        responseCallback: (JSONObject) -> Unit,
+    ) {
+        // QuickJS engine doesn't support internal browser mode
+        // This should never be called for QuickJS
+        throw UnsupportedOperationException("Internal browser mode is not supported in QuickJS engine")
     }
 
     override suspend fun destroy() {

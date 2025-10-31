@@ -196,6 +196,16 @@ internal object ResponseConstants {
      */
     const val KEY_URL = "url"
 
+    /**
+     * JSON key for message ID (used in internal browser requests).
+     */
+    const val KEY_MESSAGE_ID = "messageId"
+
+    /**
+     * JSON key for error code.
+     */
+    const val KEY_CODE = "code"
+
     // Session keys
     /**
      * JSON key for session ID.
@@ -395,6 +405,11 @@ internal object ResponseConstants {
      * Value for 'response' message kind.
      */
     const val VALUE_KIND_RESPONSE = "response"
+
+    /**
+     * Value for JS bridge diagnostic events.
+     */
+    const val VALUE_KIND_JS_BRIDGE_EVENT = "jsBridgeEvent"
 
     /**
      * Value for diagnostic call messages emitted from JS bridge.

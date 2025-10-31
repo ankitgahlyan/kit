@@ -13,21 +13,23 @@ let WalletV4R2Adapter: any;
 let WalletV5R1Adapter: any;
 let Address: any;
 let Cell: any;
-let currentNetwork: 'mainnet' | 'testnet' = 'testnet';
+let CHAIN: any; // CHAIN enum from @ton/walletkit
+let currentNetwork: string = ''; // Will be set to CHAIN.TESTNET or CHAIN.MAINNET after init
 let currentApiBase = 'https://testnet.tonapi.io';
 type TonChainEnum = { MAINNET: number; TESTNET: number };
 let tonConnectChain: TonChainEnum | null = null;
 
 async function ensureWalletKitLoaded() {
-  if (TonWalletKit && createWalletInitConfigMnemonic && tonConnectChain && Address && Cell && Signer && WalletV4R2Adapter && WalletV5R1Adapter) {
+  if (TonWalletKit && createWalletInitConfigMnemonic && tonConnectChain && CHAIN && Address && Cell && Signer && WalletV4R2Adapter && WalletV5R1Adapter) {
     return;
   }
-  if (!TonWalletKit || !createWalletInitConfigMnemonic || !Signer || !WalletV4R2Adapter || !WalletV5R1Adapter) {
+  if (!TonWalletKit || !createWalletInitConfigMnemonic || !Signer || !WalletV4R2Adapter || !WalletV5R1Adapter || !CHAIN) {
     const module = await walletKitModulePromise;
     TonWalletKit = (module as any).TonWalletKit;
     createWalletInitConfigMnemonic = (module as any).createWalletInitConfigMnemonic;
   CreateTonMnemonic = (module as any).CreateTonMnemonic ?? (module as any).CreateTonMnemonic;
     createWalletManifest = (module as any).createWalletManifest ?? createWalletManifest;
+    CHAIN = (module as any).CHAIN; // Load CHAIN enum
     tonConnectChain = (module as any).CHAIN ?? tonConnectChain;
     Signer = (module as any).Signer;
     WalletV4R2Adapter = (module as any).WalletV4R2Adapter;
@@ -39,13 +41,28 @@ async function ensureWalletKitLoaded() {
     Address = (coreModule as any).Address;
     Cell = (coreModule as any).Cell;
   }
-  if (!tonConnectChain) {
+  if (!tonConnectChain || !CHAIN) {
     const module = await walletKitModulePromise;
     tonConnectChain = (module as any).CHAIN ?? null;
-    if (!tonConnectChain) {
+    CHAIN = (module as any).CHAIN;
+    if (!tonConnectChain || !CHAIN) {
       throw new Error('TonWalletKit did not expose CHAIN enum');
     }
   }
+}
+
+// Normalize network input (accept legacy names but return CHAIN enum values)
+function normalizeNetworkValue(n?: string | null): string {
+  if (!n) return CHAIN.TESTNET;
+  if (n === CHAIN.MAINNET) return CHAIN.MAINNET;
+  if (n === CHAIN.TESTNET) return CHAIN.TESTNET;
+  if (typeof n === 'string') {
+    const lowered = n.toLowerCase();
+    if (lowered === 'mainnet') return CHAIN.MAINNET;
+    if (lowered === 'testnet') return CHAIN.TESTNET;
+  }
+  // default to testnet
+  return CHAIN.TESTNET;
 }
 
 // Helper to convert raw address (0:hex) to user-friendly format (UQ...)
@@ -53,7 +70,7 @@ function toUserFriendlyAddress(rawAddress: string | null): string | null {
   if (!rawAddress || !Address) return rawAddress;
   try {
     const addr = Address.parse(rawAddress);
-    return addr.toString({ bounceable: false, testOnly: currentNetwork === 'testnet' });
+    return addr.toString({ bounceable: false, testOnly: currentNetwork === CHAIN.TESTNET });
   } catch (e) {
     console.warn('[walletkitBridge] Failed to parse address:', rawAddress, e);
     return rawAddress;
@@ -117,7 +134,8 @@ type BridgePayload =
       stage: 'start' | 'checkpoint' | 'success' | 'error';
       timestamp: number;
       message?: string;
-    };
+    }
+  | { kind: 'jsBridgeEvent'; sessionId: string; event: any };
 
 declare global {
   interface Window {
@@ -300,7 +318,13 @@ function emit(type: WalletKitBridgeEvent['type'], data?: WalletKitBridgeEvent['d
 }
 
 function respond(id: string, result?: unknown, error?: { message: string }) {
+  console.log('[walletkitBridge] 🟢 respond() called with:');
+  console.log('[walletkitBridge] 🟢 id:', id);
+  console.log('[walletkitBridge] 🟢 result:', result);
+  console.log('[walletkitBridge] 🟢 error:', error);
+  console.log('[walletkitBridge] 🟢 About to call postToNative...');
   postToNative({ kind: 'response', id, result, error });
+  console.log('[walletkitBridge] 🟢 postToNative completed');
 }
 
 async function handleCall(id: string, method: WalletKitApiMethod, params?: unknown) {
@@ -314,8 +338,12 @@ async function handleCall(id: string, method: WalletKitApiMethod, params?: unkno
     console.log(`[walletkitBridge] about to call fn for ${method}`);
     const value = await (fn as (args: unknown, context?: CallContext) => Promise<unknown> | unknown).call(api, params as never, context);
     console.log(`[walletkitBridge] fn returned for ${method}`);
+    console.log(`[walletkitBridge] 🔵 fn returned value:`, value);
+    console.log(`[walletkitBridge] 🔵 value type:`, typeof value);
     emitCallDiagnostic(id, method, 'success');
+    console.log(`[walletkitBridge] 🔵 About to call respond(id, value)...`);
     respond(id, value);
+    console.log(`[walletkitBridge] 🔵 respond(id, value) completed`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[walletkitBridge] handleCall error for ${method}:`, err);
@@ -346,17 +374,20 @@ async function initTonWalletKit(config?: WalletKitBridgeInitConfig, context?: Ca
     return { ok: true };
   }
   emitCallCheckpoint(context, 'initTonWalletKit:begin');
-  const network = config?.network || 'testnet';
-  const tonApiUrl = config?.tonApiUrl || config?.apiBaseUrl || (network === 'mainnet' ? 'https://tonapi.io' : 'https://testnet.tonapi.io');
-  const clientEndpoint = config?.tonClientEndpoint || config?.apiUrl || (network === 'mainnet' ? 'https://toncenter.com/api/v2/jsonRPC' : 'https://testnet.toncenter.com/api/v2/jsonRPC');
+  // Normalize network to numeric chain id
+  const networkRaw = (config?.network as string | undefined) ?? 'testnet';
+  const network = normalizeNetworkValue(networkRaw);
   currentNetwork = network;
+  const isMainnet = network === CHAIN.MAINNET;
+  const tonApiUrl = config?.tonApiUrl || config?.apiBaseUrl || (isMainnet ? 'https://tonapi.io' : 'https://testnet.tonapi.io');
+  const clientEndpoint = config?.tonClientEndpoint || config?.apiUrl || (isMainnet ? 'https://toncenter.com/api/v2/jsonRPC' : 'https://testnet.toncenter.com/api/v2/jsonRPC');
   currentApiBase = tonApiUrl;
   emitCallCheckpoint(context, 'initTonWalletKit:constructing-tonwalletkit');
   const chains = tonConnectChain;
   if (!chains) {
     throw new Error('TON Connect chain constants unavailable');
   }
-  const chain = network === 'mainnet' ? chains.MAINNET : chains.TESTNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
 
   console.log('[walletkitBridge] initTonWalletKit config:', JSON.stringify(config, null, 2));
   
@@ -391,11 +422,81 @@ async function initTonWalletKit(config?: WalletKitBridgeInitConfig, context?: Ca
   if (resolvedBridgeUrl) {
     kitOptions.bridge = {
       bridgeUrl: resolvedBridgeUrl,
+      // Provide custom JS bridge transport for Android WebView
+      // This is called when WalletKit needs to send responses back to the injected bridge
+      // For Android, sessionId identifies which WebView should receive the event
+      jsBridgeTransport: async (sessionId: string, message: any) => {
+        console.log('[walletkitBridge] 📤 jsBridgeTransport called:', {
+          sessionId,
+          messageType: message.type,
+          messageId: message.messageId,
+          hasPayload: !!message.payload,
+          payloadEvent: message.payload?.event,
+        });
+        console.log('[walletkitBridge] 📤 Full message:', JSON.stringify(message, null, 2));
+        
+        // Transform disconnect responses into events (for Android adapter)
+        // Core sends disconnect as a response with payload.event='disconnect', but Android expects an event
+        if (message.type === 'TONCONNECT_BRIDGE_RESPONSE' && 
+            message.payload?.event === 'disconnect' && 
+            !message.messageId) {
+          console.log('[walletkitBridge] 🔄 Transforming disconnect response to event');
+          message = {
+            type: 'TONCONNECT_BRIDGE_EVENT',
+            source: message.source,
+            event: message.payload,
+            traceId: message.traceId,
+          };
+          console.log('[walletkitBridge] � Transformed message:', JSON.stringify(message, null, 2));
+        }
+        
+        // For responses with a messageId (replies to requests)
+        if (message.messageId) {
+          console.log('[walletkitBridge] 🔵 Message has messageId, checking for pending promise');
+          const resolvers = (globalThis as any).__internalBrowserResponseResolvers;
+          if (resolvers && resolvers.has(message.messageId)) {
+            console.log('[walletkitBridge] ✅ Resolving response promise for messageId:', message.messageId);
+            const { resolve } = resolvers.get(message.messageId);
+            resolvers.delete(message.messageId);
+            resolve(message);
+          } else {
+            console.warn('[walletkitBridge] ⚠️ No pending promise for messageId:', message.messageId);
+          }
+        }
+        
+        // For events (like disconnect initiated by wallet), route to specific WebView via Kotlin
+        if (message.type === 'TONCONNECT_BRIDGE_EVENT') {
+          console.log('[walletkitBridge] 📤 Sending event to WebView for session:', sessionId);
+          
+          postToNative({ 
+            kind: 'jsBridgeEvent',
+            sessionId,  // Use sessionId parameter to route to correct WebView
+            event: message 
+          });
+          console.log('[walletkitBridge] ✅ Event sent successfully');
+        }
+        
+        return Promise.resolve();
+      }
     };
   }
 
   // Use Android native storage if available, otherwise fall back to memory
-  if (typeof (window as any).Android !== 'undefined' && typeof (window as any).Android.storageGet === 'function') {
+  const nativeStorageBridge =
+    (window as any).WalletKitNativeStorage ??
+    ((window as any).WalletKitNative && typeof (window as any).WalletKitNative.storageGet === 'function'
+      ? (window as any).WalletKitNative
+      : undefined) ??
+    (window as any).Android;
+
+  const hasStorageMethods =
+    nativeStorageBridge &&
+    (typeof nativeStorageBridge.storageGet === 'function' ||
+      typeof nativeStorageBridge.getItem === 'function') &&
+    (typeof nativeStorageBridge.storageSet === 'function' ||
+      typeof nativeStorageBridge.setItem === 'function');
+
+  if (hasStorageMethods) {
     console.log('[walletkitBridge] Using Android native storage adapter');
     kitOptions.storage = new AndroidStorageAdapter();
   } else if (config?.allowMemoryStorage) {
@@ -464,7 +565,7 @@ const api = {
 
     // Remove old listener if it exists
     if (this.onConnectListener) {
-      walletKit.removeConnectRequestCallback(this.onConnectListener);
+      walletKit.removeConnectRequestCallback();
     }
     
     this.onConnectListener = (event: any) => {
@@ -477,7 +578,7 @@ const api = {
 
     // Remove old listener if it exists
     if (this.onTransactionListener) {
-      walletKit.removeTransactionRequestCallback(this.onTransactionListener);
+      walletKit.removeTransactionRequestCallback();
     }
     
     this.onTransactionListener = (event: any) => {
@@ -491,7 +592,7 @@ const api = {
 
     // Remove old listener if it exists
     if (this.onSignDataListener) {
-      walletKit.removeSignDataRequestCallback(this.onSignDataListener);
+      walletKit.removeSignDataRequestCallback();
     }
     
     this.onSignDataListener = (event: any) => {
@@ -505,7 +606,7 @@ const api = {
 
     // Remove old listener if it exists
     if (this.onDisconnectListener) {
-      walletKit.removeDisconnectCallback(this.onDisconnectListener);
+      walletKit.removeDisconnectCallback();
     }
     
     this.onDisconnectListener = (event: any) => {
@@ -525,22 +626,22 @@ const api = {
     console.log('[walletkitBridge] 🗑️ Removing all event listeners');
     
     if (this.onConnectListener) {
-      walletKit.removeConnectRequestCallback(this.onConnectListener);
+      walletKit.removeConnectRequestCallback();
       this.onConnectListener = null;
     }
     
     if (this.onTransactionListener) {
-      walletKit.removeTransactionRequestCallback(this.onTransactionListener);
+      walletKit.removeTransactionRequestCallback();
       this.onTransactionListener = null;
     }
     
     if (this.onSignDataListener) {
-      walletKit.removeSignDataRequestCallback(this.onSignDataListener);
+      walletKit.removeSignDataRequestCallback();
       this.onSignDataListener = null;
     }
     
     if (this.onDisconnectListener) {
-      walletKit.removeDisconnectCallback(this.onDisconnectListener);
+      walletKit.removeDisconnectCallback();
       this.onDisconnectListener = null;
     }
     
@@ -558,6 +659,44 @@ const api = {
     return { publicKey: signer.publicKey };
   },
 
+  async signDataWithMnemonic(
+    args: { words: string[]; data: number[]; mnemonicType?: 'ton' | 'bip39' },
+    context?: CallContext,
+  ) {
+    emitCallCheckpoint(context, 'signDataWithMnemonic:before-ensureWalletKitLoaded');
+    await ensureWalletKitLoaded();
+    emitCallCheckpoint(context, 'signDataWithMnemonic:after-ensureWalletKitLoaded');
+    requireWalletKit();
+    emitCallCheckpoint(context, 'signDataWithMnemonic:after-requireWalletKit');
+
+    if (!args?.words || args.words.length === 0) {
+      throw new Error('Mnemonic words required for signDataWithMnemonic');
+    }
+    if (!Array.isArray(args.data)) {
+      throw new Error('Data array required for signDataWithMnemonic');
+    }
+
+    const signer = await Signer.fromMnemonic(args.words, { type: args.mnemonicType ?? 'ton' });
+    emitCallCheckpoint(context, 'signDataWithMnemonic:after-createSigner');
+
+    const dataBytes = Uint8Array.from(args.data);
+    const signatureResult = await signer.sign(dataBytes);
+    emitCallCheckpoint(context, 'signDataWithMnemonic:after-sign');
+
+    let signatureBytes: Uint8Array;
+    if (typeof signatureResult === 'string') {
+      signatureBytes = hexToBytes(signatureResult);
+    } else if (signatureResult instanceof Uint8Array) {
+      signatureBytes = signatureResult;
+    } else if (Array.isArray(signatureResult)) {
+      signatureBytes = Uint8Array.from(signatureResult);
+    } else {
+      throw new Error('Unsupported signature format from signer');
+    }
+
+    return { signature: Array.from(signatureBytes) };
+  },
+
   async createTonMnemonic(args: { count?: number } = { count: 24 }, context?: CallContext) {
     emitCallCheckpoint(context, 'createTonMnemonic:start');
     await ensureWalletKitLoaded();
@@ -569,7 +708,7 @@ const api = {
   },
 
   async addWalletFromMnemonic(
-    args: { words: string[]; version: 'v5r1' | 'v4r2'; network?: 'mainnet' | 'testnet' | '-239' | '-3' },
+  args: { words: string[]; version: 'v5r1' | 'v4r2'; network?: string },
     context?: CallContext,
   ) {
     emitCallCheckpoint(context, 'addWalletFromMnemonic:before-ensureWalletKitLoaded');
@@ -582,8 +721,10 @@ const api = {
       throw new Error('TON Connect chain constants unavailable');
     }
     // Support both network names (mainnet/testnet) and chain IDs (-239/-3)
-    const networkValue = args.network || '-3'; // Default to testnet
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  // Normalize network input (accept legacy names but convert to CHAIN enum values)
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     
     // Create wallet adapter based on version
     let walletAdapter: any;
@@ -616,7 +757,7 @@ const api = {
     args: { 
       publicKey: string; 
       version: 'v5r1' | 'v4r2'; 
-      network?: 'mainnet' | 'testnet' | '-239' | '-3';
+      network?: string;
       signerId: string; // Unique ID for this signer, will be included in sign events
     },
     context?: CallContext,
@@ -632,17 +773,21 @@ const api = {
       throw new Error('TON Connect chain constants unavailable');
     }
     
-    const networkValue = args.network || '-3';
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     
     // Store pending sign requests
     const pendingSignRequests = new Map<string, { resolve: (sig: Uint8Array) => void; reject: (err: Error) => void }>();
+    
+    // Normalize public key - ensure it has 0x prefix (like Signer.fromMnemonic returns)
+    const publicKeyHex = args.publicKey.startsWith('0x') ? args.publicKey : `0x${args.publicKey}`;
     
     // Create a custom signer that calls back to Android via events
     const customSigner: any = {
       sign: async (bytes: Uint8Array) => {
         // Generate unique request ID
-        const requestId = 'sign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}';
+        const requestId = `sign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         // Emit sign request event to Android
         emit('signerSignRequest', {
@@ -664,7 +809,7 @@ const api = {
           }, 60000);
         });
       },
-      publicKey: args.publicKey,
+      publicKey: publicKeyHex, // Must be hex string with 0x prefix (same format as Signer.fromMnemonic)
     };
     
     // Store the pending requests map so Android can respond
@@ -702,7 +847,7 @@ const api = {
     args: {
       signerId: string;
       requestId: string;
-      signature?: number[]; // Array of bytes
+      signature?: number[] | string;
       error?: string;
     },
     _context?: CallContext,
@@ -721,8 +866,11 @@ const api = {
     
     if (args.error) {
       pending.reject(new Error(args.error));
-    } else if (args.signature) {
-      pending.resolve(new Uint8Array(args.signature));
+    } else if (typeof args.signature === 'string') {
+      pending.resolve(normalizeHex(args.signature));
+    } else if (Array.isArray(args.signature)) {
+      const signatureHex = bytesToHex(new Uint8Array(args.signature));
+      pending.resolve(signatureHex);
     } else {
       pending.reject(new Error('No signature or error provided'));
     }
@@ -731,7 +879,7 @@ const api = {
   },
 
   async createV4R2WalletUsingMnemonic(
-    args: { mnemonic: string[]; network?: 'mainnet' | 'testnet' | '-239' | '-3' },
+  args: { mnemonic: string[]; network?: string },
     context?: CallContext,
   ) {
     emitCallCheckpoint(context, 'createV4R2WalletUsingMnemonic:before-ensureWalletKitLoaded');
@@ -745,8 +893,9 @@ const api = {
     if (!chains) {
       throw new Error('TON Connect chain constants unavailable');
     }
-    const networkValue = args.network || '-3';
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     const signer = await Signer.fromMnemonic(args.mnemonic, { type: 'ton' });
     return await WalletV4R2Adapter.create(signer, {
       client: walletKit.getApiClient(),
@@ -755,7 +904,7 @@ const api = {
   },
 
   async createV4R2WalletUsingSecretKey(
-    args: { secretKey: string; network?: 'mainnet' | 'testnet' | '-239' | '-3' },
+  args: { secretKey: string; network?: string },
     context?: CallContext,
   ) {
     emitCallCheckpoint(context, 'createV4R2WalletUsingSecretKey:before-ensureWalletKitLoaded');
@@ -769,8 +918,9 @@ const api = {
     if (!chains) {
       throw new Error('TON Connect chain constants unavailable');
     }
-    const networkValue = args.network || '-3';
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     const signer = await Signer.fromPrivateKey(args.secretKey);
     return await WalletV4R2Adapter.create(signer, {
       client: walletKit.getApiClient(),
@@ -779,7 +929,7 @@ const api = {
   },
 
   async createV5R1WalletUsingMnemonic(
-    args: { mnemonic: string[]; network?: 'mainnet' | 'testnet' | '-239' | '-3' },
+  args: { mnemonic: string[]; network?: string },
     context?: CallContext,
   ) {
     emitCallCheckpoint(context, 'createV5R1WalletUsingMnemonic:before-ensureWalletKitLoaded');
@@ -793,8 +943,9 @@ const api = {
     if (!chains) {
       throw new Error('TON Connect chain constants unavailable');
     }
-    const networkValue = args.network || '-3';
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     const signer = await Signer.fromMnemonic(args.mnemonic, { type: 'ton' });
     return await WalletV5R1Adapter.create(signer, {
       client: walletKit.getApiClient(),
@@ -803,7 +954,7 @@ const api = {
   },
 
   async createV5R1WalletUsingSecretKey(
-    args: { secretKey: string; network?: 'mainnet' | 'testnet' | '-239' | '-3' },
+  args: { secretKey: string; network?: string },
     context?: CallContext,
   ) {
     emitCallCheckpoint(context, 'createV5R1WalletUsingSecretKey:before-ensureWalletKitLoaded');
@@ -817,8 +968,9 @@ const api = {
     if (!chains) {
       throw new Error('TON Connect chain constants unavailable');
     }
-    const networkValue = args.network || '-3';
-    const chain = (networkValue === 'mainnet' || networkValue === '-239') ? chains.MAINNET : chains.TESTNET;
+  const networkValue = normalizeNetworkValue(args.network as string | undefined);
+  const isMainnet = networkValue === CHAIN.MAINNET;
+  const chain = isMainnet ? chains.MAINNET : chains.TESTNET;
     const signer = await Signer.fromPrivateKey(args.secretKey);
     return await WalletV5R1Adapter.create(signer, {
       client: walletKit.getApiClient(),
@@ -1170,6 +1322,90 @@ const api = {
       (typeof wallet.getAddress === 'function' ? wallet.getAddress() : wallet.address) || args.walletAddress;
     event.wallet = wallet;
     event.walletAddress = resolvedAddress;
+    
+    // CRITICAL: Determine if this is an internal browser (JS bridge) vs deep link (HTTP bridge) event
+    // Android doesn't pass back the full event object with all fields, so we need to detect the type
+    // 
+    // The problem: Android only sends back: id, preview, request, dAppInfo, walletAddress, wallet
+    // It doesn't preserve isJsBridge, domain, tabId, messageId fields
+    //
+    // Key difference between connection types:
+    // - Deep link/QR (HTTP bridge): Event has a 'from' field (dApp's client session ID from the URL)
+    // - Internal browser (JS bridge): Event has NO 'from' field (wallet generates the session ID)
+    //
+    // The 'from' field comes from the TON Connect URL's client_id parameter, which only exists
+    // for HTTP bridge connections. Internal browser connections don't have this.
+    
+    const hasSessionId = !!(event.request?.from || event.from);
+    const manifestUrl = event.preview?.manifest?.url || event.dAppInfo?.url || '';
+    
+    // Internal browser detection:
+    // - No 'from' field (wallet will generate session ID)
+    // - OR manifestUrl is empty/local
+    const isInternalBrowser = !hasSessionId || 
+                              !manifestUrl ||
+                              manifestUrl.includes('localhost') ||
+                              manifestUrl.includes('127.0.0.1') ||
+                              manifestUrl.includes('appassets.androidplatform.net');
+    
+    console.log('[walletkitBridge] 🔍 Event type detection:', {
+      hasSessionId,
+      manifestUrl,
+      from: event.request?.from || event.from,
+      isInternalBrowser,
+      eventId: event.id,
+    });
+    
+    // Restore JS bridge fields for internal browser events
+    if (isInternalBrowser) {
+      console.log('[walletkitBridge] 🔧 Restoring missing JS bridge fields for internal browser event');
+      
+      // Set JS bridge flag
+      event.isJsBridge = true;
+      
+      // CRITICAL: Use the domain from the event if available (it was set when the event was first emitted)
+      // The domain should have been preserved by the Kotlin layer
+      let actualDomain = event.domain || 'internal-browser';
+      
+      // Only try to resolve from window if domain is missing from event
+      if (!event.domain) {
+        console.log('[walletkitBridge] ⚠️ Domain missing from event, attempting to resolve from window');
+        try {
+          if (typeof window !== 'undefined') {
+            // Try to get the domain from the top window (the actual dApp page)
+            if (window.top && window.top !== window && window.top.location) {
+              actualDomain = window.top.location.hostname;
+            } else if (document.referrer) {
+              // Fallback to document.referrer which should contain the dApp URL
+              const referrerUrl = new URL(document.referrer);
+              actualDomain = referrerUrl.hostname;
+            } else if (window.location && window.location.hostname !== 'appassets.androidplatform.net') {
+              // Only use window.location if it's not the assets domain
+              actualDomain = window.location.hostname;
+            }
+          }
+        } catch (e) {
+          console.log('[walletkitBridge] Could not access parent domain, using fallback:', e);
+        }
+      } else {
+        console.log('[walletkitBridge] ✅ Using domain from event:', event.domain);
+      }
+      
+      console.log('[walletkitBridge] Resolved domain for connect:', actualDomain);
+      event.domain = actualDomain;
+      
+      // tabId is used as sessionId for sendJsBridgeResponse
+      // Use the event.id as tabId since that's what was used in messageInfo when queuing
+      event.tabId = event.id;
+      
+      // messageId is used for the bridge response
+      event.messageId = event.id;
+      
+      console.log('[walletkitBridge] ✅ Restored fields - isJsBridge:', event.isJsBridge, 'domain:', event.domain, 'tabId:', event.tabId, 'messageId:', event.messageId);
+    } else {
+      console.log('[walletkitBridge] ℹ️ Deep link/QR event - will use HTTP bridge for response');
+    }
+    
     emitCallCheckpoint(context, 'approveConnectRequest:before-walletKit.approveConnectRequest');
     const result = await walletKit.approveConnectRequest(event);
     // Some internal implementations (request processor) perform the response
@@ -1199,6 +1435,10 @@ const api = {
       throw new Error('Connect request event is required');
     }
     const result = await walletKit.rejectConnectRequest(event, args.reason);
+    // rejectConnectRequest returns Promise<void>, treat undefined/null as success
+    if (result == null) {
+      return { success: true };
+    }
     if (!result?.success) {
       const message = result?.message || 'Failed to reject connect request';
       throw new Error(message);
@@ -1229,6 +1469,14 @@ const api = {
       throw new Error('Transaction request event is required');
     }
     const result = await walletKit.rejectTransactionRequest(event, args.reason);
+    // rejectTransactionRequest returns Promise<void>, treat undefined/null as success
+    if (result == null) {
+      return { success: true };
+    }
+    if (!result?.success) {
+      const message = result?.message || 'Failed to reject transaction request';
+      throw new Error(message);
+    }
     return result;
   },
 
@@ -1257,6 +1505,14 @@ const api = {
       throw new Error('Sign data request event is required');
     }
     const result = await walletKit.rejectSignDataRequest(event, args.reason);
+    // rejectSignDataRequest returns Promise<void>, treat undefined/null as success
+    if (result == null) {
+      return { success: true };
+    }
+    if (!result?.success) {
+      const message = result?.message || 'Failed to reject sign data request';
+      throw new Error(message);
+    }
     return result;
   },
 
@@ -1310,6 +1566,182 @@ const api = {
     emitCallCheckpoint(context, 'disconnectSession:after-walletKit.disconnect');
     return { ok: true };
   },
+
+  async processInternalBrowserRequest(
+    args: { messageId: string; method: string; params?: unknown; from?: string; url?: string; manifestUrl?: string },
+    context?: CallContext,
+  ) {
+    emitCallCheckpoint(context, 'processInternalBrowserRequest:start');
+    await ensureWalletKitLoaded();
+    requireWalletKit();
+    
+    console.log('[walletkitBridge] ========== FULL ARGS ==========');
+    console.log('[walletkitBridge] args keys:', Object.keys(args));
+    console.log('[walletkitBridge] args.from:', args.from);
+    console.log('[walletkitBridge] args.url:', args.url);
+    console.log('[walletkitBridge] args:', JSON.stringify(args, null, 2));
+    console.log('[walletkitBridge] ================================');
+    console.log('[walletkitBridge] Processing internal browser request:', args.method, args.messageId);
+    
+    // Forward all requests to processInjectedBridgeRequest (like the extension does)
+    // Deep links are now handled at the Kotlin layer by calling handleTonConnectUrl directly
+    if (typeof walletKit.processInjectedBridgeRequest !== 'function') {
+      throw new Error('walletKit.processInjectedBridgeRequest is not available');
+    }
+    
+    // Construct message info for the bridge event
+    // CRITICAL FIX: Get the domain from the URL passed by Kotlin (the actual dApp WebView URL)
+    // The bridge JavaScript runs in a separate WebView for RPC with Android,
+    // so we can't access the dApp's window.location directly.
+    let actualDomain = 'internal-browser';
+    if (args.url) {
+      // Kotlin passes the actual dApp URL from the WebView
+      try {
+        const dappUrl = new URL(args.url);
+        actualDomain = dappUrl.hostname;
+        console.log('[walletkitBridge] ✅ Domain extracted from dApp URL:', actualDomain);
+      } catch (e) {
+        console.log('[walletkitBridge] ⚠️ Failed to parse dApp URL, using fallback:', e);
+      }
+    } else {
+      console.log('[walletkitBridge] ⚠️ No dApp URL provided by Kotlin, using fallback');
+    }
+    
+    console.log('[walletkitBridge] Resolved domain for signature:', actualDomain);
+    
+    const messageInfo = {
+      messageId: args.messageId,
+      tabId: args.messageId, // Use messageId as tabId for internal browser
+      domain: actualDomain, // Use actual dApp domain for signature verification
+    };
+    
+    // Construct the bridge request payload
+    // For injected bridge, the 'from' field should be omitted (let wallet generate session ID)
+    // This is different from HTTP bridge where dApp provides its session client_id
+    
+    // CRITICAL: For 'send' method, params should be an ARRAY containing the actual request
+    // The dApp sends: { method: 'send', params: [{ method: 'signData', params: [...] }] }
+    // BridgeManager.queueJsBridgeEvent extracts params[0] to get the inner request
+    
+    const finalParams = args.params;
+    
+    // For 'connect' method, inject manifestUrl if provided by Kotlin and not already in params
+    // This ensures the core can fetch manifest data consistently for both HTTP and JS bridges
+    if (args.method === 'connect' && args.manifestUrl && finalParams && typeof finalParams === 'object' && !Array.isArray(finalParams)) {
+      const paramsObj = finalParams as Record<string, unknown>;
+      const hasManifestUrl = paramsObj.manifestUrl || 
+                            (paramsObj.manifest && typeof paramsObj.manifest === 'object' && (paramsObj.manifest as Record<string, unknown>).url);
+      
+      if (!hasManifestUrl) {
+        console.log('[walletkitBridge] Injecting manifestUrl into connect params:', args.manifestUrl);
+        paramsObj.manifestUrl = args.manifestUrl;
+      }
+    }
+    
+    const request: Record<string, unknown> = {
+      id: args.messageId,
+      method: args.method,
+      params: finalParams,
+    };
+    
+    console.log('[walletkitBridge] ========== INJECTED BRIDGE REQUEST ==========');
+    console.log('[walletkitBridge] method:', args.method);
+    console.log('[walletkitBridge] Omitting from field - wallet will generate session ID');
+    console.log('[walletkitBridge] Original params type:', typeof args.params, 'isArray:', Array.isArray(args.params));
+    console.log('[walletkitBridge] ==============================================');
+    
+    console.log('[walletkitBridge] ========== FORWARDING TO processInjectedBridgeRequest ==========');
+    console.log('[walletkitBridge] messageInfo:', JSON.stringify(messageInfo, null, 2));
+    console.log('[walletkitBridge] request:', JSON.stringify(request, null, 2));
+    console.log('[walletkitBridge] request.params type:', typeof request.params);
+    console.log('[walletkitBridge] request.params is Array?:', Array.isArray(request.params));
+    console.log('[walletkitBridge] ================================================================');
+    
+    emitCallCheckpoint(context, 'processInternalBrowserRequest:before-processInjectedBridgeRequest');
+    
+    // Forward to main WalletKit instance - this will queue the event and trigger callbacks
+    await walletKit.processInjectedBridgeRequest(messageInfo, request);
+    
+    emitCallCheckpoint(context, 'processInternalBridgeRequest:after-processInjectedBridgeRequest');
+    
+    // Wait for the response from jsBridgeTransport before returning
+    console.log('[walletkitBridge] ⏳ Response will be provided by jsBridgeTransport');
+    
+    // Create a promise that will be resolved when jsBridgeTransport is called with the response
+    const responsePromise = new Promise<any>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Request timeout: ${args.messageId}`));
+      }, 60000); // 60 second timeout
+      
+      // Store resolver in global map
+      if (!(globalThis as any).__internalBrowserResponseResolvers) {
+        (globalThis as any).__internalBrowserResponseResolvers = new Map();
+      }
+      (globalThis as any).__internalBrowserResponseResolvers.set(args.messageId, {
+        resolve: (response: any) => {
+          clearTimeout(timeoutId);
+          resolve(response);
+        },
+        reject: (error: any) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        }
+      });
+    });
+    
+    console.log('[walletkitBridge] ⏳ Awaiting response from jsBridgeTransport...');
+    const response = await responsePromise;
+    console.log('[walletkitBridge] ✅ Received response from jsBridgeTransport:', response);
+    console.log('[walletkitBridge] ✅ Response type:', typeof response);
+    console.log('[walletkitBridge] ✅ Response keys:', Object.keys(response || {}));
+    console.log('[walletkitBridge] ✅ Response.payload:', response?.payload);
+    
+    // Return the response payload
+    const result = response.payload || response;
+    console.log('[walletkitBridge] ✅ Returning to Kotlin:', result);
+    return result;
+  },
+
+  /**
+   * Emit browser page started event.
+   * Called by TonConnectInjector when a page starts loading.
+   */
+  emitBrowserPageStarted(args: { url: string }) {
+    emit('browserPageStarted', { url: args.url });
+    return { success: true };
+  },
+
+  /**
+   * Emit browser page finished event.
+   * Called by TonConnectInjector when a page finishes loading.
+   */
+  emitBrowserPageFinished(args: { url: string }) {
+    emit('browserPageFinished', { url: args.url });
+    return { success: true };
+  },
+
+  /**
+   * Emit browser error event.
+   * Called by TonConnectInjector when an error occurs.
+   */
+  emitBrowserError(args: { message: string }) {
+    emit('browserError', { message: args.message });
+    return { success: true };
+  },
+
+  /**
+   * Emit browser bridge request event.
+   * Called by TonConnectInjector when a TonConnect request is received.
+   * This is for UI tracking only - the request is still processed normally.
+   */
+  emitBrowserBridgeRequest(args: { messageId: string; method: string; request: string }) {
+    emit('browserBridgeRequest', {
+      messageId: args.messageId,
+      method: args.method,
+      request: args.request
+    });
+    return { success: true };
+  },
 };
 
 function serializeDate(value: unknown): string | null {
@@ -1318,6 +1750,34 @@ function serializeDate(value: unknown): string | null {
   const timestamp = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(timestamp)) return null;
   return new Date(timestamp).toISOString();
+}
+
+function normalizeHex(hex: string): string {
+  const trimmed = typeof hex === 'string' ? hex.trim() : '';
+  if (!trimmed) {
+    throw new Error('Empty hex string');
+  }
+  return trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const normalized = normalizeHex(hex).slice(2);
+  if (normalized.length % 2 !== 0) {
+    throw new Error(`Invalid hex string length: ${normalized.length}`);
+  }
+  const bytes = new Uint8Array(normalized.length / 2);
+  for (let i = 0; i < normalized.length; i += 2) {
+    bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  let hex = '0x';
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, '0');
+  }
+  return hex;
 }
 
 window.walletkitBridge = api;

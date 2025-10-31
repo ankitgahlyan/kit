@@ -301,18 +301,45 @@ export class TonWalletKit implements ITonWalletKit {
         await this.ensureInitialized();
 
         const removeSession = async (sessionId: string) => {
-            await this.bridgeManager.sendResponse(
-                {
-                    sessionId: sessionId,
-                    isJsBridge: false,
-                    id: Date.now(),
-                } as unknown as BridgeEventBase,
-                {
-                    event: 'disconnect',
-                    id: Date.now(),
-                    payload: {},
-                } as DisconnectEvent,
-            );
+            // Get session to check if it's a JS bridge session
+            const session = await this.sessionManager.getSession(sessionId);
+
+            if (session?.isJsBridge) {
+                // For JS bridge sessions, send disconnect to specific session
+                await this.bridgeManager.sendJsBridgeResponse(
+                    sessionId, // Use sessionId to route to correct WebView
+                    true,
+                    null,
+                    {
+                        event: 'disconnect',
+                        id: Date.now(),
+                        payload: {
+                            items: [sessionId],
+                        },
+                    },
+                    {
+                        traceId: undefined,
+                        session: session, // Pass session for disconnect event routing on emit
+                    },
+                );
+            } else if (session) {
+                // For HTTP bridge sessions, send as a response
+                await this.bridgeManager.sendResponse(
+                    {
+                        sessionId: sessionId,
+                        isJsBridge: false,
+                        id: Date.now(),
+                        from: sessionId,
+                    } as unknown as BridgeEventBase,
+                    {
+                        event: 'disconnect',
+                        id: Date.now(),
+                        payload: {},
+                    } as DisconnectEvent,
+                    session,
+                );
+            }
+
             await this.sessionManager.removeSession(sessionId);
         };
         if (sessionId) {
