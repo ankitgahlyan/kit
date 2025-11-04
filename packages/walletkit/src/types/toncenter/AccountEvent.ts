@@ -6,7 +6,7 @@
  *
  */
 
-import { EmulationAddressBookEntry, ToncenterTraceItem, ToncenterTransaction } from './emulation';
+import { EmulationAddressBookEntry, EmulationTraceNode, ToncenterTraceItem, ToncenterTransaction } from './emulation';
 import { AddressFriendly, asAddressFriendly, Hex } from '../primitive';
 import { Base64ToHex } from '../../utils/base64';
 import { computeStatus, parseIncomingTonTransfers, parseOutgoingTonTransfers } from './parsers/TonTransfer';
@@ -41,6 +41,7 @@ export interface Event {
     isScam: boolean;
     lt: number;
     inProgress: boolean;
+    trace: EmulationTraceNode;
     transactions: Record<string, ToncenterTransaction>;
 }
 
@@ -189,6 +190,7 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
             isScam: false,
             lt: Number(data.start_lt),
             inProgress: data.is_incomplete,
+            trace: data.trace,
             transactions: data.transactions,
         };
     }
@@ -200,6 +202,7 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
         isScam: false, // TODO implement detect isScam for Event
         lt: Number(data.start_lt),
         inProgress: data.is_incomplete,
+        trace: data.trace,
         transactions: data.transactions,
     };
 }
