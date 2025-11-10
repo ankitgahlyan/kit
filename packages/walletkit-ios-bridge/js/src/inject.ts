@@ -70,7 +70,7 @@ class SwiftTransport implements Transport {
 
     async send(request: Omit<InjectedToExtensionBridgeRequestPayload, 'id'>): Promise<unknown> {
         let timeout = request.method === 'restoreConnection' ? RESTORE_CONNECTION_TIMEOUT : DEFAULT_REQUEST_TIMEOUT;
-        let response = await window.webkit.messageHandlers.tonConnectBridge.postMessage(
+        let response = await window.webkit.messageHandlers.walletKitInjectionBridge.postMessage(
             { ...request, frameID: window.id, timeout: timeout }
         );
 
