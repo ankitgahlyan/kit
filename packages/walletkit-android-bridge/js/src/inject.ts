@@ -20,9 +20,8 @@ if (globalThis && !globalThis.Buffer) {
 
 // Debug logging flag - can be set via window.__TONCONNECT_DEBUG__ from native code
 // In production builds, this should be false to suppress all bridge logs
-const DEBUG_ENABLED = typeof (window as any).__TONCONNECT_DEBUG__ !== 'undefined' 
-    ? (window as any).__TONCONNECT_DEBUG__ 
-    : false; // Default to false (no logs) in production
+const DEBUG_ENABLED =
+    typeof (window as any).__TONCONNECT_DEBUG__ !== 'undefined' ? (window as any).__TONCONNECT_DEBUG__ : false; // Default to false (no logs) in production
 
 // Debug logger - only logs when DEBUG_ENABLED is true
 const debugLog = (...args: any[]) => {
@@ -231,9 +230,7 @@ class AndroidWebViewTransport implements Transport {
                     childIframes.forEach((iframe, index) => {
                         try {
                             iframe.contentWindow?.postMessage(event.data, '*');
-                            debugLog(
-                                `[AndroidTransport] ✅ Frame ${frameId} relayed event to child iframe #${index}`,
-                            );
+                            debugLog(`[AndroidTransport] ✅ Frame ${frameId} relayed event to child iframe #${index}`);
                         } catch (e) {
                             console.warn(
                                 `[AndroidTransport] ❌ Frame ${frameId} failed to relay event to child iframe #${index}:`,
@@ -320,9 +317,7 @@ class AndroidWebViewTransport implements Transport {
             const responseStr = bridge.pullResponse(messageId);
             if (responseStr) {
                 const response = JSON.parse(responseStr);
-                debugLog(
-                    `[AndroidTransport] ✅ Pulled and processing response for: ${messageId} in frame: ${frameId}`,
-                );
+                debugLog(`[AndroidTransport] ✅ Pulled and processing response for: ${messageId} in frame: ${frameId}`);
 
                 clearTimeout(pending.timeout);
                 this.pendingRequests.delete(messageId);
