@@ -671,11 +671,6 @@ export class BridgeManager {
                 }
 
                 log.info('Event stored durably', { eventId: rawEvent.id, method: rawEvent.method });
-
-                // todo - fire on emit, not inside bridge
-                if (rawEvent.method == 'connect') {
-                    await this.eventRouter.routeEvent(rawEvent);
-                }
             } catch (error) {
                 log.error('Failed to store event durably', {
                     eventId: rawEvent.id,
