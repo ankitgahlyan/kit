@@ -30,5 +30,18 @@ if (typeof self !== 'undefined') {
     }
 }
 
-import('./polyfills/firstPolyfill');
-import('./main');
+import('./polyfills/firstPolyfill')
+    .then(() => {
+        import('./main')
+            .then(() => {
+                // do nothing
+            })
+            .catch((error) => {
+                // eslint-disable-next-line no-console
+                console.error('🔍 Error loading main:', error.toString());
+            });
+    })
+    .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('🔍 Error loading polyfills:', error.toString());
+    });
