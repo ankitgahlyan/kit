@@ -138,10 +138,13 @@ export interface GetNftsArgs {
     address: string;
     limit?: number;
     offset?: number;
+    collectionAddress?: string;
+    indirectOwnership?: boolean;
 }
 
 export interface GetNftArgs {
     address: string;
+    nftAddress: string;
 }
 
 export interface CreateTransferNftTransactionArgs {
