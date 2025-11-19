@@ -92,3 +92,4 @@ export type {
 export type { NftItem } from './toncenter/NftItem';
 
 export type { NftItems } from './toncenter/NftItems';
+export { emulationEvent } from './toncenter/AccountEvent';

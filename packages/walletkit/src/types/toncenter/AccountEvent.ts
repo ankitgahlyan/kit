@@ -6,7 +6,13 @@
  *
  */
 
-import { EmulationAddressBookEntry, EmulationTraceNode, ToncenterTraceItem, ToncenterTransaction } from './emulation';
+import {
+    EmulationAddressBookEntry,
+    EmulationTraceNode,
+    ToncenterEmulationResponse,
+    ToncenterTraceItem,
+    ToncenterTransaction,
+} from './emulation';
 import { AddressFriendly, asAddressFriendly, Hex } from '../primitive';
 import { Base64ToHex } from '../../utils/base64';
 import { computeStatus, parseIncomingTonTransfers, parseOutgoingTonTransfers } from './parsers/TonTransfer';
@@ -205,6 +211,62 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
         trace: data.trace,
         transactions: data.transactions,
     };
+}
+
+export function emulationEvent(data: ToncenterEmulationResponse): Event {
+    // Build a ToncenterTraceItem from emulation response
+    const txEntries = Object.entries(data.transactions) as [string, ToncenterTransaction][];
+    const byLtAsc = [...txEntries].sort((a, b) => (BigInt(a[1].lt) < BigInt(b[1].lt) ? -1 : 1));
+    const transactions_order = byLtAsc.map(([hash]) => hash);
+
+    const start_lt = byLtAsc[0]?.[1].lt ?? '0';
+    const end_lt = byLtAsc[byLtAsc.length - 1]?.[1].lt ?? '0';
+    const start_utime =
+        byLtAsc.length > 0 ? Math.min(...byLtAsc.map(([, tx]) => tx.now)) : Math.floor(Date.now() / 1000);
+    const end_utime = byLtAsc.length > 0 ? Math.max(...byLtAsc.map(([, tx]) => tx.now)) : start_utime;
+    const mcSeqnos = byLtAsc.map(([, tx]) => tx.mc_block_seqno);
+    const mc_seqno_start = mcSeqnos.length > 0 ? String(Math.min(...mcSeqnos)) : '0';
+    const mc_seqno_end = mcSeqnos.length > 0 ? String(Math.max(...mcSeqnos)) : '0';
+    const trace_id = transactions_order[0] ?? '';
+    const rootTx = trace_id ? data.transactions[trace_id] : undefined;
+    const external_hash =
+        ((rootTx?.in_msg as unknown as { hash_norm?: string })?.hash_norm as string | undefined) ||
+        ((rootTx?.in_msg as unknown as { hash?: string })?.hash as string | undefined) ||
+        '';
+
+    const traceItem: ToncenterTraceItem = {
+        actions: data.actions,
+        end_lt,
+        end_utime,
+        external_hash,
+        is_incomplete: data.is_incomplete,
+        mc_seqno_end,
+        mc_seqno_start,
+        start_lt,
+        start_utime,
+        trace: data.trace,
+        trace_id,
+        trace_info: {
+            classification_state: 'emulated',
+            messages: byLtAsc.reduce((sum, [, tx]) => sum + (tx.in_msg ? 1 : 0) + (tx.out_msgs?.length ?? 0), 0),
+            pending_messages: 0,
+            trace_state: 'complete',
+            transactions: transactions_order.length,
+        },
+        transactions: data.transactions,
+        transactions_order,
+        warning: '',
+    };
+    // Provide metadata for parsers that utilize it (jettons/NFTs)
+    (traceItem as unknown as { metadata?: Record<string, unknown> }).metadata = data.metadata as unknown as Record<
+        string,
+        unknown
+    >;
+
+    // Infer primary account as the account of the root transaction
+    const inferredAccount = rootTx?.account ?? '';
+    const addressBook = toAddressBook(data.address_book);
+    return toEvent(traceItem, inferredAccount, addressBook);
 }
 
 export interface TonTransfer {
