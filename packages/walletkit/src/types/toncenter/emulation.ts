@@ -6,6 +6,8 @@
  *
  */
 
+import { AddressBookRowV3 } from './v3/AddressBookRowV3';
+
 // Types for Toncenter emulation endpoint response
 
 // Root response
@@ -16,7 +18,7 @@ export interface ToncenterEmulationResponse {
     actions: EmulationAction[];
     code_cells: Record<string, string>; // base64-encoded cells by code hash
     data_cells: Record<string, string>; // base64-encoded cells by data hash
-    address_book: Record<string, EmulationAddressBookEntry>;
+    address_book: Record<string, AddressBookRowV3>;
     metadata: Record<string, EmulationAddressMetadata>;
     rand_seed: string;
     is_incomplete: boolean;
@@ -24,13 +26,13 @@ export interface ToncenterEmulationResponse {
 
 export interface ToncenterTracesResponse {
     traces: ToncenterTraceItem[];
-    address_book: Record<string, EmulationAddressBookEntry>;
+    address_book: Record<string, AddressBookRowV3>;
     metadata: Record<string, EmulationAddressMetadata>;
 }
 
 export interface ToncenterTransactionsResponse {
     transactions: ToncenterTransaction[];
-    address_book: Record<string, EmulationAddressBookEntry>;
+    address_book: Record<string, AddressBookRowV3>;
 }
 
 export interface ToncenterTraceItem {
@@ -252,12 +254,6 @@ export interface EmulationAction extends EmulationActionBase {
     details: EmulationActionDetails;
 }
 
-// Address book
-export interface EmulationAddressBookEntry {
-    user_friendly: string;
-    domain: string | null;
-}
-
 // Metadata by address
 export interface EmulationAddressMetadata {
     is_indexed: boolean;
@@ -304,13 +300,13 @@ export interface EmulationTokenInfoMasters extends EmulationTokenInfoBase {
 
 export interface ToncenterResponseJettonMasters {
     jetton_masters: ToncenterJettonWallet[];
-    address_book: Record<string, EmulationAddressBookEntry>;
+    address_book: Record<string, AddressBookRowV3>;
     metadata: Record<string, EmulationAddressMetadata>;
 }
 
 export interface ToncenterResponseJettonWallets {
     jetton_wallets: ToncenterJettonWallet[];
-    address_book: Record<string, EmulationAddressBookEntry>;
+    address_book: Record<string, AddressBookRowV3>;
     metadata: Record<string, EmulationAddressMetadata>;
 }
 

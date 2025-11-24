@@ -6,19 +6,14 @@
  *
  */
 
-import {
-    EmulationAddressBookEntry,
-    EmulationTraceNode,
-    ToncenterEmulationResponse,
-    ToncenterTraceItem,
-    ToncenterTransaction,
-} from './emulation';
+import { EmulationTraceNode, ToncenterEmulationResponse, ToncenterTraceItem, ToncenterTransaction } from './emulation';
 import { AddressFriendly, asAddressFriendly, asMaybeAddressFriendly, Hex } from '../primitive';
 import { Base64ToHex } from '../../utils/base64';
 import { computeStatus, parseIncomingTonTransfers, parseOutgoingTonTransfers } from './parsers/TonTransfer';
 import { parseContractActions } from './parsers/Contract';
 import { parseJettonActions } from './parsers/Jetton';
 import { parseNftActions } from './parsers/Nft';
+import { AddressBookRowV3 } from './v3/AddressBookRowV3';
 
 export interface AddressBookItem {
     domain?: string;
@@ -28,7 +23,7 @@ export interface AddressBookItem {
 
 export type AddressBook = Record<AddressFriendly, AddressBookItem>;
 
-export function toAddressBook(data: Record<string, EmulationAddressBookEntry>): AddressBook {
+export function toAddressBook(data: Record<string, AddressBookRowV3>): AddressBook {
     const out: AddressBook = {};
     for (const item of Object.keys(data)) {
         const domain = data[item].domain;
@@ -308,7 +303,7 @@ export interface Account {
 export function toAccount(address: string, addressBook: AddressBook): Account {
     const friendly = asMaybeAddressFriendly(address);
     const out: Account = {
-        address: friendly ?? (address ?? ''),
+        address: friendly ?? address ?? '',
         isScam: false,
         isWallet: Boolean(friendly),
     };

@@ -79,7 +79,6 @@ export type {
     ToncenterEmulationResponse,
     ToncenterResponseJettonWallets,
     ToncenterJettonWallet,
-    EmulationAddressBookEntry,
     EmulationAddressMetadata,
     EmulationTokenInfo,
     EmulationTokenInfoWallets,
