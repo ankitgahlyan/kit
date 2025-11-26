@@ -84,12 +84,51 @@ try {
 
 const [schemaFile, outputFile] = process.argv.slice(2);
 
+// Integer format patterns
+const INTEGER_FORMATS = ['int', 'int8', 'int16', 'int32', 'int64', 'uint', 'uint8', 'uint16', 'uint32', 'uint64'];
+
+// Function to fix number types with integer formats
+function fixIntegerTypes(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        return obj;
+    }
+    
+    // Handle arrays
+    if (Array.isArray(obj)) {
+        return obj.map(fixIntegerTypes);
+    }
+    
+    // Check if this is a number type with integer format
+    if (obj.type === 'number' && obj.format && INTEGER_FORMATS.includes(obj.format)) {
+        obj.type = 'integer';
+    }
+    
+    // Check if this is an array with number items that have integer format
+    if (obj.type === 'array' && obj.items) {
+        if (obj.items.type === 'number' && obj.format && INTEGER_FORMATS.includes(obj.format)) {
+            obj.items.type = 'integer';
+        }
+    }
+    
+    // Recursively process all properties
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+            obj[key] = fixIntegerTypes(obj[key]);
+        }
+    }
+    
+    return obj;
+}
+
 try {
     const schemaContent = fs.readFileSync(schemaFile, 'utf8');
     const schema = JSON.parse(schemaContent);
     
     // Extract definitions/schemas
     let schemas = schema.definitions || schema.$defs || {};
+    
+    // Fix integer types in all schemas before conversion
+    schemas = fixIntegerTypes(schemas);
     
     // Convert each schema to OpenAPI format
     const openapiSchemas = {};
