@@ -137,4 +137,4 @@ echo "📄 OpenAPI spec: $OUTPUT_FILE"
 echo ""
 
 # Return the output file path (for use in other scripts)
-echo "$OUTPUT_FILE"
+echo "OPENAPI_SPEC_PATH=$OUTPUT_FILE"
