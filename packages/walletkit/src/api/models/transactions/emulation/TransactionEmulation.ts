@@ -215,7 +215,7 @@ export type TransactionEmulationActionDetails =
     | TransactionEmulationTonTransferDetails
     | TransactionEmulationJettonSwapDetails
     | TransactionEmulationCallContractDetails
-    | Record<string, unknown>; // fallback for unknown action types
+    | { [key: string]: unknown }; // fallback for unknown action types
 
 export interface TransactionEmulationAction extends TransactionEmulationActionBase {
     details: TransactionEmulationActionDetails;
