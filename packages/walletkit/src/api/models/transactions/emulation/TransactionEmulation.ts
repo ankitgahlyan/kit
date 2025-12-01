@@ -22,8 +22,8 @@ export interface TransactionEmulation {
     totalFeesExtraCurrencies?: ExtraCurrencies;
     description?: TransactionDescription;
     blockRef?: TransactionBlockRef;
-    inMsg?: TransactionMessage;
-    outMsgs: TransactionMessage[];
+    inMsg?: TransactionEmulationMessage;
+    outMsgs: TransactionEmulationMessage[];
     accountStateBefore?: AccountState;
     accountStateAfter?: AccountState;
     isEmulated: boolean;
@@ -65,7 +65,7 @@ export interface TransactionBlockRef {
     seqno: number;
 }
 
-export interface TransactionMessage {
+export interface TransactionEmulationMessage {
     hash: string;
     source?: string;
     destination?: string;
