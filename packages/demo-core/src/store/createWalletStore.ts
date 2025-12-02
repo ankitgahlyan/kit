@@ -18,6 +18,7 @@ import { createJettonsSlice } from './slices/jettonsSlice';
 import { createNftsSlice } from './slices/nftsSlice';
 import type { AppState } from '../types/store';
 import type { StorageAdapter } from '../adapters/storage/types';
+import type { WalletKitConfig } from '../types/wallet';
 
 const STORE_VERSION = 2;
 
@@ -31,7 +32,7 @@ export interface CreateWalletStoreOptions {
     /**
      * Network to use (mainnet or testnet)
      */
-    network?: 'mainnet' | 'testnet';
+    defaultNetwork?: 'mainnet' | 'testnet';
 
     /**
      * Enable Redux DevTools
@@ -46,6 +47,8 @@ export interface CreateWalletStoreOptions {
         warn: (...args: unknown[]) => void;
         error: (...args: unknown[]) => void;
     };
+
+    walletKitConfig?: WalletKitConfig;
 }
 
 const createLogger = (customLogger?: CreateWalletStoreOptions['logger']) => {
@@ -108,7 +111,13 @@ const migrate = (persistedState: unknown, fromVersion: number, log: ReturnType<t
  * Creates a Zustand store for wallet management
  */
 export function createWalletStore(options: CreateWalletStoreOptions = {}) {
-    const { storage, network = 'testnet', enableDevtools = true, logger: customLogger } = options;
+    const {
+        storage,
+        defaultNetwork = 'testnet',
+        enableDevtools = true,
+        logger: customLogger,
+        walletKitConfig,
+    } = options;
 
     const log = createLogger(customLogger);
 
@@ -122,7 +131,7 @@ export function createWalletStore(options: CreateWalletStoreOptions = {}) {
                         ...createAuthSlice(...a),
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        ...createWalletCoreSlice(...a),
+                        ...createWalletCoreSlice(walletKitConfig)(...a),
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
                         ...createWalletManagementSlice(...a),
@@ -179,7 +188,7 @@ export function createWalletStore(options: CreateWalletStoreOptions = {}) {
                                 auth: {
                                     ...currentState.auth,
                                     ...persisted?.auth,
-                                    network: persisted?.auth?.network || network,
+                                    network: persisted?.auth?.network || defaultNetwork,
                                     isUnlocked:
                                         persisted?.auth?.persistPassword &&
                                         persisted?.auth?.currentPassword &&
@@ -236,14 +245,19 @@ export function createWalletStore(options: CreateWalletStoreOptions = {}) {
                     },
                 ),
             ),
-            { enabled: enableDevtools },
+            {
+                enabled: enableDevtools,
+                serialize: {
+                    replacer: (_: unknown, value: unknown) => (typeof value === 'bigint' ? '' : value),
+                },
+            },
         ),
     );
 
     // Initialize wallet kit on first load (browser only)
     if (typeof window !== 'undefined') {
         const storeState = store.getState();
-        const persistedNetwork = storeState.auth.network || network;
+        const persistedNetwork = storeState.auth.network || defaultNetwork;
         log.info(`Initializing WalletKit with network: ${persistedNetwork}`);
         storeState.initializeWalletKit(persistedNetwork);
     }

@@ -6,7 +6,13 @@
  *
  */
 
-import type { EventConnectRequest, EventTransactionRequest, EventSignDataRequest } from '@ton/walletkit';
+import type {
+    EventConnectRequest,
+    EventTransactionRequest,
+    EventSignDataRequest,
+    JSBridgeTransportFunction,
+    StorageAdapter as KitStorageAdapter,
+} from '@ton/walletkit';
 
 export interface SavedWallet {
     id: string;
@@ -92,4 +98,14 @@ export interface LedgerConfig {
     network: string;
     workchain: number;
     accountIndex: number;
+}
+
+export interface WalletKitConfig {
+    storage?: KitStorageAdapter;
+    jsBridgeTransport?: JSBridgeTransportFunction;
+    disableHttpBridge?: boolean;
+    disableNetworkSend?: boolean;
+    bridgeUrl?: string;
+    tonApiKeyMainnet?: string;
+    tonApiKeyTestnet?: string;
 }

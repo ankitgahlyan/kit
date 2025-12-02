@@ -48,6 +48,7 @@ export type {
     QueuedRequestData,
     RequestQueue,
     LedgerConfig,
+    WalletKitConfig,
 } from './types/wallet';
 
 // Utils (optional exports)
