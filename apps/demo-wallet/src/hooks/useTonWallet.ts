@@ -8,8 +8,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { CreateTonMnemonic } from '@ton/walletkit';
+import { useWallet, useAuth } from '@ton/demo-core';
 
-import { useWallet, useAuth } from '../stores';
 import { createComponentLogger } from '../utils/logger';
 
 // Create logger for TON wallet hook

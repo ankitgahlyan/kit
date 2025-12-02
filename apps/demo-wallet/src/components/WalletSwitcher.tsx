@@ -7,8 +7,8 @@
  */
 
 import React, { useState } from 'react';
+import type { SavedWallet } from '@ton/demo-core';
 
-import type { SavedWallet } from '../types/wallet';
 import { createComponentLogger } from '../utils/logger';
 
 const log = createComponentLogger('WalletSwitcher');

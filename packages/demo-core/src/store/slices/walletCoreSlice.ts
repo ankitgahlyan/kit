@@ -12,14 +12,13 @@ import { createComponentLogger } from '../../utils/logger';
 import { isExtension } from '../../utils/isExtension';
 import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../../utils/walletManifest';
 import type { SetState, WalletCoreSliceCreator } from '../../types/store';
-
 import {
     DISABLE_HTTP_BRIDGE,
     DISABLE_NETWORK_SEND,
     ENV_BRIDGE_URL,
     ENV_TON_API_KEY_MAINNET,
     ENV_TON_API_KEY_TESTNET,
-} from '@/lib/env';
+} from '../../utils/env';
 
 const log = createComponentLogger('WalletCoreSlice');
 
@@ -27,15 +26,6 @@ const log = createComponentLogger('WalletCoreSlice');
  * Creates a WalletKit instance with the specified network configuration
  */
 async function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet'): Promise<ITonWalletKit> {
-    let jsBridgeTransport: typeof import('@/lib/extensionPopup').SendMessageToExtensionContent | undefined;
-    let storage: ReturnType<typeof import('@/lib/extensionPopup').CreateExtensionStorageAdapter> | undefined;
-
-    if (isExtension()) {
-        const { SendMessageToExtensionContent, CreateExtensionStorageAdapter } = await import('@/lib/extensionPopup');
-        jsBridgeTransport = SendMessageToExtensionContent;
-        storage = CreateExtensionStorageAdapter();
-    }
-
     const walletKit = new TonWalletKit({
         deviceInfo: createDeviceInfo(getTonConnectDeviceInfo()),
         walletManifest: createWalletManifest(getTonConnectWalletManifest()),
@@ -43,15 +33,12 @@ async function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet
         bridge: {
             bridgeUrl: ENV_BRIDGE_URL,
             disableHttpConnection: DISABLE_HTTP_BRIDGE,
-            jsBridgeTransport,
         },
 
         network: network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET,
         apiClient: {
             key: network === 'mainnet' ? ENV_TON_API_KEY_MAINNET : ENV_TON_API_KEY_TESTNET,
         },
-
-        storage,
 
         analytics: {
             enabled: true,
@@ -62,7 +49,7 @@ async function createWalletKitInstance(network: 'mainnet' | 'testnet' = 'testnet
         },
     }) as ITonWalletKit;
 
-    log.info(`WalletKit initialized with network: ${network} ${isExtension() ? 'extension' : 'web'}`);
+    log.info(`WalletKit initialized with network: ${network}`);
     return walletKit;
 }
 

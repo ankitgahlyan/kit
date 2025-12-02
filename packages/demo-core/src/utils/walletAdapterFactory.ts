@@ -21,8 +21,8 @@ import {
 } from '@ton/walletkit';
 import { createWalletInitConfigLedger, createLedgerPath, createWalletV4R2Ledger } from '@ton/v4ledger-adapter';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
-import type { LedgerConfig, PreviewTransaction, SavedWallet } from '@ton/demo-core';
 
+import type { LedgerConfig, PreviewTransaction, SavedWallet } from '../types/wallet';
 import { createComponentLogger } from './logger';
 
 const log = createComponentLogger('WalletAdapterFactory');

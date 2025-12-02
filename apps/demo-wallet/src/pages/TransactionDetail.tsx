@@ -9,8 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Base64Normalize, type ToncenterTransaction } from '@ton/walletkit';
-
-import { useWalletKit } from '../stores';
+import { useWalletKit } from '@ton/demo-core';
 
 interface TransactionDetailData {
     hash: string;

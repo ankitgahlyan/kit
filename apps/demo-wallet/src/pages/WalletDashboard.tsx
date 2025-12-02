@@ -8,6 +8,14 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    useWallet,
+    useWalletKit,
+    useTonConnect,
+    useTransactionRequests,
+    useSignDataRequests,
+    useAuth,
+} from '@ton/demo-core';
 
 import {
     Layout,
@@ -22,12 +30,9 @@ import {
     JettonsCard,
     WalletSwitcher,
 } from '../components';
-import { useWallet, useTonConnect, useTransactionRequests, useSignDataRequests, useAuth } from '../stores';
 import { useTonWallet } from '../hooks';
 import { createComponentLogger } from '../utils/logger';
 import { usePasteHandler } from '../hooks/usePasteHandler';
-
-import { useWalletKit } from '@/stores';
 
 // Create logger for wallet dashboard
 const log = createComponentLogger('WalletDashboard');

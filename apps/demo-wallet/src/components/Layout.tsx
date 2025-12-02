@@ -7,9 +7,9 @@
  */
 
 import React from 'react';
+import { useAuth } from '@ton/demo-core';
 
 import { SettingsDropdown } from './SettingsDropdown';
-import { useAuth } from '../stores';
 
 interface LayoutProps {
     children: React.ReactNode;

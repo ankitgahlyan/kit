@@ -9,6 +9,8 @@
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import type { EventTransactionRequest, JettonInfo, MoneyFlowSelf } from '@ton/walletkit';
 import { Address } from '@ton/core';
+import type { SavedWallet } from '@ton/demo-core';
+import { useWalletKit, useAuth } from '@ton/demo-core';
 
 import { ActionPreviewList } from './ActionPreviewList';
 import { Button } from './Button';
@@ -16,10 +18,8 @@ import { Card } from './Card';
 import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
 import { HoldToSignButton } from './HoldToSignButton';
-import type { SavedWallet } from '../types/wallet';
 import { createComponentLogger } from '../utils/logger';
 import { formatUnits } from '../utils/units';
-import { useWalletKit, useAuth } from '../stores';
 // Create logger for transaction request modal
 const log = createComponentLogger('TransactionRequestModal');
 

@@ -8,10 +8,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth, useWallet } from '@ton/demo-core';
 
 import { Layout, Button, Card, MnemonicDisplay, ImportWallet } from '../components';
 import { useTonWallet } from '../hooks';
-import { useAuth, useWallet } from '../stores';
 
 type SetupMode = 'select' | 'create' | 'import' | 'ledger';
 

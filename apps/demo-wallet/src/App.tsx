@@ -6,6 +6,8 @@
  *
  */
 
+import { WalletProvider } from '@ton/demo-core';
+
 import { AppRouter } from './components';
 import './App.css';
 import './storePatch';
@@ -14,10 +16,10 @@ import { Toaster } from '@/components/ui/sonner';
 
 function App() {
     return (
-        <>
+        <WalletProvider network="testnet" enableDevtools={true}>
             <AppRouter />
             <Toaster />
-        </>
+        </WalletProvider>
     );
 }
 

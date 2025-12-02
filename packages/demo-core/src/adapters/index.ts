@@ -6,5 +6,4 @@
  *
  */
 
-export * from './wallet';
-export * from './store';
+export * from './storage';

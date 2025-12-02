@@ -10,8 +10,7 @@ import React, { memo, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Base64NormalizeUrl } from '@ton/walletkit';
 import type { ToncenterTraceItem } from '@ton/walletkit';
-
-import { useWalletKit } from '../stores';
+import { useWalletKit } from '@ton/demo-core';
 
 import { log } from '@/utils/logger';
 
