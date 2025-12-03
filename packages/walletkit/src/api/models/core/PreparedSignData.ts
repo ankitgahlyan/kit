@@ -11,7 +11,7 @@ export interface PreparedSignData {
 }
 
 export declare type PreparedSignDataPayload = {
-    network?: Network;
+    network: Network;
     from?: string;
     data?: SignData;
 };
