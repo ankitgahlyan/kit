@@ -6,28 +6,28 @@
  *
  */
 
+import { useWallet } from '@ton/demo-core';
 import type { FC } from 'react';
 import type { ViewProps } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-
-import { useBalancesStore } from '../../store/store';
 
 import { AppText } from '@/core/components/app-text';
 import { Block } from '@/core/components/block';
 import { Skeleton } from '@/core/components/skeleton';
 import { TextAmount } from '@/core/components/text-amount';
-import { useWalletStore } from '@/features/wallets';
+import { fromMinorUnit } from '@/core/utils/amount/minor-unit';
 
 export const TonBalanceCard: FC<ViewProps> = ({ style, ...props }) => {
-    const address = useWalletStore((state) => state.address);
-    const tonBalance = useBalancesStore((state) => state.tonBalance);
-    const isInitialized = useBalancesStore((state) => state.isInitialized);
+    const { address, balance } = useWallet();
+    const isInitialized = !!address;
+
+    const formattedBalance = balance ? fromMinorUnit(balance, 9).toString() : '0';
 
     return (
         <Block style={[styles.container, style]} {...props}>
             {isInitialized && (
                 <AppText adjustsFontSizeToFit numberOfLines={1} style={styles.balanceContainer} textType="h2">
-                    <TextAmount amount={tonBalance || '0'} decimals={9} style={styles.balance} textType="h2" />
+                    <TextAmount amount={formattedBalance} decimals={9} style={styles.balance} textType="h2" />
                     <AppText style={styles.currency} textType="h2">
                         {' '}
                         TON

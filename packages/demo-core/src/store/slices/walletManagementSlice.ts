@@ -395,6 +395,7 @@ export const createWalletManagementSlice: WalletManagementSliceCreator = (set: S
         }
 
         if (!state.walletCore.walletKit) {
+            log.info('WalletKit not initialized, waiting for it to be initialized');
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 

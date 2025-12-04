@@ -6,8 +6,4 @@
  *
  */
 
-import { useBalancesStore } from '../store';
-
-export const resetBalancesState = () => {
-    useBalancesStore.setState(useBalancesStore.getInitialState());
-};
+export { TransactionEventRow } from './transaction-event-row';

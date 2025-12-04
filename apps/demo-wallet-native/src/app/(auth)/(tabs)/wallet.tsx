@@ -12,21 +12,23 @@ import { router } from 'expo-router';
 import { type FC, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { useWallet } from '@ton/demo-core';
+import { useJettons, useWallet } from '@ton/demo-core';
 
 import { ActiveTouchAction } from '@/core/components/active-touch-action';
 import { AppButton } from '@/core/components/app-button';
 import { ScreenHeader } from '@/core/components/screen-header';
 import { ScreenWrapper } from '@/core/components/screen-wrapper';
 import { noop } from '@/core/utils/noop';
-import { getBalance, JettonList, TonBalanceCard } from '@/features/balances';
+import { JettonList, TonBalanceCard } from '@/features/balances';
 import { WalletSwitcher } from '@/features/wallets';
 
 const WalletHomeScreen: FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isWalletSwitcherOpen, setIsWalletSwitcherOpen] = useState(false);
 
     const { address, savedWallets, activeWalletId, switchWallet, removeWallet, renameWallet, updateBalance } =
         useWallet();
+    const { loadUserJettons } = useJettons();
 
     const { theme } = useUnistyles();
 
@@ -47,7 +49,7 @@ const WalletHomeScreen: FC = () => {
     const refreshBalance = async () => {
         setIsRefreshing(true);
         await updateBalance().catch(noop);
-        await getBalance().catch(noop);
+        await loadUserJettons().catch(noop);
         setIsRefreshing(false);
     };
 
@@ -75,10 +77,21 @@ const WalletHomeScreen: FC = () => {
         }
     };
 
+    const activeWallet = savedWallets.find((w) => w.id === activeWalletId);
+    const walletName = activeWallet?.name || 'Wallet';
+
     return (
         <ScreenWrapper refreshControl={<RefreshControl onRefresh={refreshBalance} refreshing={isRefreshing} />}>
             <ScreenHeader.Container style={styles.header}>
-                <ScreenHeader.Title style={styles.title}>Wallet</ScreenHeader.Title>
+                <ActiveTouchAction onPress={() => setIsWalletSwitcherOpen(true)} style={styles.titleContainer}>
+                    <ScreenHeader.Title style={styles.title}>{walletName}</ScreenHeader.Title>
+                    <Ionicons
+                        color={theme.colors.text.highlight}
+                        name="chevron-down"
+                        size={16}
+                        style={styles.chevron}
+                    />
+                </ActiveTouchAction>
 
                 <ScreenHeader.RightSide>
                     <ActiveTouchAction onPress={handleOpenExplorer}>
@@ -90,6 +103,8 @@ const WalletHomeScreen: FC = () => {
             {/* Wallet Switcher */}
             <WalletSwitcher
                 activeWalletId={activeWalletId}
+                isOpen={isWalletSwitcherOpen}
+                onClose={() => setIsWalletSwitcherOpen(false)}
                 onRemoveWallet={handleRemoveWallet}
                 onRenameWallet={handleRenameWallet}
                 onSwitchWallet={handleSwitchWallet}
@@ -121,8 +136,16 @@ const styles = StyleSheet.create(({ sizes }) => ({
     header: {
         justifyContent: 'flex-start',
     },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
     title: {
         textAlign: 'left',
+    },
+    chevron: {
+        marginTop: 2,
     },
     tonBalance: {
         marginBottom: sizes.space.vertical * 2,

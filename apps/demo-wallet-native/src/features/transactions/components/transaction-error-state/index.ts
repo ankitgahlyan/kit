@@ -6,5 +6,4 @@
  *
  */
 
-export { getBalance } from './balance';
-export { resetBalancesState } from './reset';
+export { TransactionErrorState } from './transaction-error-state';

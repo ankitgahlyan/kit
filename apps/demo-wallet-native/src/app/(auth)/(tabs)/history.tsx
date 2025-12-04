@@ -6,67 +6,62 @@
  *
  */
 
-import { type FC, useCallback, useState } from 'react';
-import { RefreshControl } from 'react-native';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import type { Event } from '@ton/walletkit';
+import { type FC } from 'react';
+import { RefreshControl, View } from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
 
-import { RowCenter } from '@/core/components/grid';
-import { InfoBlock } from '@/core/components/info-block';
-import { LoaderCircle } from '@/core/components/loader-circle';
 import { ScreenHeader } from '@/core/components/screen-header';
-import { noop } from '@/core/utils/noop';
-import { loadTransactions, TransactionList, useTransactionsStore } from '@/features/transactions';
+import {
+    TransactionList,
+    TransactionEventRow,
+    TransactionEmptyState,
+    TransactionLoadingState,
+    TransactionErrorState,
+    useTransactionEvents,
+} from '@/features/transactions';
 
 const HistoryScreen: FC = () => {
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const { events, isInitialLoading, isRefreshing, error, address, handleRefresh } = useTransactionEvents(20);
 
-    const transactions = useTransactionsStore((state) => state.transactions);
-    const isInitialized = useTransactionsStore((state) => state.isInitialized);
+    const renderHeader = () => (
+        <ScreenHeader.Container>
+            <ScreenHeader.Title>Transactions</ScreenHeader.Title>
+        </ScreenHeader.Container>
+    );
 
-    const { theme } = useUnistyles();
-
-    const onRefresh = useCallback(async () => {
-        try {
-            setIsRefreshing(true);
-            await loadTransactions().catch(noop);
-            setIsRefreshing(false);
-        } catch (_e) {
-            setIsRefreshing(false);
+    const renderContent = () => {
+        if (error) {
+            return <TransactionErrorState error={error} onRetry={handleRefresh} />;
         }
-    }, []);
+
+        if (isInitialLoading) {
+            return <TransactionLoadingState />;
+        }
+
+        if (events.length === 0) {
+            return <TransactionEmptyState />;
+        }
+
+        return null;
+    };
 
     return (
-        <TransactionList
-            contentContainerStyle={styles.list}
-            ListHeaderComponent={
-                <>
-                    <ScreenHeader.Container>
-                        <ScreenHeader.Title>Transactions</ScreenHeader.Title>
-                    </ScreenHeader.Container>
-
-                    {!isInitialized && (
-                        <RowCenter style={styles.loaderContainer}>
-                            <LoaderCircle size={64} />
-                        </RowCenter>
-                    )}
-
-                    {isInitialized && !transactions.length && (
-                        <InfoBlock.Container style={styles.infoBlock}>
-                            <InfoBlock.IconWrapper>
-                                <InfoBlock.Icon color={theme.colors.text.inverted} name="reader" withWrapper />
-                            </InfoBlock.IconWrapper>
-
-                            <InfoBlock.Title>No transactions yet</InfoBlock.Title>
-                            <InfoBlock.Subtitle style={styles.infoSubtitle}>
-                                You haven't made any transactions so far. Once you do, they'll appear here.
-                            </InfoBlock.Subtitle>
-                        </InfoBlock.Container>
-                    )}
-                </>
-            }
-            refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={isRefreshing} />}
-            style={styles.container}
-        />
+        <View style={styles.container}>
+            <TransactionList<Event>
+                contentContainerStyle={styles.list}
+                data={events as Event[]}
+                keyExtractor={(item) => item.eventId}
+                ListHeaderComponent={
+                    <>
+                        {renderHeader()}
+                        {renderContent()}
+                    </>
+                }
+                refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={isRefreshing} />}
+                renderItem={(event) => <TransactionEventRow event={event} myAddress={address || ''} />}
+            />
+        </View>
     );
 };
 
@@ -74,6 +69,7 @@ export default HistoryScreen;
 
 const styles = StyleSheet.create(({ sizes }, runtime) => ({
     container: {
+        flex: 1,
         marginTop: runtime.insets.top,
         marginLeft: runtime.insets.left,
         marginRight: runtime.insets.right,
@@ -82,15 +78,5 @@ const styles = StyleSheet.create(({ sizes }, runtime) => ({
         paddingTop: sizes.page.paddingTop,
         paddingBottom: sizes.page.paddingBottom,
         paddingHorizontal: sizes.page.paddingHorizontal,
-    },
-    loaderContainer: {
-        marginTop: 60,
-    },
-    infoBlock: {
-        paddingVertical: 60,
-    },
-    infoSubtitle: {
-        marginBottom: 0,
-        maxWidth: 'auto',
     },
 }));

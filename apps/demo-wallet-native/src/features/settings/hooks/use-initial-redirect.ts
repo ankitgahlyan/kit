@@ -6,7 +6,7 @@
  *
  */
 
-import { router, useSegments } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useWalletStore, useWallet } from '@ton/demo-core';
 
@@ -18,9 +18,6 @@ export const useInitialRedirect = (isRouterLoading: boolean): void => {
     const isUnlocked = useWalletStore((state) => state.auth.isUnlocked);
     const { hasWallet } = useWallet();
 
-    const segments = useSegments();
-
-    const isInAuthGroup = segments[0] === '(non-auth)';
     const isReady = !isRouterLoading && isStoreHydrated;
 
     useEffect(() => {
@@ -28,10 +25,8 @@ export const useInitialRedirect = (isRouterLoading: boolean): void => {
 
         setIsRedirected(true);
 
-        console.log(`isPasswordSet: ${isPasswordSet}, isUnlocked: ${isUnlocked}, hasWallet: ${hasWallet}`);
-
         if (!isPasswordSet) {
-            router.replace('/(non-auth)/start');
+            router.replace('/(non-auth)/add-new-wallet');
 
             return;
         }
@@ -43,7 +38,7 @@ export const useInitialRedirect = (isRouterLoading: boolean): void => {
         }
 
         if (!hasWallet) {
-            router.replace('/(non-auth)/start');
+            router.replace('/(non-auth)/add-new-wallet');
 
             return;
         }

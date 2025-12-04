@@ -7,42 +7,28 @@
  */
 
 import { LegendList, type LegendListProps } from '@legendapp/list';
-import { type FC, useCallback } from 'react';
-import type { ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
 
-import { useTransactionsStore } from '../../store/store';
-import type { Transaction } from '../../types/transaction';
-import { TransactionRow } from '../transaction-row';
+type BaseListProps<T> = Omit<LegendListProps<T>, 'data' | 'renderItem' | 'children'>;
 
-type ListProps = Omit<LegendListProps<Transaction>, 'data' | 'renderItem' | 'children'>;
-
-interface TransactionListProps extends ListProps {
-    itemStyle?: ViewStyle;
-    onTransactionPress?: (transactionId: string) => void;
+interface TransactionListProps<T> extends BaseListProps<T> {
+    data?: T[];
+    renderItem?: (item: T, index: number) => ReactNode;
+    keyExtractor?: (item: T, index: number) => string;
 }
 
-export const TransactionList: FC<TransactionListProps> = ({ itemStyle, onTransactionPress, ...props }) => {
-    const transactions = useTransactionsStore((state) => state.transactions);
-
-    const handlePress = useCallback(
-        (id: string) => {
-            onTransactionPress?.(id);
-        },
-        [onTransactionPress],
-    );
-
+export const TransactionList = <T = object,>({
+    data = [],
+    renderItem,
+    keyExtractor,
+    ...props
+}: TransactionListProps<T>) => {
     return (
         <LegendList
-            data={transactions}
+            data={data}
             estimatedItemSize={76}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-                <TransactionRow
-                    onPress={onTransactionPress ? () => handlePress(item.id) : undefined}
-                    style={itemStyle}
-                    transaction={item}
-                />
-            )}
+            keyExtractor={(item, index) => keyExtractor?.(item, index) || String(index)}
+            renderItem={({ item, index }) => renderItem?.(item, index)}
             showsVerticalScrollIndicator={false}
             {...props}
         />

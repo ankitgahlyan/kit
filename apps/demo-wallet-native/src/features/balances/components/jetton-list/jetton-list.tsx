@@ -6,42 +6,73 @@
  *
  */
 
-import type { FC } from 'react';
+import { useJettons } from '@ton/demo-core';
+import { type FC, useEffect } from 'react';
 import { View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
-
-import { useBalancesStore } from '../../store/store';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/core/components/app-text';
 import { Block } from '@/core/components/block';
 import { CircleLogo } from '@/core/components/circle-logo';
 import { TextAmount } from '@/core/components/text-amount';
+import { LoaderCircle } from '@/core/components/loader-circle';
+import { RowCenter } from '@/core/components/grid';
 
 export const JettonList: FC = () => {
-    const jettonBalances = useBalancesStore((state) => state.jettonBalances);
-    const isInitialized = useBalancesStore((state) => state.isInitialized);
+    const { userJettons, isLoadingJettons, error, loadUserJettons, formatJettonAmount } = useJettons();
+    const { theme } = useUnistyles();
 
-    if (!isInitialized) {
+    // Load jettons on mount if none are loaded
+    useEffect(() => {
+        loadUserJettons();
+    }, [loadUserJettons]);
+
+    // Error state
+    if (error) {
         return (
             <View style={styles.container}>
                 <AppText style={styles.sectionTitle} textType="h3">
                     Jettons
                 </AppText>
-                <Block>
-                    <AppText style={styles.emptyText}>Loading...</AppText>
+                <Block style={styles.errorBlock}>
+                    <Ionicons color={theme.colors.error.default} name="alert-circle" size={32} />
+                    <AppText style={styles.errorTitle}>Error loading jettons</AppText>
+                    <AppText style={styles.errorText}>{error}</AppText>
                 </Block>
             </View>
         );
     }
 
-    if (jettonBalances.length === 0) {
+    // Loading state
+    if (isLoadingJettons && userJettons.length === 0) {
         return (
             <View style={styles.container}>
                 <AppText style={styles.sectionTitle} textType="h3">
                     Jettons
                 </AppText>
                 <Block>
-                    <AppText style={styles.emptyText}>No jettons found</AppText>
+                    <RowCenter style={styles.loadingContainer}>
+                        <LoaderCircle size={32} />
+                        <AppText style={styles.loadingText}>Loading jettons...</AppText>
+                    </RowCenter>
+                </Block>
+            </View>
+        );
+    }
+
+    // Empty state
+    if (!userJettons || userJettons.length === 0) {
+        return (
+            <View style={styles.container}>
+                <AppText style={styles.sectionTitle} textType="h3">
+                    Jettons
+                </AppText>
+
+                <Block style={styles.emptyBlock}>
+                    <AppText textType="caption1" style={styles.emptySubtitle}>
+                        Your jetton tokens will appear here when you receive them
+                    </AppText>
                 </Block>
             </View>
         );
@@ -53,43 +84,52 @@ export const JettonList: FC = () => {
                 Jettons
             </AppText>
 
-            <Block>
-                {jettonBalances.map((jetton) => {
-                    return (
-                        <View key={jetton.address}>
-                            <View style={styles.jettonItem}>
-                                <View style={styles.jettonInfo}>
-                                    {jetton.image ? (
-                                        <CircleLogo.Container>
-                                            <CircleLogo.Logo source={{ uri: jetton.image }} />
-                                        </CircleLogo.Container>
-                                    ) : (
-                                        <View style={styles.jettonImagePlaceholder}>
-                                            <AppText style={styles.jettonImagePlaceholderText}>
-                                                {jetton.symbol.charAt(0)}
-                                            </AppText>
-                                        </View>
+            {userJettons.map((jetton) => {
+                const name = jetton.name || jetton.symbol;
+                const symbol = jetton.symbol;
+                const image = jetton.image;
+                const decimals = jetton.decimals;
+                const isVerified = jetton.verification?.verified;
+
+                return (
+                    <Block key={jetton.address} style={styles.jettonItem}>
+                        <View style={styles.jettonInfo}>
+                            {image ? (
+                                <CircleLogo.Container>
+                                    <CircleLogo.Logo source={{ uri: image }} />
+                                </CircleLogo.Container>
+                            ) : (
+                                <View style={styles.jettonImagePlaceholder}>
+                                    <AppText style={styles.jettonImagePlaceholderText}>{symbol.slice(0, 2)}</AppText>
+                                </View>
+                            )}
+
+                            <View style={styles.jettonDetails}>
+                                <View style={styles.jettonNameRow}>
+                                    <AppText style={styles.jettonName}>{name}</AppText>
+                                    {isVerified && (
+                                        <Ionicons
+                                            color={theme.colors.success.default}
+                                            name="checkmark-circle"
+                                            size={14}
+                                        />
                                     )}
-
-                                    <View style={styles.jettonDetails}>
-                                        <AppText style={styles.jettonName}>{jetton.name}</AppText>
-                                        <AppText style={styles.jettonSymbol}>{jetton.symbol}</AppText>
-                                    </View>
                                 </View>
-
-                                <View style={styles.jettonBalance}>
-                                    <TextAmount
-                                        amount={jetton.balance}
-                                        decimals={jetton.decimals}
-                                        style={styles.jettonBalanceAmount}
-                                    />
-                                    <AppText style={styles.jettonBalanceSymbol}>{jetton.symbol}</AppText>
-                                </View>
+                                <AppText style={styles.jettonSymbol}>{symbol}</AppText>
                             </View>
                         </View>
-                    );
-                })}
-            </Block>
+
+                        <View style={styles.jettonBalance}>
+                            <TextAmount
+                                style={styles.jettonBalanceAmount}
+                                amount={formatJettonAmount(jetton.balance, decimals)}
+                                decimals={decimals}
+                            />
+                            <AppText style={styles.jettonBalanceSymbol}>{symbol}</AppText>
+                        </View>
+                    </Block>
+                );
+            })}
         </View>
     );
 };
@@ -102,27 +142,56 @@ const styles = StyleSheet.create(({ sizes, colors }) => ({
         color: colors.text.highlight,
         textAlign: 'center',
     },
-    emptyText: {
+    // Error state
+    errorBlock: {
+        alignItems: 'center',
+        paddingVertical: sizes.space.vertical * 3,
+        gap: sizes.space.vertical,
+    },
+    errorTitle: {
+        color: colors.error.foreground,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorText: {
         color: colors.text.secondary,
         textAlign: 'center',
         fontSize: 14,
     },
+    // Loading state
+    loadingContainer: {
+        paddingVertical: sizes.space.vertical * 2,
+        gap: sizes.space.horizontal,
+    },
+    loadingText: {
+        color: colors.text.secondary,
+    },
+    // Empty state
+    emptyBlock: {
+        alignItems: 'center',
+        paddingVertical: sizes.space.vertical * 3,
+        gap: sizes.space.vertical / 2,
+    },
+    emptyTitle: {
+        color: colors.text.highlight,
+    },
+    emptySubtitle: {
+        color: colors.text.secondary,
+        textAlign: 'center',
+        maxWidth: '80%',
+    },
+    // Jetton item
     jettonItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: sizes.space.vertical / 4,
+        paddingVertical: sizes.space.vertical * 2,
     },
     jettonInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: sizes.space.horizontal / 2,
         flex: 1,
-    },
-    jettonImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
     },
     jettonImagePlaceholder: {
         width: 40,
@@ -134,12 +203,15 @@ const styles = StyleSheet.create(({ sizes, colors }) => ({
     },
     jettonImagePlaceholderText: {
         color: colors.text.highlight,
-        fontSize: 18,
-        fontWeight: '600',
     },
     jettonDetails: {
         flex: 1,
         gap: sizes.space.vertical / 4,
+    },
+    jettonNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: sizes.space.horizontal / 4,
     },
     jettonName: {
         color: colors.text.highlight,
@@ -162,10 +234,5 @@ const styles = StyleSheet.create(({ sizes, colors }) => ({
     jettonBalanceSymbol: {
         color: colors.text.secondary,
         fontSize: 12,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: colors.navigation.default,
-        marginVertical: sizes.space.vertical / 2,
     },
 }));

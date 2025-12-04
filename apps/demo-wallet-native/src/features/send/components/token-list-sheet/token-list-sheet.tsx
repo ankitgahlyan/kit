@@ -10,8 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { FC } from 'react';
 import { ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-
-import { useSendTransactionStore } from '../../store/store';
+import { useJettons, useWallet } from '@ton/demo-core';
 
 import { ActiveTouchAction } from '@/core/components/active-touch-action';
 import { AppLogo } from '@/core/components/app-logo';
@@ -19,7 +18,6 @@ import { AppModal } from '@/core/components/app-modal';
 import { AppText } from '@/core/components/app-text';
 import { CircleLogo } from '@/core/components/circle-logo';
 import { TextAmount } from '@/core/components/text-amount';
-import { useBalancesStore } from '@/features/balances';
 
 interface TokenListSheetProps {
     isOpen: boolean;
@@ -27,18 +25,18 @@ interface TokenListSheetProps {
 }
 
 export const TokenListSheet: FC<TokenListSheetProps> = ({ isOpen, onClose }) => {
-    const tonBalance = useBalancesStore((state) => state.tonBalance);
-    const jettonBalances = useBalancesStore((state) => state.jettonBalances);
+    const { balance: tonBalance } = useWallet();
+    const { userJettons } = useJettons();
 
     const { theme } = useUnistyles();
 
     const handleSelectTon = () => {
-        useSendTransactionStore.setState({ selectedToken: 'TON', amount: '' });
+        // useSendTransactionStore.setState({ selectedToken: 'TON', amount: '' });
         onClose();
     };
 
-    const handleSelectJetton = (jetton: (typeof jettonBalances)[0]) => {
-        useSendTransactionStore.setState({ selectedToken: jetton, amount: '' });
+    const handleSelectJetton = (jetton: (typeof userJettons)[0]) => {
+        // useSendTransactionStore.setState({ selectedToken: jetton, amount: '' });
         onClose();
     };
 
@@ -67,14 +65,14 @@ export const TokenListSheet: FC<TokenListSheetProps> = ({ isOpen, onClose }) => 
                     </View>
 
                     <View style={styles.tokenBalance}>
-                        <TextAmount amount={tonBalance} decimals={9} style={styles.balanceAmount} />
+                        <TextAmount amount={tonBalance || '0'} decimals={9} style={styles.balanceAmount} />
                         <AppText style={styles.balanceSymbol} textType="caption1">
                             TON
                         </AppText>
                     </View>
                 </ActiveTouchAction>
 
-                {jettonBalances.map((jetton) => (
+                {userJettons.map((jetton) => (
                     <ActiveTouchAction
                         key={jetton.address}
                         onPress={() => handleSelectJetton(jetton)}

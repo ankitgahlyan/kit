@@ -6,5 +6,4 @@
  *
  */
 
-export { sendJetton } from './send-jetton';
-export { sendTon } from './send-ton';
+export { TransactionEmptyState } from './transaction-empty-state';

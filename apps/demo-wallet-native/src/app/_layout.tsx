@@ -44,7 +44,7 @@ const RootLayout: FC = () => {
                     >
                         <WalletProvider
                             storage={walletProviderStorage}
-                            defaultNetwork="mainnet"
+                            defaultNetwork="testnet"
                             walletKitConfig={{
                                 storage: walletKitStorage,
                                 tonApiKeyMainnet: ENV_TON_API_KEY_MAINNET,

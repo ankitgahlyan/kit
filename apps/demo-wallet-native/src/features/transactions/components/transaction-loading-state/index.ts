@@ -6,5 +6,4 @@
  *
  */
 
-export { loadTransactions } from './load-transactions';
-export { resetTransactionsState } from './reset';
+export { TransactionLoadingState } from './transaction-loading-state';

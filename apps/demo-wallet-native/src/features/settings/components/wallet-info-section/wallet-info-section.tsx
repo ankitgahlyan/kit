@@ -6,14 +6,25 @@
  *
  */
 
-import type { FC } from 'react';
+import { useAuth } from '@ton/demo-core';
+import { type FC, useState } from 'react';
+import { useWallet } from '@ton/demo-core';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+
+import { NetworkSelectorSheet } from '../network-selector-sheet';
 
 import { DataBlock } from '@/core/components/data-block';
-import { useWalletStore } from '@/features/wallets';
+import { ActiveTouchAction } from '@/core/components/active-touch-action';
 
 export const WalletInfoSection: FC = () => {
-    const address = useWalletStore((state) => state.address);
-    const publicKey = useWalletStore((state) => state.publicKey);
+    const { address, publicKey } = useWallet();
+    const { network } = useAuth();
+    const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
+
+    const { theme } = useUnistyles();
+
+    const networkLabel = network === 'mainnet' ? 'Mainnet' : 'Testnet';
 
     return (
         <DataBlock.Container>
@@ -41,10 +52,23 @@ export const WalletInfoSection: FC = () => {
                 <DataBlock.Key>
                     <DataBlock.Text>Network</DataBlock.Text>
                 </DataBlock.Key>
-                <DataBlock.Value>
-                    <DataBlock.Text>Mainnet</DataBlock.Text>
-                </DataBlock.Value>
+
+                <ActiveTouchAction onPress={() => setIsNetworkSelectorOpen(true)}>
+                    <DataBlock.Value style={styles.networkSelector}>
+                        <DataBlock.Text>{networkLabel}</DataBlock.Text>
+                        <Ionicons name="chevron-down" size={14} color={theme.colors.text.secondary} />
+                    </DataBlock.Value>
+                </ActiveTouchAction>
             </DataBlock.Row>
+
+            <NetworkSelectorSheet isOpen={isNetworkSelectorOpen} onClose={() => setIsNetworkSelectorOpen(false)} />
         </DataBlock.Container>
     );
 };
+
+const styles = StyleSheet.create(({ sizes }) => ({
+    networkSelector: {
+        alignItems: 'center',
+        gap: sizes.space.horizontal / 4,
+    },
+}));

@@ -10,46 +10,47 @@ import { Ionicons } from '@expo/vector-icons';
 import type { FC } from 'react';
 import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-
-import { useSendTransactionStore } from '../../store/store';
+import { useJettons, useWallet } from '@ton/demo-core';
 
 import { ActiveTouchAction } from '@/core/components/active-touch-action';
 import { AppText } from '@/core/components/app-text';
 import { Block } from '@/core/components/block';
 import { CircleLogo } from '@/core/components/circle-logo';
 import { TextAmount } from '@/core/components/text-amount';
-import { useBalancesStore } from '@/features/balances';
 
 interface TokenSelectorProps {
     onSelectToken: () => void;
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = ({ onSelectToken }) => {
+    const { balance: tonBalance } = useWallet();
+    const { userJettons } = useJettons();
+
     const { theme } = useUnistyles();
-    const selectedToken = useSendTransactionStore((state) => state.selectedToken);
-    const tonBalance = useBalancesStore((state) => state.tonBalance);
-    const jettonBalances = useBalancesStore((state) => state.jettonBalances);
+    // const selectedToken = useSendTransactionStore((state) => state.selectedToken);
+    // const tonBalance = useBalancesStore((state) => state.tonBalance);
+    // const jettonBalances = useBalancesStore((state) => state.jettonBalances);
 
     const getTokenInfo = () => {
-        if (selectedToken === 'TON') {
-            return {
-                name: 'TON',
-                symbol: 'TON',
-                balance: tonBalance,
-                decimals: 9,
-                image: require('assets/logo.png'),
-            };
-        }
-
-        if (selectedToken) {
-            return {
-                name: selectedToken.name,
-                symbol: selectedToken.symbol,
-                balance: selectedToken.balance,
-                decimals: selectedToken.decimals,
-                image: selectedToken.image,
-            };
-        }
+        // if (selectedToken === 'TON') {
+        //     return {
+        //         name: 'TON',
+        //         symbol: 'TON',
+        //         balance: tonBalance,
+        //         decimals: 9,
+        //         image: require('assets/logo.png'),
+        //     };
+        // }
+        //
+        // if (selectedToken) {
+        //     return {
+        //         name: selectedToken.name,
+        //         symbol: selectedToken.symbol,
+        //         balance: selectedToken.balance,
+        //         decimals: selectedToken.decimals,
+        //         image: selectedToken.image,
+        //     };
+        // }
 
         return null;
     };
@@ -58,7 +59,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({ onSelectToken }) => {
 
     if (!tokenInfo) return null;
 
-    const hasMultipleTokens = jettonBalances.length > 0;
+    const hasMultipleTokens = userJettons.length > 0;
 
     return (
         <Block>

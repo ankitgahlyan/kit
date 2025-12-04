@@ -17,6 +17,8 @@ import { AppInput } from '@/core/components/app-input';
 import { AppText } from '@/core/components/app-text';
 import { ScreenHeader } from '@/core/components/screen-header';
 import { ScreenWrapper } from '@/core/components/screen-wrapper';
+import { AppLogo } from '@/core/components/app-logo';
+import { AppKeyboardAwareScrollView } from '@/core/components/keyboard-aware-scroll-view';
 
 const UnlockWalletScreen: FC = () => {
     const [password, setPassword] = useState('');
@@ -63,7 +65,7 @@ const UnlockWalletScreen: FC = () => {
                     style: 'destructive',
                     onPress: () => {
                         reset();
-                        router.replace('/(non-auth)/start');
+                        router.replace('/(non-auth)/add-new-wallet');
                     },
                 },
             ],
@@ -75,12 +77,14 @@ const UnlockWalletScreen: FC = () => {
     }, [password]);
 
     return (
-        <ScreenWrapper>
-            <ScreenHeader.Container>
-                <ScreenHeader.Title>Welcome Back</ScreenHeader.Title>
-            </ScreenHeader.Container>
-
+        <AppKeyboardAwareScrollView showsVerticalScrollIndicator={false} style={styles.container}>
             <View style={styles.content}>
+                <AppLogo size={100} style={styles.logo} />
+
+                <AppText style={styles.title} textType="h3">
+                    Welcome Back
+                </AppText>
+
                 <AppText style={styles.subtitle}>Enter your password to unlock your wallet.</AppText>
 
                 <AppInput
@@ -107,21 +111,37 @@ const UnlockWalletScreen: FC = () => {
                     <AppButton.Text>Reset Wallet</AppButton.Text>
                 </AppButton.Container>
             </View>
-        </ScreenWrapper>
+        </AppKeyboardAwareScrollView>
     );
 };
 
 export default UnlockWalletScreen;
 
-const styles = StyleSheet.create(({ sizes, colors }) => ({
+const styles = StyleSheet.create(({ sizes, colors }, runtime) => ({
+    container: {
+        marginTop: runtime.insets.top,
+        marginLeft: runtime.insets.left,
+        marginRight: runtime.insets.right,
+        paddingTop: sizes.page.paddingTop,
+        paddingHorizontal: sizes.page.paddingHorizontal,
+    },
     content: {
         flex: 1,
         paddingBottom: sizes.space.vertical,
         gap: sizes.space.vertical * 2,
     },
+    logo: {
+        marginTop: 100,
+        marginHorizontal: 'auto',
+    },
+    title: {
+        color: colors.text.highlight,
+        textAlign: 'center',
+    },
     subtitle: {
         color: colors.text.secondary,
         lineHeight: 20,
+        textAlign: 'center',
     },
     input: {
         backgroundColor: colors.background.block,

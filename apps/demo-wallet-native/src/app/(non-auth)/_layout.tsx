@@ -14,15 +14,17 @@ import { Platform } from 'react-native';
 const NonAuthLayout: FC = () => (
     <>
         <Stack
-            initialRouteName="start"
+            initialRouteName="add-new-wallet"
             screenOptions={{
                 headerShown: false,
                 animation: Platform.OS === 'android' ? 'slide_from_right' : 'default',
             }}
         >
-            <Stack.Screen name="start" />
+            <Stack.Screen name="add-new-wallet" />
             <Stack.Screen name="create-mnemonic" />
             <Stack.Screen name="import-mnemonic" />
+            <Stack.Screen name="new-password" />
+            <Stack.Screen name="unlock-wallet" />
         </Stack>
 
         <StatusBar style="dark" />

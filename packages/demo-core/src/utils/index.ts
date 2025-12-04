@@ -11,3 +11,4 @@ export * from './formatters';
 export * from './units';
 export * from './walletAdapterFactory';
 export * from './walletManifest';
+export { isExtension, isWeb, isReactNative } from './isExtension';

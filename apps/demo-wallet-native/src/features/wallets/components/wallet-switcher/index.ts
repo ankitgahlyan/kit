@@ -6,5 +6,4 @@
  *
  */
 
-export { JettonList } from './components/jetton-list';
-export { TonBalanceCard } from './components/ton-balance-card';
+export { WalletSwitcher } from './wallet-switcher';

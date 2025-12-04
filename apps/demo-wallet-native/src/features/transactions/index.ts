@@ -8,6 +8,9 @@
 
 export { TransactionList } from './components/transaction-list';
 export { TransactionRow } from './components/transaction-row';
-export * from './store/actions';
-export { useTransactionsStore } from './store/store';
+export { TransactionEventRow } from './components/transaction-event-row';
+export { TransactionEmptyState } from './components/transaction-empty-state';
+export { TransactionLoadingState } from './components/transaction-loading-state';
+export { TransactionErrorState } from './components/transaction-error-state';
+export { useTransactionEvents } from './hooks';
 export type { Transaction } from './types/transaction';
