@@ -29,12 +29,14 @@
     "dev": "tsc -p tsconfig.esm.json --watch",
     "clean": "git clean -xdf dist node_modules"
   },
+  "dependencies": {
+    "@ton/v4ledger-adapter": "workspace:*",
+    "@ton/walletkit": "workspace:*"
+  },
   "peerDependencies": {
     "react": "catalog:",
     "@ton/core": "^0.62.0",
     "@ton/crypto": "^3.3.0",
-    "@ton/v4ledger-adapter": "workspace:*",
-    "@ton/walletkit": "workspace:*",
     "zustand": "^5.0.8",
     "immer": "^10.2.0"
   },
