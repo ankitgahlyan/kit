@@ -1,8 +1,19 @@
-import { SendMode } from "@ton/core";
-import { ExtraCurrencies } from "../core/ExtraCurrencies";
-import { UserFriendlyAddress, Base64String } from "../core/Primitives";
-import { TokenAmount } from "../core/TokenAmount";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { ExtraCurrencies } from '../core/ExtraCurrencies';
+import { UserFriendlyAddress, Base64String } from '../core/Primitives';
+import { TokenAmount } from '../core/TokenAmount';
+import { SendMode } from '../core/SendMode';
+
+/**
+ * Request parameters for transferring TON to another address.
+ */
 export interface TONTransferRequest {
     /**
      * Amount to transfer in nanotons
@@ -10,32 +21,32 @@ export interface TONTransferRequest {
     transferAmount: TokenAmount;
 
     /**
-     * Recipient address
+     * Recipient address in user-friendly format
      */
     recipientAddress: UserFriendlyAddress;
 
     /**
-     * Optional send mode
+     * Send mode flags controlling message behavior (e.g., pay fees separately, bounce on failure)
      */
     mode?: SendMode;
 
     /**
-     * Optional extra currency to send
+     * Additional currencies to include in the transfer
      */
     extraCurrency?: ExtraCurrencies;
 
     /**
-     * Optional state init in base64 format
+     * Initial state for deploying a new contract, encoded in Base64
      */
     stateInit?: Base64String;
-    
+
     /**
-     * Optional payload in base64 format
+     * Message payload data encoded in Base64 (e.g., for contract calls)
      */
     payload?: Base64String;
 
     /**
-     * Optional comment for the transfer
+     * Human-readable text comment attached to the transfer
      */
     comment?: string;
 }

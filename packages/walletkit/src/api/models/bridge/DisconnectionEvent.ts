@@ -1,6 +1,17 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import { BridgeEvent } from './BridgeEvent';
 import { DAppInfo } from '../core/DAppInfo';
 
+/**
+ * Event indicating a dApp has disconnected from the wallet.
+ */
 export interface DisconnectionEvent extends BridgeEvent {
     /**
      * Preview information for UI display
@@ -8,14 +19,16 @@ export interface DisconnectionEvent extends BridgeEvent {
     preview: DisconnectionEventPreview;
 }
 
+/**
+ * Preview data for displaying disconnection event in the wallet UI.
+ */
 export interface DisconnectionEventPreview {
     /**
-     * Reason of disconnection.
+     * Human-readable reason for the disconnection
      */
     reason?: string;
-
     /**
-     * Decentralized Application information
+     * Information about the disconnected dApp
      */
     dAppInfo?: DAppInfo;
 }

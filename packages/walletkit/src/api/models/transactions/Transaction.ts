@@ -1,11 +1,18 @@
-import { 
-    Base64String, 
-    LogicalTime, 
-    UserFriendlyAddress 
-} from "../core/Primitives";
-import { ExtraCurrencies } from "../core/ExtraCurrencies";
-import { TokenAmount } from "../core/TokenAmount";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { Hex, Base64String, LogicalTime, UserFriendlyAddress } from '../core/Primitives';
+import { ExtraCurrencies } from '../core/ExtraCurrencies';
+import { TokenAmount } from '../core/TokenAmount';
+
+/**
+ * Transaction on the TON blockchain.
+ */
 export interface Transaction {
     /**
      * Account of the transaction
@@ -38,8 +45,7 @@ export interface Transaction {
     logicalTime: LogicalTime;
 
     /**
-     * Current time of the transaction
-     * @format int
+     * Unix timestamp of the transaction
      */
     now: number;
 
@@ -88,7 +94,7 @@ export interface Transaction {
      * Extra currencies in the total fees
      */
     totalFeesExtraCurrencies?: ExtraCurrencies;
-    
+
     /**
      * The reference to the block in which the transaction was included
      */
@@ -103,22 +109,25 @@ export interface Transaction {
      * The list of outgoing messages produced by the transaction
      */
     outMessages: TransactionMessage[];
-    
+
     /**
      * Emulated state of the transaction
      */
-    isEmulated: boolean;
+    isEmulated: AccountStatus;
 }
 
 /**
- * Status of the account
+ * Status of the account on the blockchain.
  */
-export type AccountStatus = 
-  | { type: 'active' }
-  | { type: 'frozen' }
-  | { type: 'uninitialized' }
-  | { type: 'unknown'; value: string };
+export type AccountStatus =
+    | { type: 'active' }
+    | { type: 'frozen' }
+    | { type: 'uninitialized' }
+    | { type: 'unknown'; value: string };
 
+/**
+ * State of an account at a specific point in time.
+ */
 export interface AccountState {
     /**
      * The state hash of the account
@@ -156,6 +165,9 @@ export interface AccountState {
     codeHash?: string;
 }
 
+/**
+ * Reference to a block in the TON blockchain.
+ */
 export interface TransactionBlockRef {
     /**
      * The workchain ID of the block
@@ -175,16 +187,19 @@ export interface TransactionBlockRef {
     seqno: number;
 }
 
+/**
+ * Message sent or received in a transaction.
+ */
 export interface TransactionMessage {
     /**
      * The base64-encoded hash of the message
      */
-    hash: Base64String;
+    hash: Hex;
 
     /**
      * The normalized version of the message hash
      */
-    normalizedHash?: string;
+    normalizedHash?: Hex;
 
     /**
      * The source address of the message
@@ -208,7 +223,7 @@ export interface TransactionMessage {
 
     /**
      * The forwarding fee for the message
-     */ 
+     */
     fwdFee?: TokenAmount;
 
     /**
@@ -218,9 +233,8 @@ export interface TransactionMessage {
 
     /**
      * The timestamp when the message was created
-     * @format timestamp
      */
-    createdAt?: string;
+    createdAt?: number;
 
     /**
      * The opcode included in the message payload
@@ -265,6 +279,9 @@ export interface TransactionMessage {
     initState?: TransactionMessageContent;
 }
 
+/**
+ * Content of a transaction message (body or init state).
+ */
 export interface TransactionMessageContent {
     /**
      * The hash of the initial state
@@ -282,6 +299,9 @@ export interface TransactionMessageContent {
     decoded?: unknown;
 }
 
+/**
+ * Detailed description of transaction execution phases.
+ */
 export interface TransactionDescription {
     /**
      * The transaction type (e.g., tick-tock, ord, split-prepare)
@@ -334,6 +354,9 @@ export interface TransactionDescription {
     action?: TransactionAction;
 }
 
+/**
+ * Storage phase of transaction execution.
+ */
 export interface TransactionStoragePhase {
     /**
      * The storage fees collected during this phase
@@ -346,6 +369,9 @@ export interface TransactionStoragePhase {
     statusChange?: string;
 }
 
+/**
+ * Credit phase of transaction execution.
+ */
 export interface TransactionCreditPhase {
     /**
      * The credited amount
@@ -353,6 +379,9 @@ export interface TransactionCreditPhase {
     credit: TokenAmount;
 }
 
+/**
+ * Compute phase of transaction execution (TVM execution).
+ */
 export interface TransactionComputePhase {
     /**
      * The flag indicating if the compute phase was skipped
@@ -423,6 +452,9 @@ export interface TransactionComputePhase {
     vmFinalStateHash: string;
 }
 
+/**
+ * Action phase of transaction execution (message sending).
+ */
 export interface TransactionAction {
     /**
      * The flag indicating whether the action phase succeeded
@@ -495,12 +527,15 @@ export interface TransactionAction {
     totalMessagesSize?: TransactionActionMessageSize;
 }
 
+/**
+ * Size metrics for messages created in a transaction.
+ */
 export interface TransactionActionMessageSize {
     /**
      * The total number of cells used
      */
     cells: string;
-    
+
     /**
      * The total number of bits used
      */

@@ -1,24 +1,35 @@
-import { UserFriendlyAddress } from "../core/primitives";
-import { TokenAmount } from "../core/TokenAmount";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { UserFriendlyAddress } from '../core/Primitives';
+import { TokenAmount } from '../core/TokenAmount';
+
+/**
+ * Request parameters for transferring Jetton tokens.
+ */
 export interface JettonsTransferRequest {
     /**
-     * Jetton contract address
+     * Jetton master contract address
      */
     jettonAddress: UserFriendlyAddress;
 
     /**
-     * Amount to transfer in jeton's smallest unit
+     * Amount to transfer in Jetton's smallest unit
      */
     transferAmount?: TokenAmount;
 
     /**
-     * Recipient address
+     * Recipient wallet address
      */
     recipientAddress: UserFriendlyAddress;
 
     /**
-     * Optional comment for the transfer
+     * Human-readable comment attached to the transfer
      */
     comment?: string;
 }

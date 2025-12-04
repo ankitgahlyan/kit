@@ -1,26 +1,42 @@
-import { DAppInfo } from '../core/DAppInfo';
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import { UserFriendlyAddress } from '../core/Primitives';
 
+/**
+ * Base event type for TON Connect bridge communication.
+ */
 export type BridgeEvent = {
     /**
-     * Unique identifier for the bridge event.
+     * Unique identifier for the bridge event
      */
     id?: string;
 
     from?: string;
-
     /**
-     * The wallet address associated with the event.
+     * Wallet address associated with the event
      */
     walletAddress?: UserFriendlyAddress;
-
     /**
-     * The domain associated with the event.
+     * Domain of the dApp that initiated the event
      */
     domain?: string;
-
+    /**
+     * Whether the event originated from JS Bridge (injected provider)
+     */
     isJsBridge?: boolean;
+    /**
+     * Browser tab ID for JS Bridge events
+     */
     tabId?: number;
+    /**
+     * Session identifier for the connection
+     */
     sessionId?: string;
     isLocal?: boolean;
     messageId?: string;

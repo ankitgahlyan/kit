@@ -1,25 +1,38 @@
-import { UserFriendlyAddress, Hex } from "../core/primitives";
-import { TokenInfo } from "../core/TokenInfo";
-import { NFTAttribute } from "./NFTAttribute";
-import { NFTCollection } from "./NFTCollection";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { UserFriendlyAddress, Hex } from '../core/Primitives';
+import { TokenInfo } from '../core/TokenInfo';
+import { NFTAttribute } from './NFTAttribute';
+import { NFTCollection } from './NFTCollection';
+
+/**
+ * Non-fungible token (NFT) on the TON blockchain.
+ */
 export interface NFT {
     /**
-     * NFT address
+     * Contract address of the NFT item
      */
     address: UserFriendlyAddress;
 
     /**
-     * The index of the item within its collection
+     * Index of the item within its collection
      */
     index?: string;
 
     /**
-     * Information about the NFT token
+     * Display information about the NFT (name, description, images)
      */
     info?: TokenInfo;
 
-    // ????
+    /**
+     * Custom attributes/traits of the NFT (e.g., rarity, properties)
+     */
     attributes?: NFTAttribute[];
 
     /**
@@ -28,50 +41,52 @@ export interface NFT {
     collection?: NFTCollection;
 
     /**
-     * The address of the auction contract, if applicable.
+     * Address of the auction contract, if the NFT is being auctioned
      */
     auctionContractAddress?: UserFriendlyAddress;
 
     /**
-     * The hash of the item's smart contract code
+     * Hash of the NFT smart contract code
      */
     codeHash?: Hex;
 
     /**
-     * The hash of the item's data in the blockchain
+     * Hash of the NFT's on-chain data
      */
     dataHash?: Hex;
 
     /**
-     * The indicator if the item has been initialized
+     * Whether the NFT contract has been initialized
      */
     isInited?: boolean;
 
-    // ????
+    /**
+     * Whether the NFT is soulbound (non-transferable)
+     */
     isSoulbound?: boolean;
 
     /**
-     *  Whether the NFT item is on sale.
+     * Whether the NFT is currently listed for sale
      */
     isOnSale?: boolean;
 
     /**
-     * The address of the current owner
+     * Current owner address of the NFT
      */
     ownerAddress?: UserFriendlyAddress;
 
     /**
-     * The address of the real owner (if different from ownerAddress, e.g. when on sale).
+     * Real owner address when NFT is on sale (sale contract becomes temporary owner)
      */
     realOwnerAddress?: UserFriendlyAddress;
 
     /**
-     * The address of the sale contract, if applicable.
+     * Address of the sale contract, if the NFT is listed for sale
      */
     saleContractAddress?: UserFriendlyAddress;
 
     /**
-     * The content metadata of the NFT item
-    */
+     * Off-chain metadata of the NFT (key-value pairs)
+     */
     metadata?: { [key: string]: string };
 }

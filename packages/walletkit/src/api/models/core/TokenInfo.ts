@@ -1,35 +1,45 @@
-import { AssetType } from "./AssetType";
-import { TokenImage } from "./TokenImage";
-import { TokenAnimation } from "./TokenAnimation";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { TokenImage } from './TokenImage';
+import { TokenAnimation } from './TokenAnimation';
+
+/**
+ * Display information for a token (TON, Jetton, or NFT).
+ */
 export interface TokenInfo {
-    /** 
-     * Name of the token 
-     * */
+    /**
+     * Display name of the token
+     */
     name?: string;
 
-    /** 
-     * Description of the token 
+    /**
+     * Human-readable description of the token
      */
     description?: string;
 
-    /** 
-     * Image associated with the token 
+    /**
+     * Token image in various sizes
      */
     image?: TokenImage;
 
-    /** 
-     * Animation associated with the token 
+    /**
+     * Animated media associated with the token
      */
     animation?: TokenAnimation;
 
-    /** 
-     * Symbol of the token 
+    /**
+     * Ticker symbol of the token (e.g., "TON", "USDT")
      */
     symbol?: string;
 
-    /** 
-     * Indicates if the token info is valid 
+    /**
+     * Whether the token metadata has been verified
      */
     isValid?: boolean;
 }

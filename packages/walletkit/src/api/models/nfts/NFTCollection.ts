@@ -1,6 +1,17 @@
-import { TokenImage } from "../core/TokenImage";
-import { UserFriendlyAddress, Hex } from "../core/primitives";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { TokenImage } from '../core/TokenImage';
+import { UserFriendlyAddress, Hex } from '../core/Primitives';
+
+/**
+ * NFT collection on the TON blockchain (TEP-62 standard).
+ */
 export interface NFTCollection {
     /**
      * The blockchain address of the NFT collection contract

@@ -1,14 +1,48 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
-export type UserFriendlyAddress = string; // User-friendly address representation
-export type Hex = string; // Hexadecimal string representation
-export type Base64String = string; // Base64-encoded string representation
+/**
+ * User-friendly TON address representation (e.g., "EQDtFpEwcFAEcRe5mLVh2N6C0x-_hJEM7W61_JLnSF74p4q2")
+ */
+export type UserFriendlyAddress = string;
+
+/**
+ * Hexadecimal string representation (e.g., "0a1b2c3d...")
+ */
+export type Hex = string;
+
+/**
+ * Base64-encoded string representation
+ */
+export type Base64String = string;
+
+/**
+ * Logical time value used for ordering transactions on the TON blockchain
+ */
 export type LogicalTime = string;
 
+/**
+ * Generic result status for operations.
+ */
 export declare enum Result {
+    /**
+     * Operation completed successfully
+     */
     success = 'success',
+    /**
+     * Operation failed
+     */
     failure = 'failure',
 }
 
+/**
+ * Error information returned when an operation fails.
+ */
 export interface ResultError {
     /**
      * Error code representing the type of error

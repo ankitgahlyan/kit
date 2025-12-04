@@ -1,29 +1,39 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+/**
+ * Information about a decentralized application (dApp) connecting via TON Connect.
+ */
 export interface DAppInfo {
     /**
-     * The name of the decentralized application (DApp).
+     * Display name of the dApp
      */
     name?: string;
-    
+
     /**
-     * A brief description of the DApp.
+     * Brief description of the dApp's purpose
      */
     description?: string;
 
     /**
-     * The URL of the DApp.
+     * Main website URL of the dApp
      * @format url
      */
     url?: string;
 
     /**
-     * The icon URL of the DApp.
+     * Icon/logo URL of the dApp
      * @format url
      */
     iconUrl?: string;
 
     /**
-     * The manifest URL of the DApp.
+     * TON Connect manifest URL containing dApp metadata
      * @format url
      */
     manifestUrl?: string;

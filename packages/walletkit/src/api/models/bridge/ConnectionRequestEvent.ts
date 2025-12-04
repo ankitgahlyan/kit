@@ -1,6 +1,17 @@
-import { DAppInfo } from "../core/DAppInfo";
-import { BridgeEvent } from "./BridgeEvent";
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
+import { DAppInfo } from '../core/DAppInfo';
+import { BridgeEvent } from './BridgeEvent';
+
+/**
+ * Event containing a connection request from a dApp via TON Connect.
+ */
 export interface ConnectionRequestEvent extends BridgeEvent {
     /**
      * Preview information for UI display
@@ -8,48 +19,52 @@ export interface ConnectionRequestEvent extends BridgeEvent {
     preview: ConnectionRequestEventPreview;
 }
 
+/**
+ * Preview data for displaying connection request in the wallet UI.
+ */
 export interface ConnectionRequestEventPreview {
     /**
-     * List of requested items from the dApp
+     * Items requested by the dApp (e.g., wallet address, proof)
      */
     requestedItems: ConnectionRequestEventPreviewRequestedItem[];
-
     /**
-     * List of requested permissions from the dApp
+     * Permissions requested by the dApp
      */
     permissions: ConnectionRequestEventPreviewPermission[];
-
     /**
-     * Decentralized Application information
+     * Information about the requesting dApp
      */
     dAppInfo?: DAppInfo;
 }
 
+/**
+ * Item requested by a dApp during connection.
+ */
 export interface ConnectionRequestEventPreviewRequestedItem {
     /**
-     * Name of the requested item
+     * Identifier name of the requested item
      */
     name: string;
-
     /**
-     * Description for the requested item
+     * Human-readable description of the requested item
      */
     description?: string;
 }
 
+/**
+ * Permission requested by a dApp during connection.
+ */
 export interface ConnectionRequestEventPreviewPermission {
     /**
-     * Name of the requested permission
+     * Identifier name of the permission
      */
     name?: string;
-
     /**
-     * Title for the requested permission
+     * Human-readable title of the permission
      */
     title?: string;
-
     /**
-     * Description for the requested permission
+     * Detailed description of what the permission allows
      */
     description?: string;
 }
