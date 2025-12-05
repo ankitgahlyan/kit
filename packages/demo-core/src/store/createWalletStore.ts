@@ -248,5 +248,8 @@ export function createWalletStore(options: CreateWalletStoreOptions = {}) {
         ),
     );
 
+    const storeState = store.getState();
+    storeState.initializeWalletKit();
+
     return store;
 }

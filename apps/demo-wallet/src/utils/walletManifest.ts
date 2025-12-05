@@ -7,7 +7,8 @@
  */
 
 import type { DeviceInfo, Feature, WalletInfo } from '@ton/walletkit';
-import { isExtension } from '@ton/demo-core';
+
+import { isExtension } from './isExtension';
 
 export function getTonConnectWalletManifest(): WalletInfo {
     return {
