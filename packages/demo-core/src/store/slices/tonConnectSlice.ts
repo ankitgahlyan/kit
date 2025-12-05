@@ -84,6 +84,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
             const updatedRequest: EventConnectRequest = {
                 ...state.tonConnect.pendingConnectRequest,
                 walletAddress: selectedWallet.getAddress(),
+                walletId: selectedWallet.getWalletId(),
             };
 
             await state.walletCore.walletKit.approveConnectRequest(updatedRequest);
