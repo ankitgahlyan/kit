@@ -39,7 +39,7 @@ export interface PreparedSignData {
 /**
  * Payload structure for prepared sign data.
  */
-export interface PreparedSignDataPayload = {
+export interface PreparedSignDataPayload {
     /**
      * Network where the signing will occur
      */
@@ -52,4 +52,4 @@ export interface PreparedSignDataPayload = {
      * Optional sign data content to be signed
      */
     data?: SignData;
-};
+}

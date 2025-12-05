@@ -11,6 +11,12 @@ const tsj = require('ts-json-schema-generator');
 const ts = require('typescript');
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+const INTEGER_FORMATS = ['int', 'int8', 'int16', 'int32', 'int64', 'uint', 'uint8', 'uint16', 'uint32', 'uint64'];
+
+// ============================================================================
 // Custom EnumType with Member Names
 // ============================================================================
 
@@ -39,6 +45,7 @@ class EnumTypeWithNames extends tsj.EnumType {
 
 /**
  * Custom parser that extracts enum member names and JSDoc annotations.
+ * Wraps enums in DefinitionType so they become separate schema definitions.
  */
 class EnumNodeParserWithNames {
     constructor(typeChecker) {
@@ -46,11 +53,11 @@ class EnumNodeParserWithNames {
     }
 
     supportsNode(node) {
-        return node.kind === ts.SyntaxKind.EnumDeclaration || node.kind === ts.SyntaxKind.EnumMember;
+        return node.kind === ts.SyntaxKind.EnumDeclaration;
     }
 
     createType(node, context) {
-        const members = node.kind === ts.SyntaxKind.EnumDeclaration ? [...node.members] : [node];
+        const members = [...node.members];
 
         const values = [];
         const memberNames = [];
@@ -83,7 +90,13 @@ class EnumNodeParserWithNames {
         const sourceFile = node.getSourceFile();
         const id = `enum-${sourceFile.fileName}-${node.pos}`;
 
-        return new EnumTypeWithNames(id, values, memberNames, annotations);
+        const enumType = new EnumTypeWithNames(id, values, memberNames, annotations);
+
+        // Get the enum name for the definition
+        const enumName = node.name.getText();
+
+        // Wrap in DefinitionType so it becomes a separate schema definition
+        return new tsj.DefinitionType(enumName, enumType);
     }
 
     /**
@@ -205,6 +218,11 @@ class EnumTypeFormatterWithVarnames {
                     }
                 }
             }
+
+            // Fix integer type based on format annotation
+            if (definition.type === 'number' && definition.format && INTEGER_FORMATS.includes(definition.format)) {
+                definition.type = 'integer';
+            }
         }
 
         return definition;
@@ -237,6 +255,27 @@ class EnumTypeFormatterWithVarnames {
 }
 
 // ============================================================================
+// Custom AnnotatedTypeFormatter with Integer Type Support
+// ============================================================================
+
+/**
+ * Extends AnnotatedTypeFormatter to fix integer types after annotations are merged.
+ * Converts { type: "number", format: "int32" } → { type: "integer", format: "int32" }
+ */
+class AnnotatedTypeFormatterWithIntegers extends tsj.AnnotatedTypeFormatter {
+    getDefinition(type) {
+        const def = super.getDefinition(type);
+
+        // Fix number type with integer format
+        if (def.type === 'number' && def.format && INTEGER_FORMATS.includes(def.format)) {
+            def.type = 'integer';
+        }
+
+        return def;
+    }
+}
+
+// ============================================================================
 // Main
 // ============================================================================
 
@@ -259,7 +298,7 @@ const config = {
 };
 
 try {
-    console.error('📝 Generating JSON Schema with enum member names...');
+    console.error('📝 Generating JSON Schema with custom formatters...');
 
     // Create program and parser with our custom enum parser
     const program = tsj.createProgram(config);
@@ -268,9 +307,12 @@ try {
         prs.addNodeParser(new EnumNodeParserWithNames(program.getTypeChecker()));
     });
 
-    // Create formatter with our custom enum formatter
-    const formatter = tsj.createFormatter(config, (fmt) => {
-        // Add our custom enum formatter (it will be checked first)
+    // Create formatter with our custom formatters
+    // The augmentor runs BEFORE built-in formatters are added, so our formatters take priority
+    const formatter = tsj.createFormatter(config, (fmt, circularReferenceTypeFormatter) => {
+        // Add our AnnotatedTypeFormatter first - it will intercept AnnotatedType before the built-in one
+        fmt.addTypeFormatter(new AnnotatedTypeFormatterWithIntegers(circularReferenceTypeFormatter));
+        // Add our enum formatter
         fmt.addTypeFormatter(new EnumTypeFormatterWithVarnames());
     });
 

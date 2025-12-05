@@ -56,6 +56,7 @@ export interface TransactionMoneyFlowItem {
 
     /**
      * Number of decimal places for display
+     * @format int
      */
     decimals?: number;
 }

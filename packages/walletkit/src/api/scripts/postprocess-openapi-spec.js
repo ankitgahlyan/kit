@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Post-processes OpenAPI spec:
- * 1. Fixes number types with integer formats (number + int* format → integer)
- * 2. Adds vendor extensions for discriminated unions
+ * 1. Adds vendor extensions for discriminated unions
+ *
+ * Note: Integer type fixing is now handled in generate-json-schema.js
  *
  * Usage: node postprocess-openapi-spec.js <input-openapi.json> [output-openapi.json]
  */
@@ -18,50 +19,7 @@ if (!inputFile) {
 }
 
 // ============================================================================
-// Step 1: Fix Integer Types
-// ============================================================================
-
-const INTEGER_FORMATS = ['int', 'int8', 'int16', 'int32', 'int64', 'uint', 'uint8', 'uint16', 'uint32', 'uint64'];
-
-/**
- * Recursively fix number types with integer formats to use 'integer' type
- */
-function fixIntegerTypes(obj) {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj;
-    }
-
-    // Handle arrays
-    if (Array.isArray(obj)) {
-        return obj.map(fixIntegerTypes);
-    }
-
-    // Check if this is a number type with integer format
-    if (obj.type === 'number' && obj.format && INTEGER_FORMATS.includes(obj.format)) {
-        obj.type = 'integer';
-    }
-
-    // Check if this is an array with number items that have integer format
-    if (obj.type === 'array' && obj.items) {
-        if (obj.items.type === 'number' && obj.items.format && INTEGER_FORMATS.includes(obj.items.format)) {
-            obj.items.type = 'integer';
-        }
-        // Recursively process items
-        obj.items = fixIntegerTypes(obj.items);
-    }
-
-    // Recursively process all properties
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-            obj[key] = fixIntegerTypes(obj[key]);
-        }
-    }
-
-    return obj;
-}
-
-// ============================================================================
-// Step 2: Enrich Discriminated Unions
+// Enrich Discriminated Unions
 // ============================================================================
 
 /**
@@ -301,75 +259,6 @@ function processAllOfDiscriminatedUnion(schema, schemaName, allSchemas) {
 }
 
 // ============================================================================
-// Step 3: Extract Inline Enums to Separate Definitions
-// ============================================================================
-
-/**
- * Extract inline enums from schema properties and create separate definitions.
- * Replaces inline enum with $ref to the extracted definition.
- */
-function extractInlineEnums(schemas) {
-    const extractedEnums = {};
-
-    function processSchema(schema, parentName, propName) {
-        if (!schema || typeof schema !== 'object') return;
-
-        // Check if this is an inline enum with x-enum-varnames
-        if (schema.enum && schema['x-enum-varnames']) {
-            // Generate enum name from parent + property name
-            const enumName = parentName + propName.charAt(0).toUpperCase() + propName.slice(1);
-
-            // Extract the enum definition
-            extractedEnums[enumName] = {
-                type: schema.type || 'string',
-                enum: schema.enum,
-                'x-enum-varnames': schema['x-enum-varnames'],
-            };
-
-            // Return a reference to the extracted enum
-            return { $ref: `#/components/schemas/${enumName}` };
-        }
-
-        // Process array items
-        if (schema.type === 'array' && schema.items) {
-            if (schema.items.enum && schema.items['x-enum-varnames']) {
-                const enumName = parentName + propName.charAt(0).toUpperCase() + propName.slice(1);
-                extractedEnums[enumName] = {
-                    type: schema.items.type || 'string',
-                    enum: schema.items.enum,
-                    'x-enum-varnames': schema.items['x-enum-varnames'],
-                };
-                schema.items = { $ref: `#/components/schemas/${enumName}` };
-            }
-        }
-
-        // Process object properties
-        if (schema.properties) {
-            for (const [propKey, propSchema] of Object.entries(schema.properties)) {
-                const replacement = processSchema(propSchema, parentName, propKey);
-                if (replacement) {
-                    schema.properties[propKey] = replacement;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // Process all schemas
-    for (const [schemaName, schema] of Object.entries(schemas)) {
-        processSchema(schema, schemaName, '');
-    }
-
-    // Add extracted enums to schemas
-    for (const [enumName, enumSchema] of Object.entries(extractedEnums)) {
-        schemas[enumName] = enumSchema;
-    }
-
-    return Object.keys(extractedEnums).length;
-}
-
-// ============================================================================
 // Main Pipeline
 // ============================================================================
 
@@ -379,15 +268,8 @@ try {
     const spec = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
     const schemas = spec.components?.schemas || spec.definitions || {};
 
-    // Step 1: Fix integer types
-    console.error('Step 1: Fixing integer types...');
-    for (const [name, schema] of Object.entries(schemas)) {
-        schemas[name] = fixIntegerTypes(schema);
-    }
-    console.error('  ✓ Integer types fixed');
-
-    // Step 2: Enrich discriminated unions (try both patterns)
-    console.error('Step 2: Enriching discriminated unions...');
+    // Enrich discriminated unions (try both patterns)
+    console.error('Step 1: Enriching discriminated unions...');
     let processedCount = 0;
     for (const [name, schema] of Object.entries(schemas)) {
         // Try allOf pattern first (with @discriminator), then anyOf pattern (without @discriminator)
@@ -399,11 +281,6 @@ try {
         }
     }
     console.error(`  ✓ Processed ${processedCount} discriminated union schemas`);
-
-    // Step 3: Extract inline enums to separate definitions
-    console.error('Step 3: Extracting inline enums...');
-    const enumCount = extractInlineEnums(schemas);
-    console.error(`  ✓ Extracted ${enumCount} inline enums to separate definitions`);
 
     // Write output
     fs.writeFileSync(outputFile, JSON.stringify(spec, null, 2));

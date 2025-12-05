@@ -46,6 +46,7 @@ export enum Result {
 export interface ResultError {
     /**
      * Error code representing the type of error
+     * @format int
      */
     code?: number;
 

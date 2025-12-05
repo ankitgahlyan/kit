@@ -91,6 +91,7 @@ export interface TransactionTokenInfoJettonMasters extends TransactionTokenInfoB
     description: string;
     /**
      * Number of decimal places for the Jetton amount
+     * @format int
      */
     decimalsCount: number;
     /**
