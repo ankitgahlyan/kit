@@ -15,7 +15,6 @@ import { useWallet } from '@ton/demo-core';
 import { AppButton } from '@/core/components/app-button';
 import { AppInput } from '@/core/components/app-input';
 import { AppText } from '@/core/components/app-text';
-import { Block } from '@/core/components/block';
 import { ScreenHeader } from '@/core/components/screen-header';
 import { ScreenWrapper } from '@/core/components/screen-wrapper';
 import { TabControl } from '@/core/components/tab-control';

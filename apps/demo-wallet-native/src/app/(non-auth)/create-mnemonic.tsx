@@ -85,11 +85,7 @@ const CreateMnemonicScreen: FC = () => {
                 {!isWarningShown && mnemonic.length > 0 && (
                     <View style={styles.networkSection}>
                         <AppText style={styles.sectionLabel}>Network</AppText>
-                        <TabControl
-                            options={networkOptions}
-                            selectedOption={network}
-                            onOptionPress={setNetwork}
-                        />
+                        <TabControl options={networkOptions} selectedOption={network} onOptionPress={setNetwork} />
                         <AppText style={styles.networkHint}>
                             {network === 'testnet'
                                 ? 'Use testnet for development and testing with test TON.'
