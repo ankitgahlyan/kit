@@ -82,7 +82,6 @@ export class TokenInfoMapper extends Mapper<JettonInfo, TokenInfo> {
             description: input.description,
             symbol: input.symbol,
             image: this.extractImageFromJetton(input),
-            isValid: input.verification?.verified, // ????
         };
     }
 
@@ -96,7 +95,6 @@ export class TokenInfoMapper extends Mapper<JettonInfo, TokenInfo> {
             symbol: input.symbol,
             image: this.extractImageFromNft(input),
             animation: this.extractAnimationFromNft(input),
-            isValid: input.valid,
         };
     }
 }

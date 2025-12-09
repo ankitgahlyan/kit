@@ -8,9 +8,9 @@
 
 // Main TonWalletKit interface definition
 
-import { CHAIN, CONNECT_EVENT_ERROR_CODES, SendTransactionRpcResponseError } from '@tonconnect/protocol';
+import { CONNECT_EVENT_ERROR_CODES, SendTransactionRpcResponseError } from '@tonconnect/protocol';
 
-import type { IWallet, IWalletAdapter } from './wallet';
+import type { IWallet } from './wallet';
 import type {
     EventConnectRequest,
     EventTransactionRequest,
@@ -23,6 +23,8 @@ import type {
 import type { JettonsAPI } from './jettons';
 import { ConnectTransactionParamContent } from './internal';
 import { ApiClient } from './toncenter/ApiClient';
+import { WalletAdapter } from '../api/interfaces';
+import { Network } from '../api/models/core/Network';
 
 /**
  * Main TonWalletKit interface
@@ -33,12 +35,12 @@ import { ApiClient } from './toncenter/ApiClient';
 export interface ITonWalletKit {
     /**
      * Get API client for a specific network
-     * @param chainId - The chain ID (CHAIN.MAINNET or CHAIN.TESTNET)
+     * @param network - The network object
      */
-    getApiClient(chainId: CHAIN): ApiClient;
+    getApiClient(network: Network): ApiClient;
 
     /** Get all configured networks */
-    getConfiguredNetworks(): CHAIN[];
+    getConfiguredNetworks(): Network[];
 
     isReady(): boolean;
 
@@ -51,13 +53,13 @@ export interface ITonWalletKit {
     getWallet(walletId: string): IWallet | undefined;
 
     /** Get wallet by address and network */
-    getWalletByAddressAndNetwork(address: string, network: CHAIN): IWallet | undefined;
+    getWalletByAddressAndNetwork(address: string, network: Network): IWallet | undefined;
 
     /** Add a new wallet, returns wallet ID */
-    addWallet(adapter: IWalletAdapter): Promise<IWallet | undefined>;
+    addWallet(adapter: WalletAdapter): Promise<IWallet | undefined>;
 
     /** Remove a wallet by wallet ID or adapter */
-    removeWallet(walletIdOrAdapter: string | IWalletAdapter): Promise<void>;
+    removeWallet(walletIdOrAdapter: string | WalletAdapter): Promise<void>;
 
     /** Clear all wallets */
     clearWallets(): Promise<void>;

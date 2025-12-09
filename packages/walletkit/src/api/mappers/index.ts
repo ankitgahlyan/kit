@@ -32,7 +32,7 @@ export { JettonsResponseMapper } from './JettonsResponseMapper';
 export { JettonsTransferRequestMapper } from './JettonsTransferRequestMapper';
 
 // NFT mappers
-export { NFTMapper } from './NftMapper';
+export { NFTMapper } from './NFTMapper';
 export { NFTAttributeMapper } from './NFTAttributeMapper';
 export { NFTCollectionMapper } from './NFTCollectionMapper';
 export { NFTTransferRequestMapper } from './NFTTransferRequestMapper';

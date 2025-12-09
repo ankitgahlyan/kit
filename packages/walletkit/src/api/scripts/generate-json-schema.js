@@ -14,7 +14,19 @@ const ts = require('typescript');
 // Constants
 // ============================================================================
 
-const INTEGER_FORMATS = ['int', 'int8', 'int16', 'int32', 'int64', 'uint', 'uint8', 'uint16', 'uint32', 'uint64'];
+const INTEGER_FORMATS = [
+    'int',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'uint',
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'timestamp',
+];
 
 // ============================================================================
 // Custom EnumType with Member Names
@@ -439,7 +451,13 @@ class DiscriminatedUnionNodeParser {
     }
 
     isPrimitiveType(typeNode) {
-        const primitiveKinds = [ts.SyntaxKind.StringKeyword, ts.SyntaxKind.NumberKeyword, ts.SyntaxKind.BooleanKeyword, ts.SyntaxKind.UnknownKeyword, ts.SyntaxKind.AnyKeyword];
+        const primitiveKinds = [
+            ts.SyntaxKind.StringKeyword,
+            ts.SyntaxKind.NumberKeyword,
+            ts.SyntaxKind.BooleanKeyword,
+            ts.SyntaxKind.UnknownKeyword,
+            ts.SyntaxKind.AnyKeyword,
+        ];
         if (primitiveKinds.includes(typeNode.kind)) {
             return true;
         }

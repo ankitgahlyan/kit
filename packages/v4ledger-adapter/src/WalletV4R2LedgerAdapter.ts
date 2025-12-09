@@ -23,7 +23,7 @@ import { CHAIN, toHexString } from '@tonconnect/protocol';
 import { TonTransport } from '@ton-community/ton-ledger';
 import Transport from '@ledgerhq/hw-transport';
 import {
-    IWalletAdapter,
+    WalletAdapter,
     ApiClient,
     formatWalletAddress,
     CallForSuccess,
@@ -66,7 +66,7 @@ export function createWalletInitConfigLedger(params: WalletInitConfigLedgerInter
  * WalletV4R2 Ledger adapter that implements WalletInterface for WalletV4R2 contracts
  * using Ledger hardware wallet for signing
  */
-export class WalletV4R2LedgerAdapter implements IWalletAdapter {
+export class WalletV4R2LedgerAdapter implements WalletAdapter {
     private createTransport: () => Promise<Transport>;
     private config: WalletV4R2LedgerAdapterConfig;
     private derivationPath: number[];

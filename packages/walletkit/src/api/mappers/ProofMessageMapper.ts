@@ -6,10 +6,7 @@
  *
  */
 
-import { Address } from '@ton/core';
-
 import type { TonProofParsedMessage } from '../../utils/tonProof';
-import { Uint8ArrayToHex } from '../../utils/base64';
 import { asHex } from '../../types/primitive';
 import type { ProofMessage } from '../models/core/ProofMessage';
 import { Mapper } from './Mapper';
@@ -19,18 +16,14 @@ import { Mapper } from './Mapper';
  */
 export class ProofMessageMapper extends Mapper<ProofMessage, TonProofParsedMessage> {
     map(input: ProofMessage): TonProofParsedMessage {
-        const address = Address.parse(input.address);
-
         return {
             workchain: input.workchain,
-            address: Uint8ArrayToHex(address.hash), // ????
-            timstamp: input.timestamp, // Note: typo in target type
-            domain: input.domain
-                ? {
-                      lengthBytes: input.domain.lengthBytes,
-                      value: input.domain.value,
-                  }
-                : { lengthBytes: 0, value: '' },
+            address: asHex(input.addressHash),
+            timstamp: input.timestamp,
+            domain: {
+                lengthBytes: input.domain.lengthBytes,
+                value: input.domain.value,
+            },
             payload: input.payload,
             stateInit: input.stateInit,
             signature: input.signature ? asHex(input.signature) : undefined,

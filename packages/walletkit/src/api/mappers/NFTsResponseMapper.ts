@@ -9,7 +9,7 @@
 import { NftItems } from '../..';
 import type { NFTsResponse } from '../models/nfts/NFTsResponse';
 import { Mapper } from './Mapper';
-import { NFTMapper } from './NftMapper';
+import { NFTMapper } from './NFTMapper';
 
 /**
  * Maps array of NftItem to API NFTsResponse model.

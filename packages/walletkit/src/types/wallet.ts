@@ -9,77 +9,17 @@
 // Wallet-related type definitions
 
 import { Address, SendMode } from '@ton/core';
-import { CHAIN } from '@tonconnect/protocol';
-// import Transport from '@ledgerhq/hw-transport';
 
 import { ConnectExtraCurrency, ConnectTransactionParamContent } from './internal';
 import { JettonTransferParams } from './jettons';
 import { NftTransferParamsHuman, NftTransferParamsRaw } from './nfts';
 import { TransactionPreview } from './events';
-import { ApiClient, LimitRequest, GetJettonsByOwnerRequest } from './toncenter/ApiClient';
+import { LimitRequest, GetJettonsByOwnerRequest } from './toncenter/ApiClient';
 import { ResponseUserJettons } from './export/responses/jettons';
 import type { NftItem } from './toncenter/NftItem';
 import { NftItems } from './toncenter/NftItems';
-import { PrepareSignDataResult } from '../utils/signData/sign';
-import { Base64String, Hex } from './primitive';
-import { TonProofParsedMessage } from '../utils/tonProof';
 import { EventTransactionResponse } from './events';
-import { WalletId } from '../utils/walletId';
-
-/**
- * TON network types
- */
-export type WalletVersion = 'v5r1' | 'v4r2' | 'unknown';
-
-export type ISigner = (bytes: Iterable<number>) => Promise<Hex>;
-
-export type WalletSigner = {
-    sign: ISigner;
-    publicKey: Hex;
-};
-
-/**
- * Core wallet interface that all wallets must implement
- */
-export interface IWalletAdapter {
-    /** Unique identifier for this wallet (typically public key) */
-    getPublicKey(): Hex;
-
-    /** Get the network the wallet is connected to */
-    getNetwork(): CHAIN;
-
-    /** Get the TON client instance */
-    getClient(): ApiClient;
-
-    /** Get the address of the wallet */
-    getAddress(options?: { testnet?: boolean }): string;
-
-    /** Get the wallet ID */
-    getWalletId(): WalletId;
-
-    /** Get state init for wallet deployment base64 encoded boc */
-    getStateInit(): Promise<Base64String>;
-
-    /** Get the signed send transaction */
-    getSignedSendTransaction(
-        input: ConnectTransactionParamContent,
-        options?: {
-            fakeSignature: boolean;
-        },
-    ): Promise<Base64String>;
-    getSignedSignData(
-        input: PrepareSignDataResult,
-        options?: {
-            fakeSignature: boolean;
-        },
-    ): Promise<Hex>;
-    getSignedTonProof(
-        input: TonProofParsedMessage,
-        options?: {
-            fakeSignature: boolean;
-        },
-    ): Promise<Hex>;
-}
+import { WalletAdapter } from '../api/interfaces';
 
 export type TonTransferMessage = {
     toAddress: string;
@@ -131,14 +71,4 @@ export interface WalletNftInterface {
     getNft(address: Address | string): Promise<NftItem | null>;
 }
 
-export type IWallet = IWalletAdapter & WalletTonInterface & WalletJettonInterface & WalletNftInterface;
-
-/**
- * Wallet metadata for storage/serialization
- */
-export interface WalletMetadata {
-    publicKey: string;
-    version: string;
-    address?: string;
-    lastUsed?: Date;
-}
+export type IWallet = WalletAdapter & WalletTonInterface & WalletJettonInterface & WalletNftInterface;

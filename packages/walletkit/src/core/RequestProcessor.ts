@@ -10,6 +10,7 @@
 
 import { Address } from '@ton/core';
 import {
+    CHAIN,
     CONNECT_EVENT_ERROR_CODES,
     ConnectEventError,
     ConnectEventSuccess,
@@ -34,7 +35,6 @@ import type { BridgeManager } from './BridgeManager';
 import { globalLogger } from './Logger';
 import { createTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
-import { PrepareTonConnectData } from '../utils/signData/sign';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
 import { WalletManager } from './WalletManager';
 import { IWallet } from '../types';
@@ -52,6 +52,8 @@ import { getUnixtime } from '../utils/time';
 import { getEventsSubsystem, getVersion } from '../utils/version';
 import { Base64Normalize } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
+import { PreparedSignData } from '../api/models';
+import { PrepareSignData } from '../utils/signData/sign';
 
 const log = globalLogger.createChild('RequestProcessor');
 
@@ -148,7 +150,7 @@ export class RequestProcessor {
                         trace_id: event.traceId,
                         client_environment: 'wallet',
                         subsystem: getEventsSubsystem(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         event_id: uuidv7(),
@@ -177,7 +179,7 @@ export class RequestProcessor {
                         manifest_json_url: event.preview.manifest?.url,
                         proof_payload_size: event.request.find((item) => item.name === 'ton_proof')?.payload?.length,
                         event_id: uuidv7(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                     },
@@ -224,7 +226,7 @@ export class RequestProcessor {
                         trace_id: event.traceId,
                         client_environment: 'wallet',
                         subsystem: getEventsSubsystem(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         event_id: uuidv7(),
@@ -261,7 +263,7 @@ export class RequestProcessor {
                             ) as TonProofItemReplySuccess
                         )?.proof?.payload?.length,
                         event_id: uuidv7(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                     },
@@ -443,7 +445,7 @@ export class RequestProcessor {
                 event_id: uuidv7(),
                 client_timestamp: getUnixtime(),
                 version: getVersion(),
-                network_id: wallet?.getNetwork(),
+                network_id: wallet?.getNetwork().chainId,
                 wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                 wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                 client_id: event.from,
@@ -457,7 +459,7 @@ export class RequestProcessor {
                 client_environment: 'wallet',
                 subsystem: getEventsSubsystem(),
                 event_id: uuidv7(),
-                network_id: wallet?.getNetwork(),
+                network_id: wallet?.getNetwork().chainId,
                 wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                 wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                 version: getVersion(),
@@ -502,7 +504,7 @@ export class RequestProcessor {
                     dapp_name: event.dAppInfo?.name,
                     origin_url: event.dAppInfo?.url,
                     event_id: uuidv7(),
-                    network_id: wallet?.getNetwork(),
+                    network_id: wallet?.getNetwork().chainId,
                     wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                     wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                     wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -546,7 +548,7 @@ export class RequestProcessor {
                         client_environment: 'wallet',
                         subsystem: getEventsSubsystem(),
                         event_id: uuidv7(),
-                        network_id: wallet?.getNetwork(),
+                        network_id: wallet?.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -560,7 +562,7 @@ export class RequestProcessor {
                         client_environment: 'wallet',
                         subsystem: getEventsSubsystem(),
                         event_id: uuidv7(),
-                        network_id: wallet?.getNetwork(),
+                        network_id: wallet?.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -613,11 +615,15 @@ export class RequestProcessor {
                 }
 
                 // Sign data with wallet
-                const signData = PrepareTonConnectData({
+
+                const tonConnectData = PrepareSignData(event.request, wallet.getAddress(), domainUrl);
+                const signData: PreparedSignData = {
                     payload: event.request,
                     domain: domainUrl,
                     address: walletAddress ?? wallet.getAddress(),
-                });
+                    timestamp: Math.floor(Date.now() / 1000),
+                    hash: '',
+                };
                 const signature = await wallet.getSignedSignData(signData);
                 const signatureBase64 = Buffer.from(signature.slice(2), 'hex').toString('base64');
 
@@ -643,7 +649,7 @@ export class RequestProcessor {
                         dapp_name: event.dAppInfo?.name,
                         origin_url: event.dAppInfo?.url,
                         event_id: uuidv7(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -659,7 +665,7 @@ export class RequestProcessor {
                         dapp_name: event.dAppInfo?.name,
                         origin_url: event.dAppInfo?.url,
                         event_id: uuidv7(),
-                        network_id: wallet.getNetwork(),
+                        network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                         wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                         wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -704,7 +710,7 @@ export class RequestProcessor {
                     dapp_name: event.dAppInfo?.name,
                     origin_url: event.dAppInfo?.url,
                     event_id: uuidv7(),
-                    network_id: wallet?.getNetwork(),
+                    network_id: wallet?.getNetwork().chainId,
                     wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                     wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                     wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
@@ -767,7 +773,8 @@ export class RequestProcessor {
                     {
                         name: 'ton_addr',
                         address: Address.parse(address).toRawString(),
-                        network: walletNetwork,
+                        // TODO: Support multiple networks
+                        network: walletNetwork.chainId === CHAIN.MAINNET ? CHAIN.MAINNET : CHAIN.TESTNET,
                         walletStateInit,
                         publicKey,
                     },

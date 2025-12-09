@@ -13,7 +13,6 @@ import type {
     ConnectEventSuccess,
     ConnectItem,
     ConnectRequest,
-    SignDataPayload,
     WalletResponseTemplateError,
 } from '@tonconnect/protocol';
 
@@ -29,6 +28,7 @@ import { MoneyFlow } from '../utils/toncenterEmulation';
 import { ToncenterEmulationResponse } from './toncenter/emulation';
 import { Base64String, Hex } from './primitive';
 import { ErrorInfo } from '../errors';
+import { SignDataPayload } from '../api/models';
 
 // export type EventConnectRequest = ConnectRequest;
 

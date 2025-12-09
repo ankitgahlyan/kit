@@ -50,6 +50,7 @@ import {
     ROOT_DNS_RESOLVER_TESTNET,
 } from '../types/toncenter/dnsResolve';
 import { toAddressBook, toEvent } from '../types/toncenter/AccountEvent';
+import { Network } from '../api/models';
 
 const log = globalLogger.createChild('ApiClientToncenter');
 
@@ -71,7 +72,7 @@ export interface ApiClientConfig {
     apiKey?: string;
     timeout?: number;
     fetchApi?: typeof fetch;
-    network?: CHAIN;
+    network?: Network;
     disableNetworkSend?: boolean;
 }
 
@@ -81,15 +82,16 @@ export class ApiClientToncenter implements ApiClient {
     private readonly apiKey?: string;
     private readonly timeout: number;
     private readonly fetchApi: typeof fetch;
-    private readonly network?: CHAIN;
+    private readonly network?: Network;
     private readonly disableNetworkSend?: boolean;
 
     constructor(config: ApiClientConfig = {}) {
         this.network = config.network;
 
-        const dnsResolver = this.network === CHAIN.MAINNET ? ROOT_DNS_RESOLVER_MAINNET : ROOT_DNS_RESOLVER_TESTNET;
+        const dnsResolver =
+            this.network?.chainId === CHAIN.MAINNET ? ROOT_DNS_RESOLVER_MAINNET : ROOT_DNS_RESOLVER_TESTNET;
         const defaultEndpoint =
-            this.network === CHAIN.MAINNET ? 'https://toncenter.com' : 'https://testnet.toncenter.com';
+            this.network?.chainId === CHAIN.MAINNET ? 'https://toncenter.com' : 'https://testnet.toncenter.com';
 
         this.dnsResolver = config.dnsResolver ?? dnsResolver;
         this.endpoint = config.endpoint ?? defaultEndpoint;

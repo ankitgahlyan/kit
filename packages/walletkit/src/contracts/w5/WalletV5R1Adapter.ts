@@ -20,7 +20,6 @@ import {
     storeStateInit,
 } from '@ton/core';
 import { external, internal } from '@ton/core';
-import { CHAIN } from '@tonconnect/protocol';
 
 import { WalletV5, WalletV5R1Id } from './WalletV5R1';
 import { WalletV5R1CodeCell } from './WalletV5R1.source';
@@ -29,15 +28,14 @@ import { WalletKitError, ERROR_CODES } from '../../errors';
 import { FakeSignature } from '../../utils/sign';
 import { formatWalletAddress } from '../../utils/address';
 import { CallForSuccess } from '../../utils/retry';
-import { ConnectTransactionParamContent } from '../../types/internal';
 import { ActionSendMsg, packActionsList } from './actions';
-import { IWalletAdapter, WalletSigner } from '../../types/wallet';
 import { ApiClient } from '../../types/toncenter/ApiClient';
 import { HexToBigInt, HexToUint8Array } from '../../utils/base64';
-import { PrepareSignDataResult } from '../../utils/signData/sign';
-import { Hex } from '../../types/primitive';
-import { CreateTonProofMessageBytes, TonProofParsedMessage } from '../../utils/tonProof';
+import { asHex, Hex } from '../../types/primitive';
+import { CreateTonProofMessageBytes } from '../../utils/tonProof';
 import { createWalletId, WalletId } from '../../utils/walletId';
+import { WalletAdapter, WalletSigner } from '../../api/interfaces';
+import { Network, PreparedSignData, ProofMessage, TransactionRequest, UserFriendlyAddress } from '../../api/models';
 
 const log = globalLogger.createChild('WalletV5R1Adapter');
 
@@ -56,7 +54,7 @@ export interface WalletV5R1AdapterConfig {
     /** Shared TON client instance */
     tonClient: ApiClient;
     /** Network */
-    network: CHAIN;
+    network: Network;
     /** Workchain */
     workchain?: number;
 }
@@ -64,7 +62,7 @@ export interface WalletV5R1AdapterConfig {
 /**
  * WalletV5R1 adapter that implements WalletInterface for WalletV5 contracts
  */
-export class WalletV5R1Adapter implements IWalletAdapter {
+export class WalletV5R1Adapter implements WalletAdapter {
     // private keyPair: { publicKey: Uint8Array; secretKey: Uint8Array };
     private signer: WalletSigner;
     private config: WalletV5R1AdapterConfig;
@@ -83,14 +81,14 @@ export class WalletV5R1Adapter implements IWalletAdapter {
         signer: WalletSigner,
         options: {
             client: ApiClient;
-            network: CHAIN;
+            network: Network;
             walletId?: number | bigint;
             workchain?: number;
         },
     ): Promise<WalletV5R1Adapter> {
         return new WalletV5R1Adapter({
             signer,
-            publicKey: signer.publicKey,
+            publicKey: asHex(signer.publicKey),
             tonClient: options.client,
             network: options.network,
             walletId: options.walletId,
@@ -135,17 +133,17 @@ export class WalletV5R1Adapter implements IWalletAdapter {
      * Sign raw bytes with wallet's private key
      */
     async sign(bytes: Iterable<number>): Promise<Hex> {
-        return await this.signer.sign(bytes);
+        return asHex(await this.signer.sign(bytes));
     }
 
-    getNetwork(): CHAIN {
+    getNetwork(): Network {
         return this.config.network;
     }
 
     /**
      * Get wallet's TON address
      */
-    getAddress(options?: { testnet?: boolean }): string {
+    getAddress(options?: { testnet?: boolean }): UserFriendlyAddress {
         return formatWalletAddress(this.walletContract.address, options?.testnet);
     }
 
@@ -153,21 +151,18 @@ export class WalletV5R1Adapter implements IWalletAdapter {
         return createWalletId(this.getNetwork(), this.getAddress());
     }
 
-    async getSignedSendTransaction(
-        input: ConnectTransactionParamContent,
-        options: { fakeSignature: boolean },
-    ): Promise<string> {
+    async getSignedSendTransaction(input: TransactionRequest, options: { fakeSignature: boolean }): Promise<string> {
         const actions = packActionsList(
             input.messages.map((m) => {
                 let bounce = true;
-                const parsedAddress = Address.parseFriendly(m.address);
+                const parsedAddress = Address.parseFriendly(m.recipientAddress);
                 if (parsedAddress.isBounceable === false) {
                     bounce = false;
                 }
 
                 const msg = internal({
-                    to: m.address,
-                    value: BigInt(m.amount),
+                    to: m.recipientAddress,
+                    value: BigInt(m.transferAmount),
                     bounce: bounce,
                     extracurrency: m.extraCurrency
                         ? Object.fromEntries(Object.entries(m.extraCurrency).map(([k, v]) => [Number(k), BigInt(v)]))
@@ -208,20 +203,20 @@ export class WalletV5R1Adapter implements IWalletAdapter {
             validUntil: undefined,
         };
         // add valid untill
-        if (input.valid_until) {
+        if (input.validUntil) {
             const now = Math.floor(Date.now() / 1000);
             const maxValidUntil = now + 600;
-            if (input.valid_until < now) {
+            if (input.validUntil < now) {
                 throw new WalletKitError(
                     ERROR_CODES.VALIDATION_ERROR,
                     'Transaction valid_until timestamp is in the past',
                     undefined,
-                    { validUntil: input.valid_until, currentTime: now },
+                    { validUntil: input.validUntil, currentTime: now },
                 );
-            } else if (input.valid_until > maxValidUntil) {
+            } else if (input.validUntil > maxValidUntil) {
                 createBodyOptions.validUntil = maxValidUntil;
             } else {
-                createBodyOptions.validUntil = input.valid_until;
+                createBodyOptions.validUntil = input.validUntil;
             }
         }
 
@@ -334,12 +329,12 @@ export class WalletV5R1Adapter implements IWalletAdapter {
             .endCell();
     }
 
-    async getSignedSignData(input: PrepareSignDataResult): Promise<Hex> {
-        const signature = await this.sign(HexToUint8Array(input.hash));
+    async getSignedSignData(input: PreparedSignData): Promise<Hex> {
+        const signature = await this.sign(HexToUint8Array(asHex(input.hash)));
         return signature;
     }
 
-    async getSignedTonProof(input: TonProofParsedMessage): Promise<Hex> {
+    async getSignedTonProof(input: ProofMessage): Promise<Hex> {
         const message = await CreateTonProofMessageBytes(input);
         const signature = await this.sign(message);
 

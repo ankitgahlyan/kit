@@ -18,7 +18,7 @@ import {
     TonWalletKit,
     BridgeEventMessageInfo,
     InjectedToExtensionBridgeRequestPayload,
-    IWalletAdapter,
+    WalletAdapter,
 } from '@ton/walletkit';
 
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';

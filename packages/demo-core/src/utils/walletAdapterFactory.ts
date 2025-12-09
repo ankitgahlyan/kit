@@ -7,17 +7,16 @@
  */
 
 import {
-    type IWalletAdapter,
-    Signer,
     WalletV5R1Adapter,
     WalletV4R2Adapter,
     DefaultSignature,
     CHAIN,
     type ITonWalletKit,
     MnemonicToKeyPair,
-    type WalletSigner,
     Uint8ArrayToHex,
     type ToncenterTransaction,
+    WalletAdapter,
+    WalletSigner,
 } from '@ton/walletkit';
 import { createWalletInitConfigLedger, createLedgerPath, createWalletV4R2Ledger } from '@ton/v4ledger-adapter';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
@@ -40,7 +39,7 @@ export interface CreateWalletAdapterParams {
 /**
  * Creates a wallet adapter based on the specified type and configuration
  */
-export async function createWalletAdapter(params: CreateWalletAdapterParams): Promise<IWalletAdapter> {
+export async function createWalletAdapter(params: CreateWalletAdapterParams): Promise<WalletAdapter> {
     const {
         mnemonic,
         useWalletInterfaceType,

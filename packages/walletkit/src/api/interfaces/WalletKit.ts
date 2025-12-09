@@ -9,7 +9,7 @@
 import type { CONNECT_EVENT_ERROR_CODES, SendTransactionRpcResponseError } from '@tonconnect/protocol';
 
 import { TonWalletKit } from '../../core/TonWalletKit';
-import type { IWalletAdapter } from '../../types/wallet';
+// import type { WalletAdapter } from '../../types/wallet';
 import type {
     EventConnectRequest,
     EventTransactionRequest,
@@ -36,6 +36,7 @@ import { DisconnectionEventMapper } from '../mappers/DisconnectionEventMapper';
 import { TransactionApprovalResponseMapper } from '../mappers/TransactionApprovalResponseMapper';
 import { SignDataApprovalResponseMapper } from '../mappers/SignDataApprovalResponseMapper';
 import { TransactionRequestMapper } from '../mappers/TransactionRequestMapper';
+import { WalletAdapter } from './WalletAdapter';
 
 /**
  * WalletKit is a public API wrapper around TonWalletKit.
@@ -88,8 +89,7 @@ export class WalletKit {
      * Get all configured networks
      */
     getConfiguredNetworks(): Network[] {
-        const chains = this.internalKit.getConfiguredNetworks();
-        return chains.map((chain) => this.networkMapper.map(chain));
+        return this.internalKit.getConfiguredNetworks();
     }
 
     // === Wallet Management ===
@@ -114,15 +114,14 @@ export class WalletKit {
      * Get wallet by address and network
      */
     getWalletByAddressAndNetwork(address: string, network: Network): Wallet | undefined {
-        const chain = this.networkMapper.reverse(network);
-        const wallet = this.internalKit.getWalletByAddressAndNetwork(address, chain);
+        const wallet = this.internalKit.getWalletByAddressAndNetwork(address, network);
         return wallet ? new Wallet(wallet) : undefined;
     }
 
     /**
      * Add a new wallet
      */
-    async addWallet(adapter: IWalletAdapter): Promise<Wallet | undefined> {
+    async addWallet(adapter: WalletAdapter): Promise<Wallet | undefined> {
         const wallet = await this.internalKit.addWallet(adapter);
         return wallet ? new Wallet(wallet) : undefined;
     }
@@ -130,7 +129,7 @@ export class WalletKit {
     /**
      * Remove a wallet by wallet ID or adapter
      */
-    async removeWallet(walletIdOrAdapter: string | IWalletAdapter): Promise<void> {
+    async removeWallet(walletIdOrAdapter: string | WalletAdapter): Promise<void> {
         return this.internalKit.removeWallet(walletIdOrAdapter);
     }
 

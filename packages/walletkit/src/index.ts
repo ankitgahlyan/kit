@@ -71,7 +71,6 @@ export {
     HexToUint8Array,
 } from './utils/base64';
 export type { ToncenterTransaction } from './types/toncenter/emulation';
-export { PrepareSignDataResult } from './utils/signData/sign';
 export { Hex } from './types/primitive';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
@@ -106,3 +105,7 @@ export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';
 export { TONCONNECT_BRIDGE_EVENT } from './bridge/utils/messageTypes';
 export { RESTORE_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT } from './bridge/utils/timeouts';
+
+// API Interfaces
+export * from './api/interfaces';
+export * from './api/models';

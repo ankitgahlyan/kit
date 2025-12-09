@@ -8,6 +8,8 @@
 
 export { Wallet } from './Wallet';
 export { WalletKit } from './WalletKit';
+export { WalletAdapter } from './WalletAdapter';
+export { WalletSigner, ISigner } from './WalletSigner';
 export type {
     WalletKitConfiguration,
     ApiClientConfiguration,

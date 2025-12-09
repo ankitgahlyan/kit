@@ -8,14 +8,13 @@
 
 // Wallet management with validation and persistence
 
-import { CHAIN } from '@tonconnect/protocol';
-
 import type { IWallet } from '../types';
 import { Storage } from '../storage';
-import { IWalletAdapter } from '../types/wallet';
 import { validateWallet } from '../validation';
 import { globalLogger } from './Logger';
 import { createWalletId, WalletId } from '../utils/walletId';
+import { Network } from '../api/models';
+import { WalletAdapter } from '../api/interfaces';
 
 const _log = globalLogger.createChild('WalletManager');
 
@@ -52,7 +51,7 @@ export class WalletManager {
     /**
      * Get wallet by address and network (convenience method)
      */
-    getWalletByAddressAndNetwork(address: string, network: CHAIN): IWallet | undefined {
+    getWalletByAddressAndNetwork(address: string, network: Network): IWallet | undefined {
         const walletId = createWalletId(network, address);
         return this.getWallet(walletId);
     }
@@ -78,7 +77,7 @@ export class WalletManager {
     /**
      * Remove wallet by wallet ID or wallet adapter
      */
-    async removeWallet(walletIdOrAdapter: WalletId | IWalletAdapter): Promise<boolean> {
+    async removeWallet(walletIdOrAdapter: WalletId | WalletAdapter): Promise<boolean> {
         let walletId: WalletId;
         if (typeof walletIdOrAdapter === 'string') {
             walletId = walletIdOrAdapter;
@@ -87,10 +86,6 @@ export class WalletManager {
         }
 
         const removed = this.wallets.delete(walletId);
-        // if (removed) {
-        //     await this.persistWallets();
-        // }
-
         return removed;
     }
 
@@ -109,7 +104,6 @@ export class WalletManager {
         }
 
         this.wallets.set(walletId, wallet);
-        // await this.persistWallets();
     }
 
     /**
@@ -117,7 +111,6 @@ export class WalletManager {
      */
     async clearWallets(): Promise<void> {
         this.wallets.clear();
-        // await this.persistWallets();
     }
 
     /**
@@ -137,7 +130,7 @@ export class WalletManager {
     /**
      * Get wallet ID for a wallet adapter
      */
-    getWalletId(wallet: IWalletAdapter): WalletId {
+    getWalletId(wallet: WalletAdapter): WalletId {
         return createWalletId(wallet.getNetwork(), wallet.getAddress());
     }
 }

@@ -28,7 +28,7 @@ import type {
     TransactionTraceActionDetails,
     TransactionTraceActionJettonSwapDetails,
     TransactionTraceActionCallContractDetails,
-    TransactionTraceActionTonTransferDetails,
+    TransactionTraceActionTONTransferDetails,
     TransactionTraceActionJettonTransfer,
 } from '../models/transactions/TransactionTrace';
 import type { TokenImage } from '../models/core/TokenImage';
@@ -226,7 +226,7 @@ export class TransactionEmulatedTraceMapper extends Mapper<ToncenterEmulationRes
                 comment: string | null;
                 encrypted: boolean;
             };
-            const value: TransactionTraceActionTonTransferDetails = {
+            const value: TransactionTraceActionTONTransferDetails = {
                 source: this.mapAddress(tonDetails.source),
                 destination: this.mapAddress(tonDetails.destination),
                 value: tonDetails.value,

@@ -11,8 +11,6 @@
 // Wallet types
 export type {
     IWallet,
-    WalletMetadata,
-    WalletVersion,
     TonTransferParams,
     TonTransferManyParams,
     TonTransferParamsBody,
@@ -20,8 +18,6 @@ export type {
     WalletTonInterface,
     WalletJettonInterface,
     WalletNftInterface,
-    IWalletAdapter,
-    WalletSigner,
 } from './wallet';
 
 // Transaction types (from validation module)
@@ -109,10 +105,4 @@ export type {
     ContractDeployAction,
     Account,
     SimplePreview,
-    AddressBook,
-    AddressBookItem,
-    JettonMasterInfo,
-    JettonWalletInfo,
-    StatusAction,
-    JettonMasterOut,
 } from './toncenter/AccountEvent';

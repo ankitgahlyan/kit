@@ -26,6 +26,7 @@ import {
     stateInit,
     walletId,
 } from './WalletV5R1.fixture';
+import { Network } from '../../api/models';
 
 describe('WalletV5R1Adapter', () => {
     let tonClient: ApiClient;
@@ -37,7 +38,7 @@ describe('WalletV5R1Adapter', () => {
         const signer = await Signer.fromMnemonic(mnemonic);
         wallet = await WalletV5R1Adapter.create(signer, {
             client: tonClient,
-            network: CHAIN.MAINNET,
+            network: Network.mainnet(),
         });
     });
 
@@ -66,7 +67,7 @@ describe('WalletV5R1Adapter', () => {
         const signer = await Signer.fromMnemonic(mnemonic);
         const walletWithoutInit = await WalletV5R1Adapter.create(signer, {
             client: tonClient,
-            network: CHAIN.MAINNET,
+            network: Network.mainnet(),
         });
         Object.defineProperty(walletWithoutInit, 'walletContract', {
             value: { ...walletWithoutInit.walletContract, init: undefined },
@@ -133,8 +134,8 @@ describe('WalletV5R1Adapter', () => {
             {
                 messages: [
                     {
-                        address: addressV5r1.bounceableNot,
-                        amount: '1',
+                        recipientAddress: addressV5r1.bounceableNot,
+                        transferAmount: '1',
                     },
                 ],
             },
