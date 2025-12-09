@@ -6,12 +6,18 @@
  *
  */
 
+import { AddressBook } from '../core/AddressBook';
+import { TransactionAddressMetadata } from '../transactions/TransactionMetadata';
 import { NFT } from './NFT';
 
 /**
  * Response containing a list of NFT tokens.
  */
 export interface NFTsResponse {
+    /**
+     * Address book entries related to the NFTs
+     */
+    addressBook?: AddressBook;
     /**
      * List of NFTs
      */

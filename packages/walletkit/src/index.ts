@@ -8,7 +8,7 @@
 
 export { SEND_TRANSACTION_ERROR_CODES } from '@tonconnect/protocol';
 export { CHAIN } from '@tonconnect/protocol';
-export { TonWalletKit } from './core/TonWalletKit';
+export { TonWalletKit } from './api/interfaces/TonWalletKit';
 export * from './types';
 export type * from './types/internal';
 export * from './errors';

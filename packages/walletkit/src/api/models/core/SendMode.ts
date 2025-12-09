@@ -10,8 +10,18 @@
  * This mode determines how the message is sent, including whether to pay for gas separately and how to handle errors.
  */
 export interface SendMode {
-    base: SendModeBase;
+    base?: SendModeBase;
     flags: SendModeFlag[];
+}
+
+// Extension to combine base and flags into a single integer value
+export function SendModeValue(sendMode: SendMode): number {
+    let value = sendMode.base ?? SendModeBase.ORDINARY;
+
+    for (const flag of sendMode.flags) {
+        value |= flag;
+    }
+    return value;
 }
 
 /**

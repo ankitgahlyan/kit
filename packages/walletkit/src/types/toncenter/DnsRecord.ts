@@ -6,14 +6,14 @@
  *
  */
 
-import { AddressFriendly } from '../primitive';
+import { UserFriendlyAddress } from '../primitive';
 
 export interface DnsRecord {
     dnsNextResolver: string | null;
     dnsSiteAdnl: string | null;
     dnsStorageBagId: string | null;
-    dnsWallet: AddressFriendly | null;
+    dnsWallet: UserFriendlyAddress | null;
     domain: string;
-    nftItemAddress: AddressFriendly;
-    nftItemOwner: AddressFriendly;
+    nftItemAddress: UserFriendlyAddress;
+    nftItemOwner: UserFriendlyAddress;
 }

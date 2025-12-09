@@ -21,42 +21,40 @@ import {
 import type {
     ITonWalletKit,
     TonWalletKitOptions,
-    IWallet,
     EventConnectRequest,
     EventTransactionRequest,
     EventSignDataRequest,
     EventDisconnect,
     SessionInfo,
-} from '../types';
-import { Initializer, type InitializationResult, wrapWalletInterface } from './Initializer';
-import { globalLogger } from './Logger';
-import type { WalletManager } from './WalletManager';
-import type { SessionManager } from './SessionManager';
-import type { EventRouter } from './EventRouter';
-import type { RequestProcessor } from './RequestProcessor';
-import { JettonsManager } from './JettonsManager';
-import type { JettonsAPI } from '../types/jettons';
+} from '../../types';
+import { Initializer, type InitializationResult, wrapWalletInterface } from '../../core/Initializer';
+import { globalLogger } from '../../core/Logger';
+import type { WalletManager } from '../../core/WalletManager';
+import type { SessionManager } from '../../core/SessionManager';
+import type { EventRouter } from '../../core/EventRouter';
+import type { RequestProcessor } from '../../core/RequestProcessor';
+import { JettonsManager } from '../../core/JettonsManager';
+import type { JettonsAPI } from '../../types/jettons';
 import {
     BridgeEventBase,
-    ConnectTransactionParamContent,
     RawBridgeEventConnect,
     RawBridgeEventRestoreConnection,
     RawBridgeEventTransaction,
-} from '../types/internal';
-import { EventEmitter } from './EventEmitter';
-import { StorageEventProcessor } from './EventProcessor';
-import { BridgeManager } from './BridgeManager';
-import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
-import { ApiClient } from '../types/toncenter/ApiClient';
-import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
-import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../types/events';
-import { AnalyticsApi } from '../analytics/sender';
-import { WalletKitError, ERROR_CODES } from '../errors';
-import { CallForSuccess } from '../utils/retry';
-import { NetworkManager } from './NetworkManager';
-import { createWalletId } from '../utils/walletId';
-import { WalletAdapter } from '../api/interfaces';
-import { Network } from '../api/models';
+} from '../../types/internal';
+import { EventEmitter } from '../../core/EventEmitter';
+import { StorageEventProcessor } from '../../core/EventProcessor';
+import { BridgeManager } from '../../core/BridgeManager';
+import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../../types/jsBridge';
+import { ApiClient } from '../../types/toncenter/ApiClient';
+import { getDeviceInfoWithDefaults } from '../../utils/getDefaultWalletConfig';
+import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../../types/events';
+import { AnalyticsApi } from '../../analytics/sender';
+import { WalletKitError, ERROR_CODES } from '../../errors';
+import { CallForSuccess } from '../../utils/retry';
+import { NetworkManager } from '../../core/NetworkManager';
+import { createWalletId, WalletId } from '../../utils/walletId';
+import { Wallet, WalletAdapter } from '.';
+import { Network, TransactionRequest, UserFriendlyAddress } from '../models';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -248,7 +246,7 @@ export class TonWalletKit implements ITonWalletKit {
 
     // === Wallet Management API (Delegated) ===
 
-    getWallets(): IWallet[] {
+    getWallets(): Wallet[] {
         if (!this.isInitialized) {
             log.warn('TonWalletKit not yet initialized, returning empty array');
             return [];
@@ -259,7 +257,7 @@ export class TonWalletKit implements ITonWalletKit {
     /**
      * Get wallet by wallet ID (network:address format)
      */
-    getWallet(walletId: string): IWallet | undefined {
+    getWallet(walletId: WalletId): Wallet | undefined {
         if (!this.isInitialized) {
             log.warn('TonWalletKit not yet initialized, returning undefined');
             return undefined;
@@ -270,7 +268,7 @@ export class TonWalletKit implements ITonWalletKit {
     /**
      * Get wallet by address and network
      */
-    getWalletByAddressAndNetwork(address: string, network: Network): IWallet | undefined {
+    getWalletByAddressAndNetwork(address: UserFriendlyAddress, network: Network): Wallet | undefined {
         if (!this.isInitialized) {
             log.warn('TonWalletKit not yet initialized, returning undefined');
             return undefined;
@@ -278,7 +276,7 @@ export class TonWalletKit implements ITonWalletKit {
         return this.walletManager.getWalletByAddressAndNetwork(address, network);
     }
 
-    async addWallet(adapter: WalletAdapter): Promise<IWallet | undefined> {
+    async addWallet(adapter: WalletAdapter): Promise<Wallet | undefined> {
         await this.ensureInitialized();
 
         // Get the wallet's network and verify we have a client for it
@@ -300,11 +298,11 @@ export class TonWalletKit implements ITonWalletKit {
         return wallet;
     }
 
-    async removeWallet(walletIdOrAdapter: string | WalletAdapter): Promise<void> {
+    async removeWallet(walletIdOrAdapter: WalletId | WalletAdapter): Promise<void> {
         await this.ensureInitialized();
 
-        let wallet: IWallet | undefined;
-        let walletId: string;
+        let wallet: Wallet | undefined;
+        let walletId: WalletId;
         if (typeof walletIdOrAdapter === 'string') {
             walletId = walletIdOrAdapter;
             wallet = this.walletManager.getWallet(walletIdOrAdapter);
@@ -512,11 +510,11 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
-    async handleNewTransaction(wallet: IWallet, data: ConnectTransactionParamContent): Promise<void> {
+    async handleNewTransaction(wallet: Wallet, data: TransactionRequest): Promise<void> {
         await this.ensureInitialized();
 
-        data.valid_until ??= Math.floor(Date.now() / 1000) + 300;
-        data.network ??= wallet.getNetwork().chainId;
+        data.validUntil ??= Math.floor(Date.now() / 1000) + 300;
+        data.network ??= wallet.getNetwork();
 
         const walletId = wallet.getWalletId();
         const bridgeEvent: RawBridgeEventTransaction = {

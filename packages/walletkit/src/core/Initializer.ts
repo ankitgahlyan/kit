@@ -20,7 +20,6 @@ import { globalLogger } from './Logger';
 import type { EventEmitter } from './EventEmitter';
 import { StorageEventStore } from './EventStore';
 import { StorageEventProcessor } from './EventProcessor';
-import { IWalletAdapter } from '../types/wallet';
 import { WalletTonClass } from './wallet/extensions/ton';
 import { WalletJettonClass } from './wallet/extensions/jetton';
 import { WalletNftClass } from './wallet/extensions/nft';

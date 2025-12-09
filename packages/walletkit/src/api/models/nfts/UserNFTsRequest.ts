@@ -11,11 +11,11 @@ import { Pagination, UserFriendlyAddress } from '../core/Primitives';
 /**
  * Request parameters for fetching NFT tokens.
  */
-export interface NFTsRequest {
+export interface UserNFTsRequest {
     /**
-     * NFT address to filter by
+     * Owner address of the NFTs
      */
-    address?: UserFriendlyAddress;
+    ownerAddress: UserFriendlyAddress;
     /**
      * Pagination information
      */

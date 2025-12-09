@@ -6,16 +6,7 @@
  *
  */
 
-export { Wallet } from './Wallet';
-export { WalletKit } from './WalletKit';
+export { Wallet, WalletTonInterface, WalletNftInterface, WalletJettonInterface } from './Wallet';
+export { TonWalletKit } from './TonWalletKit';
 export { WalletAdapter } from './WalletAdapter';
 export { WalletSigner, ISigner } from './WalletSigner';
-export type {
-    WalletKitConfiguration,
-    ApiClientConfiguration,
-    NetworkConfiguration,
-    NetworkAdaptersConfiguration,
-    AnalyticsConfiguration,
-    ValidationConfiguration,
-    DevConfiguration,
-} from './WalletKitConfiguration';

@@ -12,13 +12,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 import type { Wallet } from '@tonconnect/sdk';
 import type { TonProofItemReplySuccess } from '@tonconnect/protocol';
 
-import {
-    SignatureVerify,
-    CreateTonProofMessageBytes,
-    ConvertTonProofMessage,
-    createTonProofMessage,
-    TonProofParsedMessage,
-} from './tonProof';
+import { SignatureVerify, CreateTonProofMessageBytes, ConvertTonProofMessage, createTonProofMessage } from './tonProof';
 import { Uint8ArrayToHex } from './base64';
 import { asHex } from '../types/primitive';
 import { ProofMessage } from '../api/models';

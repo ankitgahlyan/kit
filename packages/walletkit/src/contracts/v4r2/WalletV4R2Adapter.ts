@@ -149,8 +149,8 @@ export class WalletV4R2Adapter implements WalletAdapter {
         try {
             const messages: MessageRelaxed[] = input.messages.map((m) =>
                 internal({
-                    to: Address.parse(m.recipientAddress),
-                    value: BigInt(m.transferAmount),
+                    to: Address.parse(m.address),
+                    value: BigInt(m.amount),
                     bounce: true,
                     extracurrency: m.extraCurrency
                         ? Object.fromEntries(Object.entries(m.extraCurrency).map(([k, v]) => [Number(k), BigInt(v)]))

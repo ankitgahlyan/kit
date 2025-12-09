@@ -7,18 +7,9 @@
  */
 
 import { AddressBook } from '../core/AddressBook';
-import { Jetton } from './Jetton';
+import { Transaction } from './Transaction';
 
-/**
- * Response containing a list of Jetton tokens.
- */
-export interface JettonsResponse {
-    /**
-     * Address book mapping
-     */
+export interface TransactionsResponse {
+    transactions: Transaction[];
     addressBook: AddressBook;
-    /**
-     * List of Jettons
-     */
-    jettons: Jetton[];
 }

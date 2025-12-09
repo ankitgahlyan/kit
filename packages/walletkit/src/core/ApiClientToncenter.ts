@@ -50,7 +50,7 @@ import {
     ROOT_DNS_RESOLVER_TESTNET,
 } from '../types/toncenter/dnsResolve';
 import { toAddressBook, toEvent } from '../types/toncenter/AccountEvent';
-import { Network } from '../api/models';
+import { Network, NFTsRequest, NFTsResponse, UserNFTsRequest } from '../api/models';
 
 const log = globalLogger.createChild('ApiClientToncenter');
 
@@ -101,30 +101,22 @@ export class ApiClientToncenter implements ApiClient {
         this.disableNetworkSend = config.disableNetworkSend ?? false;
     }
 
-    async nftItemsByAddress(request: NftItemsRequest): Promise<NftItemsResponse> {
+    async nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse> {
         const props: Record<string, unknown> = {
-            address: (request.address ?? []).map(prepareAddress),
+            address: request.address,
         };
         const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props);
-        return toNftItemsResponse(response, {
-            limit: 0,
-            offset: 0,
-        });
+        return toNftItemsResponse(response);
     }
 
-    async nftItemsByOwner(request: NftItemsByOwnerRequest): Promise<NftItemsResponse> {
-        const pagination: Pagination = {
-            limit: request.limit ?? 10,
-            offset: request.offset ?? 0,
-        };
+    async nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse> {
         const props: Record<string, unknown> = {
-            owner_address: (request.ownerAddress ?? []).map(prepareAddress),
-            sort_by_last_transaction_lt: request.sortByLastTransactionLt ?? false,
-            limit: pagination.limit,
-            offset: pagination.offset,
+            owner_address: request.ownerAddress,
+            limit: request.pagination?.limit ?? 10,
+            offset: request.pagination?.offset ?? 0,
         };
         const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props);
-        const formattedResponse = toNftItemsResponse(response, pagination);
+        const formattedResponse = toNftItemsResponse(response);
         return formattedResponse;
     }
 

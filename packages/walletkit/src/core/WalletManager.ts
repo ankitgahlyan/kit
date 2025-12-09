@@ -8,18 +8,17 @@
 
 // Wallet management with validation and persistence
 
-import type { IWallet } from '../types';
 import { Storage } from '../storage';
 import { validateWallet } from '../validation';
 import { globalLogger } from './Logger';
 import { createWalletId, WalletId } from '../utils/walletId';
 import { Network } from '../api/models';
-import { WalletAdapter } from '../api/interfaces';
+import { Wallet, WalletAdapter } from '../api/interfaces';
 
 const _log = globalLogger.createChild('WalletManager');
 
 export class WalletManager {
-    private wallets: Map<WalletId, IWallet> = new Map();
+    private wallets: Map<WalletId, Wallet> = new Map();
     private storage: Storage;
     // private storageKey = 'wallets';
 
@@ -37,21 +36,21 @@ export class WalletManager {
     /**
      * Get all wallets as array
      */
-    getWallets(): IWallet[] {
+    getWallets(): Wallet[] {
         return Array.from(this.wallets.values());
     }
 
     /**
      * Get wallet by wallet ID (network:address format)
      */
-    getWallet(walletId: WalletId): IWallet | undefined {
+    getWallet(walletId: WalletId): Wallet | undefined {
         return this.wallets.get(walletId) || undefined;
     }
 
     /**
      * Get wallet by address and network (convenience method)
      */
-    getWalletByAddressAndNetwork(address: string, network: Network): IWallet | undefined {
+    getWalletByAddressAndNetwork(address: string, network: Network): Wallet | undefined {
         const walletId = createWalletId(network, address);
         return this.getWallet(walletId);
     }
@@ -59,7 +58,7 @@ export class WalletManager {
     /**
      * Add a wallet with validation
      */
-    async addWallet(wallet: IWallet): Promise<WalletId> {
+    async addWallet(wallet: Wallet): Promise<WalletId> {
         const validation = validateWallet(wallet);
         if (!validation.isValid) {
             throw new Error(`Invalid wallet: ${validation.errors.join(', ')}`);
@@ -92,7 +91,7 @@ export class WalletManager {
     /**
      * Update existing wallet
      */
-    async updateWallet(wallet: IWallet): Promise<void> {
+    async updateWallet(wallet: Wallet): Promise<void> {
         const walletId = createWalletId(wallet.getNetwork(), wallet.getAddress());
         if (!this.wallets.has(walletId)) {
             throw new Error(`Wallet with ID ${walletId} not found`);

@@ -14,13 +14,7 @@ import {
     WalletResponseTemplateError,
 } from '@tonconnect/protocol';
 
-import type {
-    IWallet,
-    EventTransactionRequest,
-    TransactionPreview,
-    ValidationResult,
-    TonWalletKitOptions,
-} from '../types';
+import type { EventTransactionRequest, TransactionPreview, ValidationResult, TonWalletKitOptions } from '../types';
 import type {
     RawBridgeEvent,
     EventHandler,
@@ -44,6 +38,8 @@ import { uuidv7 } from '../utils/uuid';
 import { getUnixtime } from '../utils/time';
 import { Base64Normalize } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
+import { Wallet } from '../api/interfaces';
+import { TransactionEmulatedPreview } from '../api/models';
 
 const log = globalLogger.createChild('TransactionHandler');
 
@@ -115,7 +111,7 @@ export class TransactionHandler
         }
         const request = requestValidation.result;
 
-        let preview: TransactionPreview;
+        let preview: TransactionEmulatedPreview;
         try {
             preview = await CallForSuccess(() => createTransactionPreviewHelper(request, wallet));
             // Emit emulation result event for jetton caching and other components
@@ -158,7 +154,7 @@ export class TransactionHandler
                 client_timestamp: getUnixtime(),
                 dapp_name: event.dAppInfo?.name,
                 version: getVersion(),
-                network_id: wallet.getNetwork(),
+                network_id: wallet.getNetwork().chainId,
                 wallet_app_name: this.walletKitConfig.deviceInfo?.appName,
                 wallet_app_version: this.walletKitConfig.deviceInfo?.appVersion,
                 event_id: uuidv7(),
@@ -178,7 +174,7 @@ export class TransactionHandler
 
     private parseTonConnectTransactionRequest(
         event: RawBridgeEventTransaction,
-        wallet: IWallet,
+        wallet: Wallet,
     ): {
         result: ConnectTransactionParamContent | undefined;
         validation: ValidationResult;
@@ -240,13 +236,13 @@ export class TransactionHandler
      * Parse network from various possible formats
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private validateNetwork(network: any, wallet: IWallet): ReturnWithValidationResult<CHAIN | undefined> {
+    private validateNetwork(network: any, wallet: Wallet): ReturnWithValidationResult<CHAIN | undefined> {
         let errors: string[] = [];
         if (typeof network === 'string') {
             if (network === '-3' || network === '-239') {
                 const chain = network === '-3' ? CHAIN.TESTNET : CHAIN.MAINNET;
                 const walletNetwork = wallet.getNetwork();
-                if (chain !== walletNetwork) {
+                if (chain !== walletNetwork.chainId) {
                     errors.push('Invalid network not equal to wallet network');
                 } else {
                     return { result: chain, isValid: errors.length === 0, errors: errors };
@@ -261,7 +257,7 @@ export class TransactionHandler
         return { result: undefined, isValid: errors.length === 0, errors: errors };
     }
 
-    private validateFrom(from: unknown, wallet: IWallet): ReturnWithValidationResult<string> {
+    private validateFrom(from: unknown, wallet: Wallet): ReturnWithValidationResult<string> {
         let errors: string[] = [];
 
         if (typeof from !== 'string') {

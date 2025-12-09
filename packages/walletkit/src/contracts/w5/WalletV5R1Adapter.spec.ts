@@ -8,7 +8,6 @@
 
 import { Cell, loadMessage } from '@ton/core';
 import { CommonMessageInfoExternalIn } from '@ton/core/src/types/CommonMessageInfo';
-import { CHAIN } from '@tonconnect/protocol';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { clearAllMocks, mocked } from '../../../mock.config';
@@ -134,8 +133,8 @@ describe('WalletV5R1Adapter', () => {
             {
                 messages: [
                     {
-                        recipientAddress: addressV5r1.bounceableNot,
-                        transferAmount: '1',
+                        address: addressV5r1.bounceableNot,
+                        amount: '1',
                     },
                 ],
             },

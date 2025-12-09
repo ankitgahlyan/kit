@@ -9,13 +9,13 @@
 import { Address, Cell } from '@ton/core';
 import { parseInternal } from '@truecarry/tlb-abi';
 
-import { ConnectTransactionParamContent } from '../types/internal';
 import { EmulationTokenInfoWallets, ToncenterEmulationResponse } from '../types/toncenter/emulation';
 import { ErrorInfo } from '../errors/WalletKitError';
 import { ERROR_CODES } from '../errors/codes';
-import { TransactionPreview, TransactionPreviewEmulationError } from '../types/events';
 import { CallForSuccess } from './retry';
-import { IWallet } from '../types';
+import { Result, TransactionEmulatedPreview, TransactionRequest } from '../api/models';
+import { Wallet } from '../api/interfaces';
+import { SendModeValue } from '../api/models/core/SendMode';
 
 // import { ConnectMessageTransactionMessage } from '@/types/connect';
 
@@ -64,6 +64,7 @@ export type ToncenterEmulationResult =
           emulationError: ErrorInfo;
       };
 
+// ????
 export interface ToncenterEmulationHook {
     emulation: ToncenterEmulationResult;
     moneyFlow: MoneyFlow;
@@ -81,7 +82,7 @@ const TON_PROXY_ADDRESSES = [
  */
 export function createToncenterMessage(
     walletAddress: string | undefined,
-    messages: ConnectTransactionParamContent['messages'],
+    messages: TransactionRequest['messages'],
 ): ToncenterMessage {
     return {
         method: 'POST',
@@ -95,7 +96,14 @@ export function createToncenterMessage(
             include_address_book: true,
             include_metadata: true,
             with_actions: true,
-            messages: messages,
+            messages: messages.map((m) => ({
+                address: m.address,
+                amount: m.amount,
+                payload: m.payload,
+                stateInit: m.stateInit,
+                extraCurrency: m.extraCurrency,
+                mode: m.mode ? SendModeValue(m.mode) : undefined,
+            })),
         }),
     };
 }
@@ -276,10 +284,11 @@ export function processToncenterMoneyFlow(emulation: ToncenterEmulationResponse)
 /**
  * Creates a transaction preview by emulating the transaction
  */
+// ????
 export async function createTransactionPreview(
-    request: ConnectTransactionParamContent,
-    wallet?: IWallet,
-): Promise<TransactionPreview> {
+    request: TransactionRequest,
+    wallet?: Wallet,
+): Promise<TransactionEmulatedPreview> {
     const message = createToncenterMessage(wallet?.getAddress(), request.messages);
 
     let emulationResult: ToncenterEmulationResponse;
@@ -288,22 +297,28 @@ export async function createTransactionPreview(
         if (emulatedResult.result === 'success') {
             emulationResult = emulatedResult.emulationResult;
         } else {
-            return emulatedResult;
+            return {
+                result: Result.failure,
+                error: {
+                    code: emulatedResult.emulationError.code,
+                    message: emulatedResult.emulationError.message,
+                },
+            };
         }
     } catch (_error) {
         return {
-            result: 'error',
-            emulationError: {
+            result: Result.failure,
+            error: {
                 code: ERROR_CODES.UNKNOWN_EMULATION_ERROR,
                 message: 'Unknown emulation error',
             },
-        } as TransactionPreviewEmulationError;
+        };
     }
 
     const moneyFlow = processToncenterMoneyFlow(emulationResult);
 
     return {
-        result: 'success',
+        result: Result.success,
         emulationResult: emulationResult,
         moneyFlow,
     };

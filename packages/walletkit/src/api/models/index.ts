@@ -23,7 +23,7 @@ export type {
     Pagination,
 } from './core/Primitives';
 export type { ProofMessage } from './core/ProofMessage';
-export { SendMode } from './core/SendMode';
+export { SendMode, SendModeFlag, SendModeBase } from './core/SendMode';
 export type { SignData, SignDataText, SignDataBinary, SignDataCell } from './core/SignData';
 export type { TokenAmount } from './core/TokenAmount';
 export type { TokenAnimation } from './core/TokenAnimation';
@@ -58,6 +58,8 @@ export type { NFTTransferRequest } from './nfts/NFTTransferRequest';
 export type { NFTsRequest } from './nfts/NFTsRequest';
 export type { NFTsResponse } from './nfts/NFTsResponse';
 export type { NFTRawTransferRequest } from './nfts/NFTRawTransferRequest';
+export type { UserNFTsRequest } from './nfts/UserNFTsRequest';
+
 // TON models
 export type { TONTransferRequest } from './tons/TONTransferRequest';
 
@@ -70,3 +72,4 @@ export type { TransactionTrace } from './transactions/TransactionTrace';
 export type { TransactionEmulatedPreview } from './transactions/emulation/TransactionEmulatedPreview';
 export type { TransactionEmulatedTrace } from './transactions/emulation/TransactionEmulatedTrace';
 export type { SendTransactionResponse } from './transactions/SendTransactionResponse';
+export type { TransactionsResponse } from './transactions/TransactionsResponse';

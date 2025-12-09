@@ -23,4 +23,9 @@ export interface AddressBookEntry {
      * The domain name associated with the address if available
      */
     domain?: string;
+
+    /**
+     * List of supported interfaces by the address
+     */
+    interfaces: string[];
 }

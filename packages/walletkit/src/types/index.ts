@@ -8,18 +8,6 @@
 
 // Type definitions module exports
 
-// Wallet types
-export type {
-    IWallet,
-    TonTransferParams,
-    TonTransferManyParams,
-    TonTransferParamsBody,
-    TonTransferParamsComment,
-    WalletTonInterface,
-    WalletJettonInterface,
-    WalletNftInterface,
-} from './wallet';
-
 // Transaction types (from validation module)
 export type { HumanReadableTx } from '../validation/transaction';
 export type { ValidationResult } from '../validation/types';
