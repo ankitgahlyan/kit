@@ -67,7 +67,7 @@ export async function rejectConnectRequest(args: RejectConnectRequestArgs) {
             throw new Error('Connect request event is required');
         }
 
-        const result = await walletKit.rejectConnectRequest(args.event, args.reason);
+        const result = await walletKit.rejectConnectRequest(args.event, args.reason, args.errorCode);
 
         if (result == null) {
             return { success: true };

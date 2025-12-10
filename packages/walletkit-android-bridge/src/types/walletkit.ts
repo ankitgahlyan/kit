@@ -61,5 +61,7 @@ export interface WalletKitInstance {
     removeSignDataRequestCallback(): void;
     onDisconnect(callback: (event: unknown) => void): void;
     removeDisconnectCallback(): void;
+    onRequestError(callback: (event: unknown) => void): void;
+    removeErrorCallback(): void;
     signDataRequest(event: unknown): Promise<unknown>;
 }

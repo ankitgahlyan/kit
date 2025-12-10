@@ -143,6 +143,23 @@ export class ConnectHandler
 
         const dAppUrl = (event?.domain || manifest?.url?.toString() || '').trim();
 
+        // Validate dApp URL from manifest content - set error if invalid
+        let finalManifestFetchErrorCode = manifestFetchErrorCode;
+        if (!finalManifestFetchErrorCode && dAppUrl) {
+            try {
+                const parsedDAppUrl = new URL(dAppUrl);
+                // Check if host has at least one dot (valid domain like "example.com")
+                // Invalid examples: "tonkeeper", "localhost" (single word hosts)
+                if (parsedDAppUrl.host.indexOf('.') === -1) {
+                    log.warn('Invalid dApp URL in manifest - host has no dot', { dAppUrl, host: parsedDAppUrl.host });
+                    finalManifestFetchErrorCode = CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
+                }
+            } catch (_) {
+                log.warn('Invalid dApp URL in manifest - failed to parse', { dAppUrl });
+                finalManifestFetchErrorCode = CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
+            }
+        }
+
         const sanitizedManifest = manifest && {
             name: manifest.name?.toString()?.trim() || '',
             description: manifest.description?.toString()?.trim() || '',
@@ -177,7 +194,7 @@ export class ConnectHandler
             manifest: sanitizedManifest,
             requestedItems: event.params?.items || [],
             permissions: permissions,
-            manifestFetchErrorCode: manifestFetchErrorCode ?? undefined,
+            manifestFetchErrorCode: finalManifestFetchErrorCode ?? undefined,
         };
     }
 
