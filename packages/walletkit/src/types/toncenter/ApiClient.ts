@@ -7,12 +7,10 @@
  */
 
 import { Address } from '@ton/core';
-import { TransferMessage } from '@ton-community/assets-sdk';
 
 import type { ToncenterResponseJettonMasters, ToncenterTracesResponse } from './emulation';
 import type { FullAccountState, GetResult } from './api';
 import { RawStackItem } from '../../utils/tvmStack';
-import { UserFriendlyAddress } from '../primitive';
 import { Event } from './AccountEvent';
 import {
     Base64String,
@@ -24,6 +22,7 @@ import {
     TransactionsResponse,
     UserFriendlyAddress,
     JettonsResponse,
+    TransactionRequestMessage,
 } from '../../api/models';
 
 export interface LimitRequest {
@@ -99,7 +98,7 @@ export interface ApiClient {
     nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse>;
     fetchEmulation(
         address: UserFriendlyAddress,
-        messages: TransferMessage[],
+        messages: TransactionRequestMessage[],
         seqno?: number,
     ): Promise<TransactionEmulatedTrace>;
     sendBoc(boc: Base64String): Promise<string>;

@@ -13,9 +13,9 @@ import { toNftItem } from './NftItemV3';
 import { asAddressFriendly } from '../../primitive';
 import { toTokenInfo } from './NftTokenInfoV3';
 import { NftMetadata } from '../NftMetadata';
-import { NftCollection } from '../NftCollection';
 import { tokenMetaToNftCollection } from './NFTCollectionV3';
-import { UserFriendlyAddress, NFTsResponse } from '../../../api/models';
+import { UserFriendlyAddress, NFTsResponse, NFTCollection } from '../../../api/models';
+import { toApiTokenInfo } from '../TokenInfo';
 
 export interface NftItemsResponseV3 {
     address_book?: { [key: string]: AddressBookRowV3 };
@@ -25,7 +25,7 @@ export interface NftItemsResponseV3 {
 
 export function toNftItemsResponse(data: NftItemsResponseV3): NFTsResponse {
     const metadata: NftMetadata = {};
-    const collections: { [key: UserFriendlyAddress]: NftCollection } = {};
+    const collections: { [key: UserFriendlyAddress]: NFTCollection } = {};
     if (data.metadata) {
         for (const address of Object.keys(data.metadata)) {
             if (!data.metadata[address].token_info || data.metadata[address].token_info.length === 0) {
@@ -54,32 +54,32 @@ export function toNftItemsResponse(data: NftItemsResponseV3): NFTsResponse {
             if (meta) {
                 const tokenInfo = meta.tokenInfo.filter((it) => it.valid);
                 if (tokenInfo.length > 0) {
-                    item.metadata = tokenInfo[0];
+                    item.info = toApiTokenInfo(tokenInfo[0]);
                 }
             }
             const itemCollection = item.collection;
-            const itemCollectionMeta = item.collectionAddress
-                ? collections[asAddressFriendly(item.collectionAddress)]
+            const itemCollectionMeta = item.collection?.address
+                ? collections[asAddressFriendly(item.collection?.address)]
                 : undefined;
 
             if (itemCollection || itemCollectionMeta) {
                 item.collection = {
                     ...itemCollection,
                     ...itemCollectionMeta,
-                } as NftCollection;
+                } as NFTCollection;
             }
-
             return item;
         }),
     };
-    // if (out.items.length === 0) {
-    //     out.pagination.pages = 0;
-    // }
     if (data.address_book) {
         for (const address of Object.keys(data.address_book)) {
-            out.addressBook[asAddressFriendly(address)] = {
-                domain: data.address_book[address].domain,
-            };
+            if (out.addressBook) {
+                out.addressBook[asAddressFriendly(address)] = {
+                    address: asAddressFriendly(address),
+                    domain: data.address_book[address].domain ?? undefined,
+                    interfaces: data.address_book[address].interfaces ?? [],
+                };
+            }
         }
     }
     return out;

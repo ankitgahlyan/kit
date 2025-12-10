@@ -17,7 +17,7 @@ export interface AddressBookEntry {
     /**
      * The human-readable representation of the blockchain address
      */
-    userFriendly?: UserFriendlyAddress;
+    address?: UserFriendlyAddress;
 
     /**
      * The domain name associated with the address if available

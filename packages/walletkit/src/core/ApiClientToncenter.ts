@@ -12,7 +12,6 @@ import { CHAIN } from '@tonconnect/protocol';
 import { Base64ToBigInt, Uint8ArrayToBase64, Base64Normalize, Base64ToHex } from '../utils/base64';
 import { FullAccountState, GetResult, TransactionId } from '../types/toncenter/api';
 import { ToncenterEmulationResponse } from '../types';
-import { ConnectTransactionParamMessage } from '../types/internal';
 import { RawStackItem } from '../utils/tvmStack';
 import {
     ApiClient,
@@ -22,15 +21,11 @@ import {
     GetPendingTransactionsRequest,
     GetTraceRequest,
     GetTransactionByHashRequest,
-    NftItemsByOwnerRequest,
-    NftItemsRequest,
     TransactionsByAddressRequest,
     GetEventsResponse,
     GetEventsRequest,
 } from '../types/toncenter/ApiClient';
 import { NftItemsResponseV3, toNftItemsResponse } from '../types/toncenter/v3/NftItemsResponseV3';
-import { NftItemsResponse } from '../types/toncenter/NftItemsResponse';
-import { Pagination } from '../types/toncenter/Pagination';
 import {
     ToncenterResponseJettonMasters,
     ToncenterResponseJettonWallets,
@@ -50,7 +45,17 @@ import {
     ROOT_DNS_RESOLVER_TESTNET,
 } from '../types/toncenter/dnsResolve';
 import { toAddressBook, toEvent } from '../types/toncenter/AccountEvent';
-import { Network, NFTsRequest, NFTsResponse, UserNFTsRequest } from '../api/models';
+import {
+    Network,
+    NFTsRequest,
+    NFTsResponse,
+    TokenAmount,
+    TransactionEmulatedTrace,
+    TransactionRequestMessage,
+    TransactionsResponse,
+    UserFriendlyAddress,
+    UserNFTsRequest,
+} from '../api/models';
 
 const log = globalLogger.createChild('ApiClientToncenter');
 
@@ -121,13 +126,10 @@ export class ApiClientToncenter implements ApiClient {
     }
 
     async fetchEmulation(
-        address: Address | string,
-        messages: ConnectTransactionParamMessage[],
+        address: UserFriendlyAddress,
+        messages: TransactionRequestMessage[],
         seqno?: number,
-    ): Promise<ToncenterEmulationResponse> {
-        if (address instanceof Address) {
-            address = address.toString();
-        }
+    ): Promise<TransactionEmulatedTrace> {
         const props: Record<string, unknown> = {
             from: address,
             valid_until: Math.floor(Date.now() / 1000) + 60,
@@ -206,7 +208,7 @@ export class ApiClientToncenter implements ApiClient {
         return out;
     }
 
-    async getBalance(address: Address | string, seqno?: number): Promise<string> {
+    async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
         return (await this.getAccountState(address, seqno)).balance;
     }
 
@@ -287,7 +289,7 @@ export class ApiClientToncenter implements ApiClient {
         return new TonClientError(`HTTP ${response.status}: ${message}`, code, detail);
     }
 
-    async getAccountTransactions(request: TransactionsByAddressRequest): Promise<ToncenterTransactionsResponse> {
+    async getAccountTransactions(request: TransactionsByAddressRequest): Promise<TransactionsResponse> {
         const accounts = request.address?.map(prepareAddress);
         let offset = request.offset ?? 0;
         let limit = request.limit ?? 10;
@@ -307,7 +309,7 @@ export class ApiClientToncenter implements ApiClient {
         return response;
     }
 
-    async getTransactionsByHash(request: GetTransactionByHashRequest): Promise<ToncenterTransactionsResponse> {
+    async getTransactionsByHash(request: GetTransactionByHashRequest): Promise<TransactionsResponse> {
         const msgHash = 'msgHash' in request ? padBase64(request.msgHash) : undefined;
         const bodyHash = 'bodyHash' in request ? padBase64(request.bodyHash) : undefined;
 
@@ -318,7 +320,7 @@ export class ApiClientToncenter implements ApiClient {
         return response;
     }
 
-    async getPendingTransactions(request: GetPendingTransactionsRequest): Promise<ToncenterTransactionsResponse> {
+    async getPendingTransactions(request: GetPendingTransactionsRequest): Promise<TransactionsResponse> {
         const accounts = 'accounts' in request ? request.accounts?.map(prepareAddress) : undefined;
         const traceId = 'traceId' in request ? request.traceId : undefined;
         const response = await this.getJson<ToncenterTransactionsResponse>('/api/v3/pendingTransactions', {

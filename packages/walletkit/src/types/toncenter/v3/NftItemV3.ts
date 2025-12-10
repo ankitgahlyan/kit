@@ -36,21 +36,18 @@ export interface NftItemV3 {
 export function toNftItem(data: NftItemV3): NFT {
     const out: NFT = {
         address: asAddressFriendly(data.address),
-        auctionContractAddress: asMaybeAddressFriendly(data.auction_contract_address) ?? undefined,
-        codeHash: data.code_hash ? Base64ToHex(data.code_hash) : null,
-        dataHash: data.data_hash ? Base64ToHex(data.data_hash) : null,
-        collection: toNftCollection(data.collection),
-        collectionAddress: asMaybeAddressFriendly(data.collection_address),
         index: data.index.toString(),
-        init: data.init,
-        onSale: data.on_sale,
-        ownerAddress: asMaybeAddressFriendly(data.owner_address),
-        realOwner: asMaybeAddressFriendly(data.real_owner),
-        saleContractAddress: asMaybeAddressFriendly(data.sale_contract_address),
+        collection: toNftCollection(data.collection_address, data.collection) ?? undefined,
+        auctionContractAddress: asMaybeAddressFriendly(data.auction_contract_address) ?? undefined,
+        ownerAddress: asMaybeAddressFriendly(data.owner_address) ?? undefined,
+        realOwnerAddress: asMaybeAddressFriendly(data.real_owner) ?? undefined,
+        saleContractAddress: asMaybeAddressFriendly(data.sale_contract_address) ?? undefined,
+        codeHash: data.code_hash ? Base64ToHex(data.code_hash) : undefined,
+        dataHash: data.data_hash ? Base64ToHex(data.data_hash) : undefined,
+        isInited: data.init,
+        isSoulbound: data.is_sbt,
+        isOnSale: data.on_sale,
     };
-    if (data.last_transaction_lt) out.lastTransactionLt = data.last_transaction_lt;
-    if (data.content) out.content = data.content;
-    if (data.is_sbt !== undefined) out.isSbt = data.is_sbt;
-
+    if (data.content) out.extra = data.content;
     return out;
 }
