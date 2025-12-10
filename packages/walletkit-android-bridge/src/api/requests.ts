@@ -23,13 +23,10 @@ import type {
 } from '../types';
 import { walletKit } from '../core/state';
 import { callBridge } from '../utils/bridgeWrapper';
+import { log } from '../utils/logger';
 
 /**
  * Approves a connect request.
- *
- * Note: The wallet assignment and address resolution (lines 41-42) are necessary
- * SDK operations that must remain in JavaScript. The SDK requires the wallet object
- * to be attached to the event before approval.
  */
 export async function approveConnectRequest(args: ApproveConnectRequestArgs) {
     return callBridge('approveConnectRequest', async () => {
@@ -37,24 +34,17 @@ export async function approveConnectRequest(args: ApproveConnectRequestArgs) {
             throw new Error('Connect request event is required');
         }
 
-        const wallet = walletKit.getWallet?.(args.walletAddress);
+        log('approveConnectRequest walletId:', args.walletId);
+
+        const wallet = walletKit?.getWallet(args.walletId);
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new Error(`Wallet not found for walletId: ${args.walletId}`);
         }
 
         args.event.wallet = wallet;
-        args.event.walletAddress = wallet.getAddress?.() ?? wallet.address ?? args.walletAddress;
+        args.event.walletId = args.walletId;
 
-        const result = await walletKit.approveConnectRequest(args.event);
-
-        if (result == null) {
-            return { success: true } as unknown as Record<string, unknown>;
-        }
-        if (!result?.success) {
-            throw new Error(result?.message || 'Failed to approve connect request');
-        }
-
-        return result;
+        return await walletKit?.approveConnectRequest(args.event);
     });
 }
 

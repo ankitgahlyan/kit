@@ -50,20 +50,20 @@ export interface AddWalletArgs {
 }
 
 export interface RemoveWalletArgs {
-    address: string;
+    walletId: string;
 }
 
 export interface GetBalanceArgs {
-    address: string;
+    walletId: string;
 }
 
 export interface GetRecentTransactionsArgs {
-    address: string;
+    walletId: string;
     limit?: number;
 }
 
 export interface CreateTransferTonTransactionArgs {
-    walletAddress: string;
+    walletId: string;
     toAddress: string;
     amount: string;
     comment?: string;
@@ -80,12 +80,12 @@ export interface MultiTransferMessage {
 }
 
 export interface CreateTransferMultiTonTransactionArgs {
-    walletAddress: string;
+    walletId: string;
     messages: MultiTransferMessage[];
 }
 
 export interface TransactionContentArgs {
-    walletAddress: string;
+    walletId: string;
     transactionContent: unknown; // Can be object (from Kotlin) or string (legacy)
 }
 
@@ -104,7 +104,7 @@ export interface TonConnectRequestEvent extends Record<string, unknown> {
 
 export interface ApproveConnectRequestArgs {
     event: TonConnectRequestEvent;
-    walletAddress: string;
+    walletId: string;
 }
 
 export interface RejectConnectRequestArgs {
@@ -136,7 +136,7 @@ export interface DisconnectSessionArgs {
 }
 
 export interface GetNftsArgs {
-    address: string;
+    walletId: string;
     limit?: number;
     offset?: number;
     collectionAddress?: string;
@@ -144,12 +144,12 @@ export interface GetNftsArgs {
 }
 
 export interface GetNftArgs {
-    address: string;
+    walletId: string;
     nftAddress: string;
 }
 
 export interface CreateTransferNftTransactionArgs {
-    address: string;
+    walletId: string;
     nftAddress: string;
     transferAmount: string;
     toAddress: string;
@@ -157,20 +157,20 @@ export interface CreateTransferNftTransactionArgs {
 }
 
 export interface CreateTransferNftRawTransactionArgs {
-    address: string;
+    walletId: string;
     nftAddress: string;
     transferAmount: string;
     transferMessage: unknown;
 }
 
 export interface GetJettonsArgs {
-    address: string;
+    walletId: string;
     limit?: number;
     offset?: number;
 }
 
 export interface CreateTransferJettonTransactionArgs {
-    address: string;
+    walletId: string;
     jettonAddress: string;
     amount: string;
     toAddress: string;
@@ -178,12 +178,12 @@ export interface CreateTransferJettonTransactionArgs {
 }
 
 export interface GetJettonBalanceArgs {
-    address: string;
+    walletId: string;
     jettonAddress: string;
 }
 
 export interface GetJettonWalletAddressArgs {
-    address: string;
+    walletId: string;
     jettonAddress: string;
 }
 
