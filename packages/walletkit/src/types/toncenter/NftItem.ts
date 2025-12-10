@@ -6,7 +6,8 @@
  *
  */
 
-import { UserFriendlyAddress, Hex } from '../primitive';
+import { UserFriendlyAddress } from '../../api/models';
+import { Hex } from '../primitive';
 import type { NftCollection } from './NftCollection';
 import { TokenInfo } from './TokenInfo';
 

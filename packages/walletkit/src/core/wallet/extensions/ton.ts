@@ -115,7 +115,7 @@ export class WalletTonClass implements WalletTonInterface {
         try {
             const boc = await this.getSignedSendTransaction(request);
 
-            await CallForSuccess(() => this.getClient().sendBoc(Buffer.from(boc, 'base64')));
+            await CallForSuccess(() => this.getClient().sendBoc(boc));
 
             return { boc };
         } catch (error) {
@@ -132,6 +132,6 @@ export class WalletTonClass implements WalletTonInterface {
     }
 
     async getBalance(this: Wallet): Promise<string> {
-        return await CallForSuccess(async () => this.getClient().getBalance(Address.parse(this.getAddress())));
+        return await CallForSuccess(async () => this.getClient().getBalance(this.getAddress()));
     }
 }

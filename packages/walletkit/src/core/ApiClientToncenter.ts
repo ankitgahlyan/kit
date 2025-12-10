@@ -9,7 +9,7 @@
 import { Address, ExtraCurrency, AccountStatus } from '@ton/core';
 import { CHAIN } from '@tonconnect/protocol';
 
-import { Base64ToBigInt, Uint8ArrayToBase64, Base64Normalize, Base64ToHex } from '../utils/base64';
+import { Base64ToBigInt, Base64Normalize, Base64ToHex } from '../utils/base64';
 import { FullAccountState, GetResult, TransactionId } from '../types/toncenter/api';
 import { JettonInfo, ToncenterEmulationResponse } from '../types';
 import { RawStackItem } from '../utils/tvmStack';
@@ -46,6 +46,8 @@ import {
 } from '../types/toncenter/dnsResolve';
 import { toAddressBook, toEvent } from '../types/toncenter/AccountEvent';
 import {
+    AccountState,
+    Base64String,
     Jetton,
     JettonsResponse,
     Network,
@@ -146,26 +148,20 @@ export class ApiClientToncenter implements ApiClient {
         return toTransactionEmulatedTrace(response);
     }
 
-    async sendBoc(boc: string | Uint8Array): Promise<string> {
+    async sendBoc(boc: Base64String): Promise<string> {
         if (this.disableNetworkSend) {
             return '';
-        }
-        if (typeof boc !== 'string') {
-            boc = Uint8ArrayToBase64(boc);
         }
         const response = await this.postJson<V2SendMessageResult>('/api/v3/message', { boc });
         return Base64ToBigInt(response.message_hash_norm).toString(16);
     }
 
     async runGetMethod(
-        address: Address | string,
+        address: UserFriendlyAddress,
         method: string,
         stack: RawStackItem[] = [],
         seqno?: number,
     ): Promise<GetResult> {
-        if (address instanceof Address) {
-            address = address.toString();
-        }
         const props: Record<string, unknown> = {
             address,
             method,
@@ -180,10 +176,7 @@ export class ApiClientToncenter implements ApiClient {
         };
     }
 
-    async getAccountState(address: Address | string, seqno?: number): Promise<FullAccountState> {
-        if (address instanceof Address) {
-            address = address.toString();
-        }
+    async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
         const query: Record<string, unknown> = { include_boc: true, address: [address] };
         if (typeof seqno === 'number') query.seqno = seqno.toString();
         const raw = await this.getJson<V2AddressInformation>('/api/v3/addressInformation', query);

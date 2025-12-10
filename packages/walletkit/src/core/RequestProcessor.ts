@@ -50,7 +50,7 @@ import { WalletKitError, ERROR_CODES } from '../errors';
 import { uuidv7 } from '../utils/uuid';
 import { getUnixtime } from '../utils/time';
 import { getEventsSubsystem, getVersion } from '../utils/version';
-import { Base64Normalize } from '../utils/base64';
+import { Base64Normalize, Base64ToHex } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
 import { PreparedSignData } from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
@@ -571,7 +571,7 @@ export class RequestProcessor {
                         client_id: event.from,
                     },
                 ]);
-                return { signature: asHex(event.result.signature) };
+                return { signature: Base64ToHex(event.result.signature) };
             } else {
                 if (!event.domain) {
                     const error = new WalletKitError(

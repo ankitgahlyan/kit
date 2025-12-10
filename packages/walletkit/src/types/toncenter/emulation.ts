@@ -6,6 +6,7 @@
  *
  */
 
+import { Base64ToHex } from '../..';
 import {
     AccountState,
     AccountStatus,
@@ -43,13 +44,17 @@ export function toTransactionEmulatedTrace(response: ToncenterEmulationResponse)
         mcBlockSeqno: response.mc_block_seqno,
         trace: toTransactionTraceNode(response.trace),
         transactions: Object.fromEntries(
-            Object.entries(response.transactions).map(([hash, tx]) => [asHex(hash), toTransaction(tx)]),
+            Object.entries(response.transactions).map(([hash, tx]) => [Base64ToHex(hash), toTransaction(tx)]),
         ),
         actions: response.actions.map(toTransactionTraceAction),
-        randSeed: asHex(response.rand_seed),
+        randSeed: Base64ToHex(response.rand_seed),
         isIncomplete: response.is_incomplete,
-        codeCells: Object.fromEntries(Object.entries(response.code_cells).map(([hash, cell]) => [asHex(hash), cell])),
-        dataCells: Object.fromEntries(Object.entries(response.data_cells).map(([hash, cell]) => [asHex(hash), cell])),
+        codeCells: Object.fromEntries(
+            Object.entries(response.code_cells).map(([hash, cell]) => [Base64ToHex(hash), cell]),
+        ),
+        dataCells: Object.fromEntries(
+            Object.entries(response.data_cells).map(([hash, cell]) => [Base64ToHex(hash), cell]),
+        ),
         metadata: {}, // to be filled later
         addressBook: {}, // to be filled later
     };
@@ -57,8 +62,8 @@ export function toTransactionEmulatedTrace(response: ToncenterEmulationResponse)
 
 function toTransactionTraceNode(node: EmulationTraceNode): TransactionTraceNode {
     return {
-        txHash: asHex(node.tx_hash),
-        inMsgHash: node.in_msg_hash ? asHex(node.in_msg_hash) : undefined,
+        txHash: Base64ToHex(node.tx_hash),
+        inMsgHash: node.in_msg_hash ? Base64ToHex(node.in_msg_hash) : undefined,
         children: node.children.map(toTransactionTraceNode),
     };
 }
@@ -142,13 +147,13 @@ function toTransaction(tx: ToncenterTransaction): Transaction {
         accountStateBefore: toAccountState(tx.account_state_before),
         accountStateAfter: toAccountState(tx.account_state_after),
         description: toTransactionDescription(tx.description),
-        hash: asHex(tx.hash),
+        hash: Base64ToHex(tx.hash),
         logicalTime: tx.lt,
         now: tx.now,
         mcBlockSeqno: tx.mc_block_seqno,
-        traceExternalHash: asHex(tx.trace_external_hash),
+        traceExternalHash: Base64ToHex(tx.trace_external_hash),
         traceId: tx.trace_id ?? undefined,
-        previousTransactionHash: tx.prev_trans_hash ? asHex(tx.prev_trans_hash) : undefined,
+        previousTransactionHash: tx.prev_trans_hash ? Base64ToHex(tx.prev_trans_hash) : undefined,
         previousTransactionLogicalTime: tx.prev_trans_lt ?? undefined,
         origStatus: toAccountStatus(tx.orig_status),
         endStatus: toAccountStatus(tx.end_status),
@@ -316,8 +321,8 @@ export interface EmulationMessage {
 
 function toTransactionMessage(msg: EmulationMessage): TransactionMessage {
     return {
-        hash: asHex(msg.hash),
-        normalizedHash: msg.hash_norm ? asHex(msg.hash_norm) : undefined,
+        hash: Base64ToHex(msg.hash),
+        normalizedHash: msg.hash_norm ? Base64ToHex(msg.hash_norm) : undefined,
         source: asMaybeAddressFriendly(msg.source) ?? undefined,
         destination: asMaybeAddressFriendly(msg.destination) ?? undefined,
         value: msg.value ?? undefined,
@@ -332,7 +337,7 @@ function toTransactionMessage(msg: EmulationMessage): TransactionMessage {
         importFee: msg.import_fee ?? undefined,
         opcode: msg.opcode ?? undefined,
         messageContent: {
-            hash: asHex(msg.message_content.hash),
+            hash: Base64ToHex(msg.message_content.hash),
             body: msg.message_content.body,
             decoded: msg.message_content.decoded ?? undefined,
         },
@@ -351,13 +356,13 @@ export interface EmulationAccountState {
 
 function toAccountState(state: EmulationAccountState): AccountState {
     return {
-        hash: asHex(state.hash),
+        hash: Base64ToHex(state.hash),
         balance: state.balance,
         extraCurrencies: state.extra_currencies ?? undefined,
         accountStatus: toAccountStatus(state.account_status),
-        frozenHash: state.frozen_hash ? asHex(state.frozen_hash) : undefined,
-        dataHash: state.data_hash ? asHex(state.data_hash) : undefined,
-        codeHash: state.code_hash ? asHex(state.code_hash) : undefined,
+        frozenHash: state.frozen_hash ? Base64ToHex(state.frozen_hash) : undefined,
+        dataHash: state.data_hash ? Base64ToHex(state.data_hash) : undefined,
+        codeHash: state.code_hash ? Base64ToHex(state.code_hash) : undefined,
     };
 }
 
@@ -443,9 +448,9 @@ function toTransactionTraceAction(action: EmulationAction): TransactionTraceActi
         traceEndLt: action.trace_end_lt,
         traceEndUtime: action.trace_end_utime,
         traceMcSeqnoEnd: action.trace_mc_seqno_end,
-        transactions: action.transactions.map(asHex),
+        transactions: action.transactions.map(Base64ToHex),
         isSuccess: action.success,
-        traceExternalHash: asHex(action.trace_external_hash),
+        traceExternalHash: Base64ToHex(action.trace_external_hash),
         accounts: action.accounts.map(asAddressFriendly),
         details: toTransactionTraceActionDetails(action),
     };
