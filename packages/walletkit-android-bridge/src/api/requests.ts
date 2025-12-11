@@ -92,7 +92,16 @@ export async function rejectTransactionRequest(args: RejectTransactionRequestArg
             throw new Error('Transaction request event is required');
         }
 
-        const result = await walletKit.rejectTransactionRequest(args.event, args.reason);
+        // If errorCode is provided, pass it as an error object; otherwise just pass the reason string
+        const reason =
+            args.errorCode !== undefined
+                ? { code: args.errorCode, message: args.reason || 'Transaction rejected' }
+                : args.reason;
+
+        const result = (await walletKit!.rejectTransactionRequest(args.event, reason)) as {
+            success?: boolean;
+            message?: string;
+        } | null;
 
         if (result == null) {
             return { success: true };

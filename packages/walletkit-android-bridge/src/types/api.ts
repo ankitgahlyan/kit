@@ -120,6 +120,7 @@ export interface ApproveTransactionRequestArgs {
 export interface RejectTransactionRequestArgs {
     event: TonConnectRequestEvent;
     reason?: string;
+    errorCode?: number;
 }
 
 export interface ApproveSignDataRequestArgs {

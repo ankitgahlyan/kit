@@ -68,7 +68,10 @@ export interface WalletKitInstance {
     approveConnectRequest(event: unknown): Promise<unknown>;
     rejectConnectRequest(event: unknown, reason?: string, errorCode?: number): Promise<unknown>;
     approveTransactionRequest(event: unknown): Promise<unknown>;
-    rejectTransactionRequest(event: unknown, reason?: string): Promise<unknown>;
+    rejectTransactionRequest(
+        event: unknown,
+        reason?: string | { code: number; message: string },
+    ): Promise<unknown>;
     signDataRequest(event: unknown): Promise<unknown>;
     rejectSignDataRequest(event: unknown, reason?: string): Promise<unknown>;
 }
