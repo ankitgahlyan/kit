@@ -9,7 +9,7 @@
 import { CHAIN } from '@tonconnect/protocol';
 
 import { mockFn, mocked, useFakeTimers, useRealTimers } from '../../mock.config';
-import { TonWalletKit } from '../api/interfaces/TonWalletKit';
+import { TonWalletKit } from './TonWalletKit';
 import type { TonWalletKitOptions } from '../types';
 import { createDummyWallet, createMockApiClient } from '../contracts/w5/WalletV5R1.fixture';
 import { InjectedToExtensionBridgeRequest, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';

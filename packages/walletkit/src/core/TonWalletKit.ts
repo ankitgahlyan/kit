@@ -26,35 +26,35 @@ import type {
     EventSignDataRequest,
     EventDisconnect,
     SessionInfo,
-} from '../../types';
-import { Initializer, type InitializationResult, wrapWalletInterface } from '../../core/Initializer';
-import { globalLogger } from '../../core/Logger';
-import type { WalletManager } from '../../core/WalletManager';
-import type { SessionManager } from '../../core/SessionManager';
-import type { EventRouter } from '../../core/EventRouter';
-import type { RequestProcessor } from '../../core/RequestProcessor';
-import { JettonsManager } from '../../core/JettonsManager';
-import type { JettonsAPI } from '../../types/jettons';
+} from '../types';
+import { Initializer, type InitializationResult, wrapWalletInterface } from './Initializer';
+import { globalLogger } from './Logger';
+import type { WalletManager } from './WalletManager';
+import type { SessionManager } from './SessionManager';
+import type { EventRouter } from './EventRouter';
+import type { RequestProcessor } from './RequestProcessor';
+import { JettonsManager } from './JettonsManager';
+import type { JettonsAPI } from '../types/jettons';
 import {
     BridgeEventBase,
     RawBridgeEventConnect,
     RawBridgeEventRestoreConnection,
     RawBridgeEventTransaction,
-} from '../../types/internal';
-import { EventEmitter } from '../../core/EventEmitter';
-import { StorageEventProcessor } from '../../core/EventProcessor';
-import { BridgeManager } from '../../core/BridgeManager';
-import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../../types/jsBridge';
-import { ApiClient } from '../../types/toncenter/ApiClient';
-import { getDeviceInfoWithDefaults } from '../../utils/getDefaultWalletConfig';
-import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../../types/events';
-import { AnalyticsApi } from '../../analytics/sender';
-import { WalletKitError, ERROR_CODES } from '../../errors';
-import { CallForSuccess } from '../../utils/retry';
-import { NetworkManager } from '../../core/NetworkManager';
-import { createWalletId, WalletId } from '../../utils/walletId';
-import { Wallet, WalletAdapter } from '.';
-import { Network, TransactionRequest, UserFriendlyAddress } from '../models';
+} from '../types/internal';
+import { EventEmitter } from './EventEmitter';
+import { StorageEventProcessor } from './EventProcessor';
+import { BridgeManager } from './BridgeManager';
+import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
+import { ApiClient } from '../types/toncenter/ApiClient';
+import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
+import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../types/events';
+import { AnalyticsApi } from '../analytics/sender';
+import { WalletKitError, ERROR_CODES } from '../errors';
+import { CallForSuccess } from '../utils/retry';
+import { NetworkManager } from './NetworkManager';
+import { createWalletId, WalletId } from '../utils/walletId';
+import { Wallet, WalletAdapter } from '../api/interfaces';
+import { Network, TransactionRequest, UserFriendlyAddress } from '../api/models';
 
 const log = globalLogger.createChild('TonWalletKit');
 
