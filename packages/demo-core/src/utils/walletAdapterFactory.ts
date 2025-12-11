@@ -10,13 +10,14 @@ import {
     WalletV5R1Adapter,
     WalletV4R2Adapter,
     DefaultSignature,
-    CHAIN,
     type ITonWalletKit,
     MnemonicToKeyPair,
     Uint8ArrayToHex,
     type ToncenterTransaction,
     WalletAdapter,
     WalletSigner,
+    Network,
+    Signer,
 } from '@ton/walletkit';
 import { createWalletInitConfigLedger, createLedgerPath, createWalletV4R2Ledger } from '@ton/v4ledger-adapter';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
@@ -54,7 +55,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
         await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    const chainNetwork = network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET;
+    const chainNetwork = network === 'mainnet' ? Network.mainnet() : Network.testnet();
 
     switch (useWalletInterfaceType) {
         case 'signer': {
@@ -118,7 +119,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
                             path: storedLedgerConfig.path,
                             publicKey: Uint8Array.from(storedLedgerConfig.publicKey),
                             version: storedLedgerConfig.version as 'v4r2',
-                            network: storedLedgerConfig.network === 'mainnet' ? CHAIN.MAINNET : CHAIN.TESTNET,
+                            network: storedLedgerConfig.network === 'mainnet' ? Network.mainnet() : Network.testnet(),
                             workchain: storedLedgerConfig.workchain,
                             walletId: storedLedgerConfig.walletId,
                             accountIndex: storedLedgerConfig.accountIndex,

@@ -481,7 +481,7 @@ export class ApiClientToncenter implements ApiClient {
             const decimals =
                 typeof metadataJettonInfo.extra.decimals === 'string'
                     ? parseInt(metadataJettonInfo.extra.decimals, 10)
-                    : ((metadataJettonInfo.extra.decimals as number) ?? 9);
+                    : (metadataJettonInfo.extra.decimals as number | undefined);
 
             return {
                 address: jettonAddress,

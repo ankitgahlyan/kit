@@ -9,13 +9,13 @@
 import {
     WalletAdapter,
     Hex,
-    ConnectTransactionParamContent,
-    PrepareSignDataResult,
-    TonProofParsedMessage,
     ApiClient,
     UserFriendlyAddress,
     Base64String,
     Network,
+    TransactionRequest,
+    PreparedSignData,
+    ProofMessage,
 } from '@ton/walletkit';
 
 export class SwiftWalletAdapter implements WalletAdapter {
@@ -50,7 +50,7 @@ export class SwiftWalletAdapter implements WalletAdapter {
     }
 
     async getSignedSendTransaction(
-        input: ConnectTransactionParamContent,
+        input: TransactionRequest,
         options?: {
             fakeSignature: boolean;
         },
@@ -59,7 +59,7 @@ export class SwiftWalletAdapter implements WalletAdapter {
     }
 
     async getSignedSignData(
-        input: PrepareSignDataResult,
+        input: PreparedSignData,
         options?: {
             fakeSignature: boolean;
         },
@@ -68,7 +68,7 @@ export class SwiftWalletAdapter implements WalletAdapter {
     }
 
     async getSignedTonProof(
-        input: TonProofParsedMessage,
+        input: ProofMessage,
         options?: {
             fakeSignature: boolean;
         },

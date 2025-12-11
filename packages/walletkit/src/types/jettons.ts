@@ -16,7 +16,7 @@ export interface JettonInfo {
     name: string;
     symbol: string;
     description: string;
-    decimals: number;
+    decimals?: number;
     totalSupply?: string;
     image?: string;
     image_data?: string;
