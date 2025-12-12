@@ -150,7 +150,10 @@ export class ConnectHandler
             try {
                 const parsedDAppUrl = new URL(dAppUrl);
                 if (!isValidHost(parsedDAppUrl.host)) {
-                    log.warn('Invalid dApp URL in manifest - invalid host format', { dAppUrl, host: parsedDAppUrl.host });
+                    log.warn('Invalid dApp URL in manifest - invalid host format', {
+                        dAppUrl,
+                        host: parsedDAppUrl.host,
+                    });
                     finalManifestFetchErrorCode = CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
                 }
             } catch (_) {
