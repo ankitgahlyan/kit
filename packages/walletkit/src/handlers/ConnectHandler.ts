@@ -18,6 +18,7 @@ import { AnalyticsApi } from '../analytics/sender';
 import { getUnixtime } from '../utils/time';
 import { uuidv7 } from '../utils/uuid';
 import { getEventsSubsystem, getVersion } from '../utils/version';
+import { isValidHost } from '../utils/url';
 
 const log = globalLogger.createChild('ConnectHandler');
 
@@ -148,10 +149,8 @@ export class ConnectHandler
         if (!finalManifestFetchErrorCode && dAppUrl) {
             try {
                 const parsedDAppUrl = new URL(dAppUrl);
-                // Check if host has at least one dot (valid domain like "example.com")
-                // Invalid examples: "tonkeeper", "localhost" (single word hosts)
-                if (parsedDAppUrl.host.indexOf('.') === -1) {
-                    log.warn('Invalid dApp URL in manifest - host has no dot', { dAppUrl, host: parsedDAppUrl.host });
+                if (!isValidHost(parsedDAppUrl.host)) {
+                    log.warn('Invalid dApp URL in manifest - invalid host format', { dAppUrl, host: parsedDAppUrl.host });
                     finalManifestFetchErrorCode = CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
                 }
             } catch (_) {
@@ -212,7 +211,7 @@ export class ConnectHandler
         try {
             // try to parse url
             const parsedUrl = new URL(manifestUrl);
-            if (parsedUrl.host.indexOf('.') === -1) {
+            if (!isValidHost(parsedUrl.host)) {
                 return {
                     manifest: null,
                     manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR,
