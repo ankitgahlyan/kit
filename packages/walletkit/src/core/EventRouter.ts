@@ -8,8 +8,6 @@
 
 // Event routing and handler coordination
 
-import { WalletResponseTemplateError } from '@tonconnect/protocol';
-
 import type {
     EventConnectRequest,
     EventTransactionRequest,
@@ -76,7 +74,7 @@ export class EventRouter {
                 if (handler.canHandle(event)) {
                     const result = await handler.handle(event);
                     if ('error' in result) {
-                        this.notifyErrorCallback({ incomingEvent: event, result: result });
+                        this.notifyErrorCallback({ id: result.id, data: { ...event }, error: result.error });
                         try {
                             await this.bridgeManager.sendResponse(event, result);
                         } catch (error) {
@@ -177,12 +175,7 @@ export class EventRouter {
     /**
      * Notify connect request callbacks
      */
-    private async notifyConnectRequestCallbacks(
-        event: EventConnectRequest | WalletResponseTemplateError,
-    ): Promise<void> {
-        if ('error' in event) {
-            return;
-        }
+    private async notifyConnectRequestCallbacks(event: EventConnectRequest): Promise<void> {
         return await this.connectRequestCallback?.(event);
     }
 

@@ -16,15 +16,9 @@ import type {
     WalletResponseTemplateError,
 } from '@tonconnect/protocol';
 
-import {
-    BridgeEventBase,
-    EventApprovalBase,
-    RawBridgeEventSignData,
-    RawBridgeEventTransaction,
-    RawBridgeEvent,
-} from './internal';
+import { BridgeEventBase, EventApprovalBase, RawBridgeEvent } from './internal';
 import { Base64String, Hex } from './primitive';
-import { SignDataPayload, TransactionEmulatedPreview, TransactionRequest } from '../api/models';
+import { ResultError, SignDataPayload, TransactionEmulatedPreview, TransactionRequest } from '../api/models';
 
 // export type EventConnectRequest = ConnectRequest;
 
@@ -51,7 +45,7 @@ export interface EventConnectRequest extends BridgeEventBase {
 /**
  * Transaction request event from dApp
  */
-export type EventTransactionRequest = RawBridgeEventTransaction & {
+export interface EventTransactionRequest extends BridgeEventBase {
     /** Raw transaction request data */
     request: TransactionRequest;
 
@@ -60,7 +54,7 @@ export type EventTransactionRequest = RawBridgeEventTransaction & {
 
     /** dApp information */
     dAppInfo: DAppInfo;
-};
+}
 
 export interface EventTransactionResponse {
     signedBoc: Base64String;
@@ -69,7 +63,7 @@ export interface EventTransactionResponse {
 /**
  * Sign data request event from dApp
  */
-export interface EventSignDataRequest extends RawBridgeEventSignData {
+export interface EventSignDataRequest extends BridgeEventBase {
     /** Raw data to be signed */
     request: SignDataPayload;
 
@@ -100,8 +94,9 @@ export interface EventDisconnect extends BridgeEventBase {
 }
 
 export interface EventRequestError {
-    incomingEvent: RawBridgeEvent;
-    result: WalletResponseTemplateError;
+    id: string;
+    data: { [k: string]: unknown };
+    error: ResultError;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

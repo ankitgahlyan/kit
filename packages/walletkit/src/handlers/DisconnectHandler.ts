@@ -44,6 +44,7 @@ export class DisconnectHandler
         const reason = this.extractDisconnectReason(event);
 
         const disconnectEvent: EventDisconnect = {
+            id: event.id,
             reason,
             walletId: walletId ?? '',
             walletAddress: walletAddress,

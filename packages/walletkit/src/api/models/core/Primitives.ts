@@ -58,7 +58,7 @@ export interface ResultError {
     /**
      * Additional error data
      */
-    data?: { [key: string]: unknown };
+    data?: unknown;
 }
 
 export interface Pagination {

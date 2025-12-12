@@ -70,7 +70,7 @@ export interface EventCallback<T = any> {
 }
 
 export type BridgeEventBase = {
-    id?: string;
+    id: string;
     from?: string;
     walletId?: string;
     walletAddress?: string;
