@@ -40,7 +40,8 @@
     "quality": "pnpm test:coverage",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --max-warnings 0 --fix",
-    "clean": "git clean -xdf dist node_modules .turbo"
+    "clean": "git clean -xdf dist node_modules .turbo",
+    "generate-openapi-spec": "src/api/scripts/generate-openapi-spec.sh"
   },
   "keywords": [
     "ton",
@@ -85,6 +86,7 @@
     "node-hid": "^3.2.0",
     "rimraf": "^6.1.0",
     "ts-jest": "^29.4.5",
+    "ts-json-schema-generator": "^2.4.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
