@@ -7,11 +7,11 @@
  */
 
 import React, { memo, useMemo } from 'react';
-import type { ToncenterEmulationResponse } from '@ton/walletkit';
+import type { TransactionEmulatedTrace } from '@ton/walletkit';
 import { emulationEvent } from '@ton/walletkit';
 
 interface ActionPreviewListProps {
-    emulationResult: ToncenterEmulationResponse;
+    emulationResult: TransactionEmulatedTrace;
     walletAddress?: string;
     title?: string;
     className?: string;

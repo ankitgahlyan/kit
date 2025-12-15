@@ -7,14 +7,14 @@
  */
 
 import {
-    type EventConnectRequest,
-    type EventTransactionRequest,
-    type EventSignDataRequest,
-    type EventDisconnect,
     type Wallet,
     SEND_TRANSACTION_ERROR_CODES,
     WalletKitError,
     ERROR_CODES,
+    TransactionRequestEvent,
+    ConnectionRequestEvent,
+    SignDataRequestEvent,
+    DisconnectionEvent,
 } from '@ton/walletkit';
 import { toast } from 'sonner';
 
@@ -62,7 +62,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
     },
 
     // Connect request actions
-    showConnectRequest: (request: EventConnectRequest) => {
+    showConnectRequest: (request: ConnectionRequestEvent) => {
         set((state) => {
             state.tonConnect.pendingConnectRequest = request;
             state.tonConnect.isConnectModalOpen = true;
@@ -81,7 +81,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         }
 
         try {
-            const updatedRequest: EventConnectRequest = {
+            const updatedRequest: ConnectionRequestEvent = {
                 ...state.tonConnect.pendingConnectRequest,
                 walletAddress: selectedWallet.getAddress(),
                 walletId: selectedWallet.getWalletId(),
@@ -135,7 +135,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
     },
 
     // Transaction request actions
-    showTransactionRequest: (request: EventTransactionRequest) => {
+    showTransactionRequest: (request: TransactionRequestEvent) => {
         set((state) => {
             state.tonConnect.pendingTransactionRequest = request;
             state.tonConnect.isTransactionModalOpen = true;
@@ -234,7 +234,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
     },
 
     // Sign data request actions
-    showSignDataRequest: (request: EventSignDataRequest) => {
+    showSignDataRequest: (request: SignDataRequestEvent) => {
         set((state) => {
             state.tonConnect.pendingSignDataRequest = request;
             state.tonConnect.isSignDataModalOpen = true;
@@ -303,13 +303,13 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
     },
 
     // Disconnect events
-    handleDisconnectEvent: (event: EventDisconnect) => {
+    handleDisconnectEvent: (event: DisconnectionEvent) => {
         log.info('Disconnect event received:', event);
 
         set((state) => {
             state.tonConnect.disconnectedSessions.push({
                 walletAddress: event.walletAddress,
-                reason: event.reason,
+                reason: event.preview.reason,
                 timestamp: Date.now(),
             } as DisconnectNotification);
         });
@@ -395,11 +395,11 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         });
 
         if (nextRequest.type === 'connect') {
-            get().showConnectRequest(nextRequest.request as EventConnectRequest);
+            get().showConnectRequest(nextRequest.request);
         } else if (nextRequest.type === 'transaction') {
-            get().showTransactionRequest(nextRequest.request as EventTransactionRequest);
+            get().showTransactionRequest(nextRequest.request);
         } else if (nextRequest.type === 'signData') {
-            get().showSignDataRequest(nextRequest.request as EventSignDataRequest);
+            get().showSignDataRequest(nextRequest.request);
         }
     },
 
@@ -468,7 +468,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
             });
         });
 
-        walletKit.onTransactionRequest(async (event: EventTransactionRequest) => {
+        walletKit.onTransactionRequest(async (event: TransactionRequestEvent) => {
             const wallet = await walletKit.getWallet(event.walletId ?? '');
             if (!wallet) {
                 log.error('Wallet not found for transaction request', { walletId: event.walletId });

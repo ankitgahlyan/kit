@@ -32,7 +32,6 @@ import { CallForSuccess } from '../utils/retry';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
 import { WalletManager } from './WalletManager';
 import { EventConnectApproval, EventTransactionApproval } from '../types/events';
-import { asHex } from '../types/primitive';
 import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { uuidv7 } from '../utils/uuid';
@@ -48,6 +47,7 @@ import {
     ConnectionRequestEvent,
     TransactionApprovalResponse,
     SignDataApprovalResponse,
+    asHex,
 } from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
 import { Wallet } from '../api/interfaces';

@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { EventConnectRequest, Wallet } from '@ton/walletkit';
+import type { ConnectionRequestEvent, Wallet } from '@ton/walletkit';
 import type { SavedWallet } from '@ton/demo-core';
 
 import { Button } from './Button';
@@ -20,7 +20,7 @@ import { createComponentLogger } from '../utils/logger';
 const log = createComponentLogger('ConnectRequestModal');
 
 interface ConnectRequestModalProps {
-    request: EventConnectRequest;
+    request: ConnectionRequestEvent;
     availableWallets: Wallet[];
     savedWallets: SavedWallet[];
     isOpen: boolean;
