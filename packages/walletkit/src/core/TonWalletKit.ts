@@ -13,7 +13,6 @@ import {
     CHAIN,
     CONNECT_EVENT_ERROR_CODES,
     ConnectEventSuccess,
-    ConnectItem,
     ConnectRequest,
     DisconnectEvent,
     SendTransactionRpcResponseError,
@@ -38,7 +37,6 @@ import { JettonsManager } from './JettonsManager';
 import type { JettonsAPI } from '../types/jettons';
 import {
     BridgeEventBase,
-    ConnectTransactionParamContent,
     RawBridgeEventConnect,
     RawBridgeEventRestoreConnection,
     RawBridgeEventTransaction,

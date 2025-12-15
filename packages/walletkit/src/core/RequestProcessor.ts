@@ -52,7 +52,7 @@ import { getUnixtime } from '../utils/time';
 import { getEventsSubsystem, getVersion } from '../utils/version';
 import { Base64Normalize, Base64ToHex, HexToBase64 } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
-import { TransactionRequest, SignDataPayload, asHex } from '../api/models';
+import { TransactionRequest, SignDataPayload } from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
 import { Wallet } from '../api/interfaces';
 
