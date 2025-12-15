@@ -18,15 +18,7 @@ import {
     SendTransactionRpcResponseError,
 } from '@tonconnect/protocol';
 
-import type {
-    ITonWalletKit,
-    TonWalletKitOptions,
-    EventConnectRequest,
-    EventTransactionRequest,
-    EventSignDataRequest,
-    EventDisconnect,
-    SessionInfo,
-} from '../types';
+import type { ITonWalletKit, TonWalletKitOptions, SessionInfo } from '../types';
 import { Initializer, type InitializationResult, wrapWalletInterface } from './Initializer';
 import { globalLogger } from './Logger';
 import type { WalletManager } from './WalletManager';
@@ -35,26 +27,32 @@ import type { EventRouter } from './EventRouter';
 import type { RequestProcessor } from './RequestProcessor';
 import { JettonsManager } from './JettonsManager';
 import type { JettonsAPI } from '../types/jettons';
-import {
-    BridgeEventBase,
-    RawBridgeEventConnect,
-    RawBridgeEventRestoreConnection,
-    RawBridgeEventTransaction,
-} from '../types/internal';
+import { RawBridgeEventConnect, RawBridgeEventRestoreConnection, RawBridgeEventTransaction } from '../types/internal';
 import { EventEmitter } from './EventEmitter';
 import { StorageEventProcessor } from './EventProcessor';
 import { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
 import { ApiClient } from '../types/toncenter/ApiClient';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
-import { EventRequestError, EventSignDataResponse, EventTransactionResponse } from '../types/events';
 import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { CallForSuccess } from '../utils/retry';
 import { NetworkManager } from './NetworkManager';
 import { createWalletId, WalletId } from '../utils/walletId';
 import { Wallet, WalletAdapter } from '../api/interfaces';
-import { Network, TransactionRequest, UserFriendlyAddress } from '../api/models';
+import {
+    Network,
+    TransactionRequest,
+    UserFriendlyAddress,
+    TransactionRequestEvent,
+    BridgeEvent,
+    RequestErrorEvent,
+    DisconnectionEvent,
+    SignDataRequestEvent,
+    ConnectionRequestEvent,
+    TransactionApprovalResponse,
+    SignDataApprovalResponse,
+} from '../api/models';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -358,7 +356,7 @@ export class TonWalletKit implements ITonWalletKit {
                                     isJsBridge: session?.isJsBridge,
                                     id: Date.now(),
                                     from: sessionId,
-                                } as unknown as BridgeEventBase,
+                                } as unknown as BridgeEvent,
                                 {
                                     event: 'disconnect',
                                     id: Date.now(),
@@ -403,7 +401,7 @@ export class TonWalletKit implements ITonWalletKit {
 
     // === Event Handler Registration (Delegated) ===
 
-    onConnectRequest(cb: (event: EventConnectRequest) => void): void {
+    onConnectRequest(cb: (event: ConnectionRequestEvent) => void): void {
         if (this.eventRouter) {
             this.eventRouter.onConnectRequest(cb);
         } else {
@@ -414,7 +412,7 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
-    onTransactionRequest(cb: (event: EventTransactionRequest) => void): void {
+    onTransactionRequest(cb: (event: TransactionRequestEvent) => void): void {
         if (this.eventRouter) {
             this.eventRouter.onTransactionRequest(cb);
         } else {
@@ -424,7 +422,7 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
-    onSignDataRequest(cb: (event: EventSignDataRequest) => void): void {
+    onSignDataRequest(cb: (event: SignDataRequestEvent) => void): void {
         if (this.eventRouter) {
             this.eventRouter.onSignDataRequest(cb);
         } else {
@@ -434,7 +432,7 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
-    onDisconnect(cb: (event: EventDisconnect) => void): void {
+    onDisconnect(cb: (event: DisconnectionEvent) => void): void {
         if (this.eventRouter) {
             this.eventRouter.onDisconnect(cb);
         } else {
@@ -460,7 +458,7 @@ export class TonWalletKit implements ITonWalletKit {
         this.eventRouter.removeDisconnectCallback();
     }
 
-    onRequestError(cb: (event: EventRequestError) => void): void {
+    onRequestError(cb: (event: RequestErrorEvent) => void): void {
         if (this.eventRouter) {
             this.eventRouter.onRequestError(cb);
         } else {
@@ -606,13 +604,13 @@ export class TonWalletKit implements ITonWalletKit {
 
     // === Request Processing API (Delegated) ===
 
-    async approveConnectRequest(event: EventConnectRequest): Promise<void> {
+    async approveConnectRequest(event: ConnectionRequestEvent): Promise<void> {
         await this.ensureInitialized();
         return this.requestProcessor.approveConnectRequest(event);
     }
 
     async rejectConnectRequest(
-        event: EventConnectRequest,
+        event: ConnectionRequestEvent,
         reason?: string,
         errorCode?: CONNECT_EVENT_ERROR_CODES,
     ): Promise<void> {
@@ -620,25 +618,25 @@ export class TonWalletKit implements ITonWalletKit {
         return this.requestProcessor.rejectConnectRequest(event, reason, errorCode);
     }
 
-    async approveTransactionRequest(event: EventTransactionRequest): Promise<EventTransactionResponse> {
+    async approveTransactionRequest(event: TransactionRequestEvent): Promise<TransactionApprovalResponse> {
         await this.ensureInitialized();
         return this.requestProcessor.approveTransactionRequest(event);
     }
 
     async rejectTransactionRequest(
-        event: EventTransactionRequest,
+        event: TransactionRequestEvent,
         reason?: string | SendTransactionRpcResponseError['error'],
     ): Promise<void> {
         await this.ensureInitialized();
         return this.requestProcessor.rejectTransactionRequest(event, reason);
     }
 
-    async signDataRequest(event: EventSignDataRequest): Promise<EventSignDataResponse> {
+    async signDataRequest(event: SignDataRequestEvent): Promise<SignDataApprovalResponse> {
         await this.ensureInitialized();
         return this.requestProcessor.approveSignDataRequest(event);
     }
 
-    async rejectSignDataRequest(event: EventSignDataRequest, reason?: string): Promise<void> {
+    async rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void> {
         await this.ensureInitialized();
         return this.requestProcessor.rejectSignDataRequest(event, reason);
     }

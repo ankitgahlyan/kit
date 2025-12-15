@@ -14,6 +14,10 @@ import { BridgeEvent } from './BridgeEvent';
  */
 export interface ConnectionRequestEvent extends BridgeEvent {
     /**
+     * Items requested by the dApp (e.g., wallet address, proof)
+     */
+    requestedItems: ConnectionRequestEventRequestedItem[];
+    /**
      * Preview information for UI display
      */
     preview: ConnectionRequestEventPreview;
@@ -23,10 +27,6 @@ export interface ConnectionRequestEvent extends BridgeEvent {
  * Preview data for displaying connection request in the wallet UI.
  */
 export interface ConnectionRequestEventPreview {
-    /**
-     * Items requested by the dApp (e.g., wallet address, proof)
-     */
-    requestedItems: ConnectionRequestEventPreviewRequestedItem[];
     /**
      * Permissions requested by the dApp
      */
@@ -38,17 +38,18 @@ export interface ConnectionRequestEventPreview {
 }
 
 /**
- * Item requested by a dApp during connection.
+ * Data to be signed by the wallet, discriminated by type.
  */
-export interface ConnectionRequestEventPreviewRequestedItem {
-    /**
-     * Identifier name of the requested item
-     */
-    name: string;
-    /**
-     *
-     */
-    payload?: string;
+export type ConnectionRequestEventRequestedItem =
+    | { type: 'ton_addr' }
+    | { type: 'ton_proof'; value: ConnectionRequestTonProofRequestedItem }
+    | { type: 'unknown'; value: unknown }; // For future extensibility
+
+/**
+ * TON Proof request item.
+ */
+export interface ConnectionRequestTonProofRequestedItem {
+    payload: string;
 }
 
 /**

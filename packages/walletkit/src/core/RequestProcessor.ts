@@ -23,13 +23,7 @@ import {
 } from '@tonconnect/protocol';
 import { getSecureRandomBytes } from '@ton/crypto';
 
-import type {
-    EventConnectRequest,
-    EventTransactionRequest,
-    EventSignDataRequest,
-    EventSignDataApproval,
-    TonWalletKitOptions,
-} from '../types';
+import type { EventSignDataApproval, TonWalletKitOptions } from '../types';
 import type { SessionManager } from './SessionManager';
 import type { BridgeManager } from './BridgeManager';
 import { globalLogger } from './Logger';
@@ -37,12 +31,7 @@ import { createTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
 import { WalletManager } from './WalletManager';
-import {
-    EventConnectApproval,
-    EventSignDataResponse,
-    EventTransactionApproval,
-    EventTransactionResponse,
-} from '../types/events';
+import { EventConnectApproval, EventTransactionApproval } from '../types/events';
 import { asHex } from '../types/primitive';
 import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
@@ -51,7 +40,15 @@ import { getUnixtime } from '../utils/time';
 import { getEventsSubsystem, getVersion } from '../utils/version';
 import { Base64Normalize, Base64ToHex } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
-import { TransactionRequest, SignDataPayload } from '../api/models';
+import {
+    TransactionRequest,
+    SignDataPayload,
+    TransactionRequestEvent,
+    SignDataRequestEvent,
+    ConnectionRequestEvent,
+    TransactionApprovalResponse,
+    SignDataApprovalResponse,
+} from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
 import { Wallet } from '../api/interfaces';
 
@@ -96,7 +93,7 @@ export class RequestProcessor {
     /**
      * Process connect request approval
      */
-    async approveConnectRequest(event: EventConnectRequest | EventConnectApproval): Promise<void> {
+    async approveConnectRequest(event: ConnectionRequestEvent | EventConnectApproval): Promise<void> {
         try {
             // If event is EventConnectRequest, we need to create approval ourself
             if ('preview' in event && 'request' in event) {
@@ -124,14 +121,14 @@ export class RequestProcessor {
                 }
 
                 // Create session for this connection'
-                const url = new URL(event.preview.manifest?.url || '');
+                const url = new URL(event.preview.dAppInfo?.url || '');
                 const domain = url.host;
                 const newSession = await this.sessionManager.createSession(
                     event.from || (await getSecureRandomBytes(32)).toString('hex'),
-                    event.preview.manifest?.name || '',
+                    event.preview.dAppInfo?.name || '',
                     domain,
-                    event.preview.manifest?.iconUrl || '',
-                    event.preview.manifest?.description || '',
+                    event.preview.dAppInfo?.iconUrl || '',
+                    event.preview.dAppInfo?.description || '',
                     wallet,
                     {
                         isJsBridge: event.isJsBridge,
@@ -157,10 +154,11 @@ export class RequestProcessor {
                         origin_url: event.dAppInfo?.url,
                         dapp_name: event.dAppInfo?.name,
                         client_id: event.from,
-                        is_ton_addr: event.request.some((item) => item.name === 'ton_addr'),
-                        is_ton_proof: event.request.some((item) => item.name === 'ton_proof'),
-                        manifest_json_url: event.preview.manifest?.url,
-                        proof_payload_size: event.request.find((item) => item.name === 'ton_proof')?.payload?.length,
+                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                        manifest_json_url: event.dAppInfo?.manifestUrl,
+                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
+                            ?.payload?.length,
                         client_timestamp: getUnixtime(),
                         version: getVersion(),
                     },
@@ -174,10 +172,11 @@ export class RequestProcessor {
                         version: getVersion(),
                         dapp_name: event.dAppInfo?.name,
                         origin_url: event.dAppInfo?.url,
-                        is_ton_addr: event.request.some((item) => item.name === 'ton_addr'),
-                        is_ton_proof: event.request.some((item) => item.name === 'ton_proof'),
-                        manifest_json_url: event.preview.manifest?.url,
-                        proof_payload_size: event.request.find((item) => item.name === 'ton_proof')?.payload?.length,
+                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                        manifest_json_url: event.preview.dAppInfo?.manifestUrl,
+                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
+                            .payload?.length,
                         event_id: uuidv7(),
                         network_id: wallet.getNetwork().chainId,
                         wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
@@ -290,14 +289,14 @@ export class RequestProcessor {
      * Process connect request rejection
      */
     async rejectConnectRequest(
-        event: EventConnectRequest,
+        event: ConnectionRequestEvent,
         reason?: string,
         errorCode?: CONNECT_EVENT_ERROR_CODES,
     ): Promise<void> {
         try {
             log.info('Connect request rejected', {
                 id: event.id,
-                dAppName: event.preview.manifest?.name || '',
+                dAppName: event.preview.dAppInfo?.name || '',
                 reason: reason || 'User rejected connection',
             });
 
@@ -311,7 +310,7 @@ export class RequestProcessor {
             };
             const newSession = await this.sessionManager.createSession(
                 event.from || '',
-                event.preview.manifest?.name || '',
+                event.preview.dAppInfo?.name || '',
                 '',
                 '',
                 '',
@@ -333,17 +332,18 @@ export class RequestProcessor {
                     trace_id: event.traceId,
                     client_environment: 'wallet',
                     subsystem: getEventsSubsystem(),
-                    dapp_name: event.preview.manifest?.name || '',
-                    origin_url: event.preview.manifest?.url || '',
-                    manifest_json_url: event.preview.manifest?.url || '',
+                    dapp_name: event.preview.dAppInfo?.name || '',
+                    origin_url: event.preview.dAppInfo?.url || '',
+                    manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
                     event_id: uuidv7(),
                     client_timestamp: getUnixtime(),
                     version: getVersion(),
                     wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                     wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
-                    is_ton_addr: event.request.some((item) => item.name === 'ton_addr'),
-                    is_ton_proof: event.request.some((item) => item.name === 'ton_proof'),
-                    proof_payload_size: event.request.find((item) => item.name === 'ton_proof')?.payload?.length,
+                    is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                    is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                    proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value.payload
+                        ?.length,
                     client_id: event.from,
                 },
                 {
@@ -351,17 +351,18 @@ export class RequestProcessor {
                     trace_id: event.traceId,
                     client_environment: 'wallet',
                     subsystem: getEventsSubsystem(),
-                    dapp_name: event.preview.manifest?.name || '',
-                    origin_url: event.preview.manifest?.url || '',
-                    manifest_json_url: event.preview.manifest?.url || '',
+                    dapp_name: event.preview.dAppInfo?.name || '',
+                    origin_url: event.preview.dAppInfo?.url || '',
+                    manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
                     event_id: uuidv7(),
                     client_timestamp: getUnixtime(),
                     version: getVersion(),
                     wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
                     wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
-                    is_ton_addr: event.request.some((item) => item.name === 'ton_addr'),
-                    is_ton_proof: event.request.some((item) => item.name === 'ton_proof'),
-                    proof_payload_size: event.request.find((item) => item.name === 'ton_proof')?.payload?.length,
+                    is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                    is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                    proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value.payload
+                        ?.length,
                     client_id: event.from,
                 },
             ]);
@@ -376,8 +377,8 @@ export class RequestProcessor {
      * Process transaction request approval
      */
     async approveTransactionRequest(
-        event: EventTransactionRequest | EventTransactionApproval,
-    ): Promise<EventTransactionResponse> {
+        event: TransactionRequestEvent | EventTransactionApproval,
+    ): Promise<TransactionApprovalResponse> {
         try {
             if ('result' in event) {
                 if (!this.walletKitOptions.dev?.disableNetworkSend) {
@@ -431,7 +432,7 @@ export class RequestProcessor {
      * Send transaction analytics events
      */
     private sendTransactionAnalytics(
-        event: EventTransactionRequest | EventTransactionApproval,
+        event: TransactionRequestEvent | EventTransactionApproval,
         signedBoc: string,
     ): void {
         const wallet = this.getWalletFromEvent(event);
@@ -450,8 +451,8 @@ export class RequestProcessor {
                 wallet_app_version: this.walletKitOptions.deviceInfo?.appVersion,
                 client_id: event.from,
                 wallet_id: walletAddress ? Base64Normalize(walletAddress) : undefined,
-                dapp_name: 'dAppInfo' in event ? event.dAppInfo?.name : undefined,
-                origin_url: 'dAppInfo' in event ? event.dAppInfo?.url : undefined,
+                dapp_name: 'preview' in event ? event.preview.dAppInfo?.name : undefined,
+                origin_url: 'preview' in event ? event.preview.dAppInfo?.url : undefined,
             },
             {
                 event_name: 'wallet-transaction-sent',
@@ -474,7 +475,7 @@ export class RequestProcessor {
      * Process transaction request rejection
      */
     async rejectTransactionRequest(
-        event: EventTransactionRequest,
+        event: TransactionRequestEvent,
         reason?: string | SendTransactionRpcResponseError['error'],
     ): Promise<void> {
         try {
@@ -501,8 +502,8 @@ export class RequestProcessor {
                     trace_id: event.traceId,
                     client_environment: 'wallet',
                     subsystem: getEventsSubsystem(),
-                    dapp_name: event.dAppInfo?.name,
-                    origin_url: event.dAppInfo?.url,
+                    dapp_name: event.preview.dAppInfo?.name,
+                    origin_url: event.preview.dAppInfo?.url,
                     event_id: uuidv7(),
                     network_id: wallet?.getNetwork().chainId,
                     wallet_app_name: this.walletKitOptions.deviceInfo?.appName,
@@ -523,7 +524,9 @@ export class RequestProcessor {
     /**
      * Process sign data request approval
      */
-    async approveSignDataRequest(event: EventSignDataRequest | EventSignDataApproval): Promise<EventSignDataResponse> {
+    async approveSignDataRequest(
+        event: SignDataRequestEvent | EventSignDataApproval,
+    ): Promise<SignDataApprovalResponse> {
         try {
             if ('result' in event) {
                 // Send approval response
@@ -616,7 +619,7 @@ export class RequestProcessor {
 
                 // Sign data with wallet
                 const signData = PrepareSignData({
-                    payload: event.request,
+                    payload: event.payload,
                     domain: domainUrl,
                     address: wallet.getAddress(),
                 });
@@ -687,7 +690,7 @@ export class RequestProcessor {
     /**
      * Process sign data request rejection
      */
-    async rejectSignDataRequest(event: EventSignDataRequest, reason?: string): Promise<void> {
+    async rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void> {
         try {
             const response = {
                 error: 'USER_REJECTED',
@@ -725,7 +728,9 @@ export class RequestProcessor {
     /**
      * Create connect approval response
      */
-    private async createConnectApprovalResponse(event: EventConnectRequest): Promise<{ result: ConnectEventSuccess }> {
+    private async createConnectApprovalResponse(
+        event: ConnectionRequestEvent,
+    ): Promise<{ result: ConnectEventSuccess }> {
         const walletId = event.walletId;
         const walletAddress = this.getWalletAddressFromEvent(event);
 
@@ -781,14 +786,14 @@ export class RequestProcessor {
         // TODO: Handle ton_proof if requested
         // This would require access to the original connect request items
         // and the ability to sign the proof with the wallet's private key
-        const proofItem = event.request.find((item) => item.name === 'ton_proof');
+        const proofItem = event.requestedItems.find((item) => item.type === 'ton_proof');
         if (proofItem) {
             let domain = {
                 lengthBytes: 0,
                 value: '',
             };
             try {
-                const dAppUrl = new URL(event.preview.manifest?.url || '');
+                const dAppUrl = new URL(event.preview.dAppInfo?.url || '');
                 domain = {
                     lengthBytes: Buffer.from(dAppUrl.host).length,
                     value: dAppUrl.host,
@@ -802,7 +807,7 @@ export class RequestProcessor {
             const signMessage = createTonProofMessage({
                 address: Address.parse(address),
                 domain,
-                payload: proofItem.payload,
+                payload: proofItem.value.payload,
                 stateInit: walletStateInit,
                 timestamp,
             });
@@ -818,7 +823,7 @@ export class RequestProcessor {
                         lengthBytes: domain.lengthBytes,
                         value: domain.value,
                     },
-                    payload: proofItem.payload,
+                    payload: proofItem.value.payload,
                     signature: signatureBase64,
                 },
             });
@@ -832,7 +837,7 @@ export class RequestProcessor {
     /**
      * Sign transaction and return BOC
      */
-    private async signTransaction(event: EventTransactionRequest): Promise<string> {
+    private async signTransaction(event: TransactionRequestEvent): Promise<string> {
         const walletId = event.walletId;
         const walletAddress = this.getWalletAddressFromEvent(event);
 

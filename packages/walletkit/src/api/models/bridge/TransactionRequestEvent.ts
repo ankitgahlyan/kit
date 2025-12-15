@@ -9,11 +9,12 @@
 import { DAppInfo } from '../core/DAppInfo';
 import { TransactionEmulatedPreview } from '../transactions/emulation/TransactionEmulatedPreview';
 import { TransactionRequest } from '../transactions/TransactionRequest';
+import { BridgeEvent } from './BridgeEvent';
 
 /**
  * Event containing a transaction request from a dApp via TON Connect.
  */
-export interface TransactionRequestEvent {
+export interface TransactionRequestEvent extends BridgeEvent {
     /**
      * Preview information for UI display
      */

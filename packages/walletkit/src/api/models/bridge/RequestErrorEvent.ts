@@ -10,6 +10,10 @@ import { ResultError } from '../core/Primitives';
 
 export interface RequestErrorEvent {
     /**
+     * Unique identifier for the request that resulted in an error
+     */
+    id: string;
+    /**
      * Error details for the request failure
      */
     error: ResultError;

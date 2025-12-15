@@ -28,14 +28,15 @@ export type { BridgeEvent } from './bridge/BridgeEvent';
 export type {
     ConnectionRequestEvent,
     ConnectionRequestEventPreview,
-    ConnectionRequestEventPreviewRequestedItem,
+    ConnectionRequestEventRequestedItem as ConnectionRequestEventPreviewRequestedItem,
     ConnectionRequestEventPreviewPermission,
 } from './bridge/ConnectionRequestEvent';
 export type { DisconnectionEvent } from './bridge/DisconnectionEvent';
 export type { SignDataApprovalResponse } from './bridge/SignDataApprovalResponse';
-export type { SignDataRequestEvent, SignDataRequestEventPreview } from './bridge/SignDataRequestEvent';
+export type { SignDataRequestEvent, SignDataRequestEventPreview, SignDataPreview } from './bridge/SignDataRequestEvent';
 export type { TransactionApprovalResponse } from './bridge/TransactionApprovalResponse';
 export type { TransactionRequestEvent, TransactionRequestEventPreview } from './bridge/TransactionRequestEvent';
+export type { RequestErrorEvent } from './bridge/RequestErrorEvent';
 
 // Jetton models
 export type { Jetton } from './jettons/Jetton';

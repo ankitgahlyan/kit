@@ -11,7 +11,7 @@
 import { SessionCrypto } from '@tonconnect/protocol';
 import { BridgeProvider, ClientConnection, WalletConsumer } from '@tonconnect/bridge-sdk';
 
-import type { BridgeConfig, BridgeEventBase, RawBridgeEvent, SessionData } from '../types/internal';
+import type { BridgeConfig, RawBridgeEvent, SessionData } from '../types/internal';
 import { Storage } from '../storage';
 import type { EventStore } from '../types/durableEvents';
 import type { EventEmitter } from './EventEmitter';
@@ -32,6 +32,7 @@ import { TonWalletKitOptions } from '../types/config';
 import { getEventsSubsystem, getVersion } from '../utils/version';
 import { TONCONNECT_BRIDGE_RESPONSE } from '../bridge/JSBridgeInjector';
 import { getAddressFromWalletId } from '../utils/walletId';
+import { BridgeEvent } from '../api/models';
 
 const log = globalLogger.createChild('BridgeManager');
 
@@ -184,7 +185,7 @@ export class BridgeManager {
      */
 
     async sendResponse(
-        event: BridgeEventBase,
+        event: BridgeEvent,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         response: any,
         _session?: SessionData,

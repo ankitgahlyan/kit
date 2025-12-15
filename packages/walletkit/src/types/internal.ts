@@ -16,11 +16,15 @@ import {
     WalletResponseTemplateError,
 } from '@tonconnect/protocol';
 
-import { DAppInfo } from './events';
 import { JSBridgeTransportFunction } from './jsBridge';
 import { WalletId } from '../utils/walletId';
-import { ExtraCurrencies, TransactionRequest, TransactionRequestMessage } from '../api/models';
-import { SendModeFromValue } from '../api/models/core/SendMode';
+import {
+    ExtraCurrencies,
+    TransactionRequest,
+    TransactionRequestMessage,
+    BridgeEvent,
+    SendModeFromValue,
+} from '../api/models';
 
 // import type { WalletInterface } from './wallet';
 
@@ -69,25 +73,6 @@ export interface EventCallback<T = any> {
     (event: T): void | Promise<void>;
 }
 
-export type BridgeEventBase = {
-    id: string;
-    from?: string;
-    walletId?: string;
-    walletAddress?: string;
-    domain?: string;
-
-    isJsBridge?: boolean;
-    tabId?: number;
-    sessionId?: string;
-    isLocal?: boolean;
-    messageId?: string;
-
-    traceId?: string;
-
-    /** dApp information */
-    dAppInfo?: DAppInfo;
-};
-
 export type EventApprovalBase = {
     id: string;
     from: string;
@@ -101,7 +86,7 @@ export type EventApprovalBase = {
 };
 
 // Bridge event types (raw from bridge)
-export interface RawBridgeEventGeneric extends BridgeEventBase {
+export interface RawBridgeEventGeneric extends BridgeEvent {
     id: string;
     method: 'none';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +94,7 @@ export interface RawBridgeEventGeneric extends BridgeEventBase {
     timestamp?: number;
 }
 
-export interface RawBridgeEventConnect extends BridgeEventBase {
+export interface RawBridgeEventConnect extends BridgeEvent {
     id: string;
     method: 'connect';
     params: {
@@ -123,7 +108,7 @@ export interface RawBridgeEventConnect extends BridgeEventBase {
     timestamp?: number;
 }
 
-export interface RawBridgeEventRestoreConnection extends BridgeEventBase {
+export interface RawBridgeEventRestoreConnection extends BridgeEvent {
     id: string;
     method: 'restoreConnection';
     params: object; // no params
@@ -177,10 +162,10 @@ export function toTransactionRequest(params: ConnectTransactionParamContent): Tr
     };
 }
 
-export type RawBridgeEventTransaction = BridgeEventBase & SendTransactionRpcRequest;
-export type RawBridgeEventSignData = BridgeEventBase & SignDataRpcRequest;
+export type RawBridgeEventTransaction = BridgeEvent & SendTransactionRpcRequest;
+export type RawBridgeEventSignData = BridgeEvent & SignDataRpcRequest;
 
-export interface RawBridgeEventDisconnect extends BridgeEventBase {
+export interface RawBridgeEventDisconnect extends BridgeEvent {
     id: string;
     method: 'disconnect';
     params: {
@@ -200,7 +185,7 @@ export type RawBridgeEvent =
 // Internal event routing types
 export type EventType = 'connect' | 'sendTransaction' | 'signData' | 'disconnect' | 'restoreConnection';
 
-export interface EventHandler<T extends BridgeEventBase = BridgeEventBase, V extends RawBridgeEvent = RawBridgeEvent> {
+export interface EventHandler<T extends BridgeEvent = BridgeEvent, V extends RawBridgeEvent = RawBridgeEvent> {
     canHandle(event: RawBridgeEvent): event is V;
     handle(event: V): Promise<T | WalletResponseTemplateError>;
     notify(event: T): Promise<void>;
