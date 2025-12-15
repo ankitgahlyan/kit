@@ -178,8 +178,6 @@ export function toConnectTransactionParamMessage(message: TransactionRequestMess
         mode: message.mode ? SendModeToValue(message.mode) : undefined,
     };
 }
-    }
-}
 
 export function toTransactionRequest(params: ConnectTransactionParamContent): TransactionRequest {
     return {
