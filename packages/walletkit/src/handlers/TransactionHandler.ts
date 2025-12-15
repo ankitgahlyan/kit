@@ -115,7 +115,7 @@ export class TransactionHandler
         try {
             preview = await CallForSuccess(() => createTransactionPreviewHelper(request, wallet));
             // Emit emulation result event for jetton caching and other components
-            if (preview.result === 'success' && preview.trace) {
+            if (preview.result === Result.success && preview.trace) {
                 try {
                     this.eventEmitter.emit('emulation:result', preview.trace);
                 } catch (error) {
