@@ -24,6 +24,7 @@ import {
     TransactionRequestMessage,
     BridgeEvent,
     SendModeFromValue,
+    SendModeToValue,
 } from '../api/models';
 
 // import type { WalletInterface } from './wallet';
@@ -153,12 +154,32 @@ export function toTransactionRequestMessage(msg: ConnectTransactionParamMessage)
     };
 }
 
+export function toConnectTransactionParamMessage(message: TransactionRequestMessage): ConnectTransactionParamMessage {
+    return {
+        address: message.address,
+        amount: message.amount,
+        payload: message.payload,
+        stateInit: message.stateInit,
+        extraCurrency: message.extraCurrency as ConnectExtraCurrency | undefined,
+        mode: message.mode ? SendModeToValue(message.mode) : undefined,
+    };
+}
+
 export function toTransactionRequest(params: ConnectTransactionParamContent): TransactionRequest {
     return {
         messages: params.messages.map(toTransactionRequestMessage),
         network: params.network ? { chainId: params.network } : undefined,
         validUntil: params.valid_until,
         fromAddress: params.from,
+    };
+}
+
+export function toConnectTransactionParamContent(request: TransactionRequest): ConnectTransactionParamContent {
+    return {
+        messages: request.messages.map(toConnectTransactionParamMessage),
+        network: request.network?.chainId,
+        valid_until: request.validUntil,
+        from: request.fromAddress,
     };
 }
 

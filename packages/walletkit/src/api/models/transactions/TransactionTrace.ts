@@ -79,38 +79,38 @@ export interface TransactionTraceAction {
     /**
      * Action identifier
      */
-    actionId: string;
+    actionId?: string;
 
     /**
      * Logical time when the action started
      */
-    startLt: LogicalTime;
+    startLt?: LogicalTime;
     /**
      * Logical time when the action ended
      */
-    endLt: LogicalTime;
+    endLt?: LogicalTime;
     /**
      * Unix time when the action started
      */
-    startUtime: number;
+    startUtime?: number;
     /**
      * Unix time when the action ended
      * @format timestamp
      */
-    endUtime: number;
+    endUtime?: number;
     /**
      * Logical time when the trace ended
      */
-    traceEndLt: LogicalTime;
+    traceEndLt?: LogicalTime;
     /**
      * Unix time when the trace ended
      * @format timestamp
      */
-    traceEndUtime: number;
+    traceEndUtime?: number;
     /**
      * Masterchain block sequence number when the trace ended
      */
-    traceMcSeqnoEnd: number;
+    traceMcSeqnoEnd?: number;
     /**
      * List of transaction hashes involved in this action
      */
@@ -118,11 +118,11 @@ export interface TransactionTraceAction {
     /**
      * Indicates if the action was successful
      */
-    isSuccess: boolean;
+    isSuccess?: boolean;
     /**
      * External hash of the trace
      */
-    traceExternalHash: Hex;
+    traceExternalHash?: Hex;
     /**
      * List of accounts involved in this action
      */
@@ -201,7 +201,7 @@ export interface TransactionTraceActionJettonTransfer {
     /**
      * Amount of jettons transferred.
      */
-    amount: TokenAmount;
+    amount?: TokenAmount;
 }
 
 export interface TransactionTraceActionCallContractDetails {
@@ -223,7 +223,7 @@ export interface TransactionTraceActionCallContractDetails {
     /**
      * Value transferred during the contract call.
      */
-    value: TokenAmount;
+    value?: TokenAmount;
 
     /**
      * Extra currencies sent with the call.
@@ -245,7 +245,7 @@ export interface TransactionTraceActionTONTransferDetails {
     /**
      * Amount of TON transferred (in nanotons).
      */
-    value: TokenAmount;
+    value?: TokenAmount;
 
     /**
      * Extra currencies sent with the transfer.
@@ -260,5 +260,5 @@ export interface TransactionTraceActionTONTransferDetails {
     /**
      * Indicates if the payload or comment was encrypted.
      */
-    isEncrypted: boolean;
+    isEncrypted?: boolean;
 }

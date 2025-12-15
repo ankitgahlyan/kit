@@ -45,16 +45,16 @@ export function toTransactionEmulatedTrace(response: ToncenterEmulationResponse)
         mcBlockSeqno: response.mc_block_seqno,
         trace: toTransactionTraceNode(response.trace),
         transactions: Object.fromEntries(
-            Object.entries(response.transactions).map(([hash, tx]) => [Base64ToHex(hash), toTransaction(tx)]),
+            Object.entries(response.transactions ?? {}).map(([hash, tx]) => [Base64ToHex(hash), toTransaction(tx)]),
         ),
         actions: response.actions.map(toTransactionTraceAction),
         randSeed: Base64ToHex(response.rand_seed),
         isIncomplete: response.is_incomplete,
         codeCells: Object.fromEntries(
-            Object.entries(response.code_cells).map(([hash, cell]) => [Base64ToHex(hash), cell]),
+            Object.entries(response.code_cells ?? {}).map(([hash, cell]) => [Base64ToHex(hash), cell]),
         ),
         dataCells: Object.fromEntries(
-            Object.entries(response.data_cells).map(([hash, cell]) => [Base64ToHex(hash), cell]),
+            Object.entries(response.data_cells ?? {}).map(([hash, cell]) => [Base64ToHex(hash), cell]),
         ),
         metadata: {}, // to be filled later
         addressBook: {}, // to be filled later
@@ -63,9 +63,9 @@ export function toTransactionEmulatedTrace(response: ToncenterEmulationResponse)
 
 function toTransactionTraceNode(node: EmulationTraceNode): TransactionTraceNode {
     return {
-        txHash: Base64ToHex(node.tx_hash),
+        txHash: node.tx_hash ? Base64ToHex(node.tx_hash) : undefined,
         inMsgHash: node.in_msg_hash ? Base64ToHex(node.in_msg_hash) : undefined,
-        children: node.children.map(toTransactionTraceNode),
+        children: node.children?.map(toTransactionTraceNode) ?? [],
     };
 }
 
@@ -80,7 +80,7 @@ export interface ToncenterTransactionsResponse {
 
 export function toTransactionsResponse(response: ToncenterTransactionsResponse): TransactionsResponse {
     return {
-        transactions: response.transactions.map(toTransaction),
+        transactions: response.transactions?.map(toTransaction) ?? [],
         addressBook: toAddressBook(response.address_book),
     };
 }
@@ -162,7 +162,7 @@ function toTransaction(tx: ToncenterTransaction): Transaction {
         totalFeesExtraCurrencies: tx.total_fees_extra_currencies,
         blockRef: toTransactionBlockRef(tx.block_ref),
         inMessage: tx.in_msg ? toTransactionMessage(tx.in_msg) : undefined,
-        outMessages: tx.out_msgs.map(toTransactionMessage),
+        outMessages: tx.out_msgs?.map(toTransactionMessage) ?? [],
         isEmulated: tx.emulated,
     };
 }
@@ -252,45 +252,49 @@ function toTransactionDescription(desc: EmulationTransactionDescription): Transa
         isTock: desc.is_tock,
         isInstalled: desc.installed,
         storagePhase: {
-            storageFeesCollected: desc.storage_ph.storage_fees_collected,
-            statusChange: desc.storage_ph.status_change,
+            storageFeesCollected: desc.storage_ph?.storage_fees_collected,
+            statusChange: desc.storage_ph?.status_change,
         },
         creditPhase: desc.credit_ph
             ? {
-                  credit: desc.credit_ph.credit,
+                  credit: desc.credit_ph?.credit,
               }
             : undefined,
         computePhase: {
-            isSkipped: desc.compute_ph.skipped,
-            isSuccess: desc.compute_ph.success,
-            isMessageStateUsed: desc.compute_ph.msg_state_used,
-            isAccountActivated: desc.compute_ph.account_activated,
-            gasFees: desc.compute_ph.gas_fees,
-            gasUsed: desc.compute_ph.gas_used,
-            gasLimit: desc.compute_ph.gas_limit,
-            gasCredit: desc.compute_ph.gas_credit,
-            mode: desc.compute_ph.mode,
-            exitCode: desc.compute_ph.exit_code,
-            vmStepsNumber: desc.compute_ph.vm_steps,
-            vmInitStateHash: desc.compute_ph.vm_init_state_hash,
-            vmFinalStateHash: desc.compute_ph.vm_final_state_hash,
+            isSkipped: desc.compute_ph?.skipped,
+            isSuccess: desc.compute_ph?.success,
+            isMessageStateUsed: desc.compute_ph?.msg_state_used,
+            isAccountActivated: desc.compute_ph?.account_activated,
+            gasFees: desc.compute_ph?.gas_fees,
+            gasUsed: desc.compute_ph?.gas_used,
+            gasLimit: desc.compute_ph?.gas_limit,
+            gasCredit: desc.compute_ph?.gas_credit,
+            mode: desc.compute_ph?.mode,
+            exitCode: desc.compute_ph?.exit_code,
+            vmStepsNumber: desc.compute_ph?.vm_steps,
+            vmInitStateHash: desc.compute_ph?.vm_init_state_hash
+                ? Base64ToHex(desc.compute_ph.vm_init_state_hash)
+                : undefined,
+            vmFinalStateHash: desc.compute_ph?.vm_final_state_hash
+                ? Base64ToHex(desc.compute_ph.vm_final_state_hash)
+                : undefined,
         },
         action: {
-            isSuccess: desc.action.success,
-            isValid: desc.action.valid,
-            hasNoFunds: desc.action.no_funds,
-            statusChange: desc.action.status_change,
-            totalForwardingFees: desc.action.total_fwd_fees,
-            totalActionFees: desc.action.total_action_fees,
-            resultCode: desc.action.result_code,
-            totalActionsNumber: desc.action.tot_actions,
-            specActionsNumber: desc.action.spec_actions,
-            skippedActionsNumber: desc.action.skipped_actions,
-            messagesCreatedNumber: desc.action.msgs_created,
-            actionListHash: desc.action.action_list_hash,
+            isSuccess: desc.action?.success,
+            isValid: desc.action?.valid,
+            hasNoFunds: desc.action?.no_funds,
+            statusChange: desc.action?.status_change,
+            totalForwardingFees: desc.action?.total_fwd_fees,
+            totalActionFees: desc.action?.total_action_fees,
+            resultCode: desc.action?.result_code,
+            totalActionsNumber: desc.action?.tot_actions,
+            specActionsNumber: desc.action?.spec_actions,
+            skippedActionsNumber: desc.action?.skipped_actions,
+            messagesCreatedNumber: desc.action?.msgs_created,
+            actionListHash: desc.action?.action_list_hash ? Base64ToHex(desc.action.action_list_hash) : undefined,
             totalMessagesSize: {
-                cells: desc.action.tot_msg_size.cells,
-                bits: desc.action.tot_msg_size.bits,
+                cells: desc.action?.tot_msg_size.cells,
+                bits: desc.action?.tot_msg_size.bits,
             },
         },
     };
@@ -338,9 +342,9 @@ function toTransactionMessage(msg: EmulationMessage): TransactionMessage {
         importFee: msg.import_fee ?? undefined,
         opcode: msg.opcode ?? undefined,
         messageContent: {
-            hash: Base64ToHex(msg.message_content.hash),
-            body: msg.message_content.body,
-            decoded: msg.message_content.decoded ?? undefined,
+            hash: msg.message_content?.hash ? Base64ToHex(msg.message_content.hash) : undefined,
+            body: msg.message_content?.body,
+            decoded: msg.message_content?.decoded ?? undefined,
         },
     };
 }
@@ -360,7 +364,7 @@ function toAccountState(state: EmulationAccountState): AccountState {
         hash: Base64ToHex(state.hash),
         balance: state.balance,
         extraCurrencies: state.extra_currencies ?? undefined,
-        accountStatus: toAccountStatus(state.account_status),
+        accountStatus: state.account_status ? toAccountStatus(state.account_status) : undefined,
         frozenHash: state.frozen_hash ? Base64ToHex(state.frozen_hash) : undefined,
         dataHash: state.data_hash ? Base64ToHex(state.data_hash) : undefined,
         codeHash: state.code_hash ? Base64ToHex(state.code_hash) : undefined,
@@ -453,7 +457,7 @@ function toTransactionTraceAction(action: EmulationAction): TransactionTraceActi
         isSuccess: action.success,
         traceExternalHash: Base64ToHex(action.trace_external_hash),
         // Filter out invalid addresses
-        accounts: action.accounts
+        accounts: (action.accounts ?? [])
             .map(asMaybeAddressFriendly)
             .filter((addr): addr is UserFriendlyAddress => addr !== null),
         details: toTransactionTraceActionDetails(action),
@@ -491,22 +495,24 @@ function toTransactionTraceActionJettonSwapDetails(
         dex: details.dex,
         sender: asMaybeAddressFriendly(details.sender) ?? undefined,
         dexIncomingTransfer: {
-            asset: asMaybeAddressFriendly(details.dex_incoming_transfer.asset) ?? undefined,
-            source: asMaybeAddressFriendly(details.dex_incoming_transfer.source) ?? undefined,
-            destination: asMaybeAddressFriendly(details.dex_incoming_transfer.destination) ?? undefined,
-            sourceJettonWallet: asMaybeAddressFriendly(details.dex_incoming_transfer.source_jetton_wallet) ?? undefined,
+            asset: asMaybeAddressFriendly(details.dex_incoming_transfer?.asset) ?? undefined,
+            source: asMaybeAddressFriendly(details.dex_incoming_transfer?.source) ?? undefined,
+            destination: asMaybeAddressFriendly(details.dex_incoming_transfer?.destination) ?? undefined,
+            sourceJettonWallet:
+                asMaybeAddressFriendly(details.dex_incoming_transfer?.source_jetton_wallet) ?? undefined,
             destinationJettonWallet:
-                asMaybeAddressFriendly(details.dex_incoming_transfer.destination_jetton_wallet) ?? undefined,
-            amount: details.dex_incoming_transfer.amount,
+                asMaybeAddressFriendly(details.dex_incoming_transfer?.destination_jetton_wallet) ?? undefined,
+            amount: details.dex_incoming_transfer?.amount,
         },
         dexOutgoingTransfer: {
-            asset: asMaybeAddressFriendly(details.dex_outgoing_transfer.asset) ?? undefined,
-            source: asMaybeAddressFriendly(details.dex_outgoing_transfer.source) ?? undefined,
-            destination: asMaybeAddressFriendly(details.dex_outgoing_transfer.destination) ?? undefined,
-            sourceJettonWallet: asMaybeAddressFriendly(details.dex_outgoing_transfer.source_jetton_wallet) ?? undefined,
+            asset: asMaybeAddressFriendly(details.dex_outgoing_transfer?.asset) ?? undefined,
+            source: asMaybeAddressFriendly(details.dex_outgoing_transfer?.source) ?? undefined,
+            destination: asMaybeAddressFriendly(details.dex_outgoing_transfer?.destination) ?? undefined,
+            sourceJettonWallet:
+                asMaybeAddressFriendly(details.dex_outgoing_transfer?.source_jetton_wallet) ?? undefined,
             destinationJettonWallet:
-                asMaybeAddressFriendly(details.dex_outgoing_transfer.destination_jetton_wallet) ?? undefined,
-            amount: details.dex_outgoing_transfer.amount,
+                asMaybeAddressFriendly(details.dex_outgoing_transfer?.destination_jetton_wallet) ?? undefined,
+            amount: details.dex_outgoing_transfer?.amount,
         },
         peerSwaps: details.peer_swaps,
     };
