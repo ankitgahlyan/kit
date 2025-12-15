@@ -74,7 +74,7 @@ export class WalletV4R2Adapter implements WalletAdapter {
     ): Promise<WalletV4R2Adapter> {
         return new WalletV4R2Adapter({
             signer,
-            publicKey: asHex(signer.publicKey),
+            publicKey: signer.publicKey,
             tonClient: options.client,
             network: options.network,
             walletId: typeof options.walletId === 'bigint' ? Number(options.walletId) : options.walletId,
@@ -115,7 +115,7 @@ export class WalletV4R2Adapter implements WalletAdapter {
      * Sign raw bytes with wallet's private key
      */
     async sign(bytes: Iterable<number>): Promise<Hex> {
-        return asHex(await this.signer.sign(bytes));
+        return this.signer.sign(bytes);
     }
 
     getNetwork(): Network {
@@ -250,7 +250,7 @@ export class WalletV4R2Adapter implements WalletAdapter {
     }
 
     async getSignedSignData(input: PreparedSignData): Promise<Hex> {
-        const signature = await this.sign(HexToUint8Array(asHex(input.hash)));
+        const signature = await this.sign(HexToUint8Array(input.hash));
         return signature;
     }
 
