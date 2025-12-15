@@ -109,7 +109,7 @@ describe('WalletV5R1Adapter', () => {
     it('should handle active/inactive/error states', async () => {
         let isDeployed = await wallet.isDeployed();
         expect(isDeployed).toEqual(true);
-        expect(tonClient.getAccountState).toHaveBeenCalledWith(wallet.walletContract.address);
+        expect(tonClient.getAccountState).toHaveBeenCalledWith(wallet.walletContract.address.toString());
         mocked(tonClient.getAccountState).mockResolvedValueOnce({
             status: 'uninitialized',
             balance: '0',

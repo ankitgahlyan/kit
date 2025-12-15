@@ -16,7 +16,6 @@ import {
 import { Address } from '@ton/core';
 import { useWalletKit, useAuth, useWalletStore, type SavedWallet } from '@ton/demo-core';
 
-import { ActionPreviewList } from './ActionPreviewList';
 import { Button } from './Button';
 import { Card } from './Card';
 import { DAppInfo } from './DAppInfo';
@@ -190,14 +189,14 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                                     </div>
                                 </div>
                                 {/* Parsed Actions from Emulation */}
-                                {request.preview.data.result && (
-                                    <ActionPreviewList
-                                        emulationResult={request.preview.data.trace}
-                                        walletAddress={request.walletAddress || currentWallet?.address}
-                                        className="mt-4"
-                                        title="Actions:"
-                                    />
-                                )}
+                                {/*{request.preview.data.result && (*/}
+                                {/*    <ActionPreviewList*/}
+                                {/*        emulationResult={request.preview.data.trace}*/}
+                                {/*        walletAddress={request.walletAddress || currentWallet?.address}*/}
+                                {/*        className="mt-4"*/}
+                                {/*        title="Actions:"*/}
+                                {/*    />*/}
+                                {/*)}*/}
                             </>
                         )}
 

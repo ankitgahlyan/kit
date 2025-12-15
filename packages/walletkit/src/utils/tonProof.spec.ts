@@ -14,8 +14,7 @@ import type { TonProofItemReplySuccess } from '@tonconnect/protocol';
 
 import { SignatureVerify, CreateTonProofMessageBytes, ConvertTonProofMessage, createTonProofMessage } from './tonProof';
 import { Uint8ArrayToHex } from './base64';
-import { asHex } from '../types/primitive';
-import { ProofMessage } from '../api/models';
+import { asHex, ProofMessage } from '../api/models';
 
 describe('tonProof', () => {
     describe('SignatureVerify', () => {
@@ -77,8 +76,8 @@ describe('tonProof', () => {
         });
 
         it('should produce different hashes for different timestamps', async () => {
-            const message1 = { ...testMessage, timstamp: 1700000000 };
-            const message2 = { ...testMessage, timstamp: 1700000001 };
+            const message1: ProofMessage = { ...testMessage, timestamp: 1700000000 };
+            const message2: ProofMessage = { ...testMessage, timestamp: 1700000001 };
 
             const result1 = await CreateTonProofMessageBytes(message1);
             const result2 = await CreateTonProofMessageBytes(message2);
@@ -87,8 +86,8 @@ describe('tonProof', () => {
         });
 
         it('should produce different hashes for different domains', async () => {
-            const message1 = { ...testMessage, domain: { lengthBytes: 11, value: 'example.com' } };
-            const message2 = { ...testMessage, domain: { lengthBytes: 9, value: 'other.com' } };
+            const message1: ProofMessage = { ...testMessage, domain: { lengthBytes: 11, value: 'example.com' } };
+            const message2: ProofMessage = { ...testMessage, domain: { lengthBytes: 9, value: 'other.com' } };
 
             const result1 = await CreateTonProofMessageBytes(message1);
             const result2 = await CreateTonProofMessageBytes(message2);
@@ -97,8 +96,8 @@ describe('tonProof', () => {
         });
 
         it('should produce different hashes for different payloads', async () => {
-            const message1 = { ...testMessage, payload: 'payload-1' };
-            const message2 = { ...testMessage, payload: 'payload-2' };
+            const message1: ProofMessage = { ...testMessage, payload: 'payload-1' };
+            const message2: ProofMessage = { ...testMessage, payload: 'payload-2' };
 
             const result1 = await CreateTonProofMessageBytes(message1);
             const result2 = await CreateTonProofMessageBytes(message2);
@@ -107,8 +106,8 @@ describe('tonProof', () => {
         });
 
         it('should produce different hashes for different addresses', async () => {
-            const message1 = { ...testMessage, address: asHex('0x' + '00'.repeat(32)) };
-            const message2 = { ...testMessage, address: asHex('0x' + 'ff'.repeat(32)) };
+            const message1: ProofMessage = { ...testMessage, addressHash: asHex('0x' + '00'.repeat(32)) };
+            const message2: ProofMessage = { ...testMessage, addressHash: asHex('0x' + 'ff'.repeat(32)) };
 
             const result1 = await CreateTonProofMessageBytes(message1);
             const result2 = await CreateTonProofMessageBytes(message2);
