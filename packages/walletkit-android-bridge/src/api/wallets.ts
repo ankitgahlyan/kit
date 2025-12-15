@@ -12,7 +12,7 @@
  * Simplified bridge for wallet creation, listing, removal, and state retrieval.
  */
 
-import { type Hex } from '@ton/walletkit';
+import type { Hex } from '@ton/walletkit';
 
 import type {
     RemoveWalletArgs,

@@ -9,19 +9,21 @@
 // Request approval and rejection processing
 
 import { Address } from '@ton/core';
-import {
-    CHAIN,
-    CONNECT_EVENT_ERROR_CODES,
+import type {
     ConnectEventError,
     ConnectEventSuccess,
-    SEND_TRANSACTION_ERROR_CODES,
     SendTransactionRpcResponseError,
     SendTransactionRpcResponseSuccess,
-    SIGN_DATA_ERROR_CODES,
     SignDataRpcResponseError,
     SignDataRpcResponseSuccess,
     TonProofItemReplySuccess,
     SignDataPayload as TonConnectSignDataPayload,
+} from '@tonconnect/protocol';
+import {
+    CHAIN,
+    CONNECT_EVENT_ERROR_CODES,
+    SEND_TRANSACTION_ERROR_CODES,
+    SIGN_DATA_ERROR_CODES,
 } from '@tonconnect/protocol';
 import { getSecureRandomBytes } from '@ton/crypto';
 
@@ -38,23 +40,23 @@ import { globalLogger } from './Logger';
 import { createTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
-import { WalletManager } from './WalletManager';
-import {
+import type { WalletManager } from './WalletManager';
+import type {
     EventConnectApproval,
     EventSignDataResponse,
     EventTransactionApproval,
     EventTransactionResponse,
 } from '../types/events';
-import { AnalyticsApi } from '../analytics/sender';
+import type { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { uuidv7 } from '../utils/uuid';
 import { getUnixtime } from '../utils/time';
 import { getEventsSubsystem, getVersion } from '../utils/version';
 import { Base64Normalize, Base64ToHex, HexToBase64 } from '../utils/base64';
 import { getAddressFromWalletId } from '../utils/walletId';
-import { TransactionRequest, SignDataPayload } from '../api/models';
+import type { TransactionRequest, SignDataPayload } from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
-import { Wallet } from '../api/interfaces';
+import type { Wallet } from '../api/interfaces';
 
 const log = globalLogger.createChild('RequestProcessor');
 

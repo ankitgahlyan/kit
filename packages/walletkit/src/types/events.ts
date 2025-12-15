@@ -16,15 +16,15 @@ import type {
     WalletResponseTemplateError,
 } from '@tonconnect/protocol';
 
-import {
+import type {
     BridgeEventBase,
     EventApprovalBase,
     RawBridgeEventSignData,
     RawBridgeEventTransaction,
     RawBridgeEvent,
 } from './internal';
-import { Base64String } from './primitive';
-import { SignDataPayload, TransactionEmulatedPreview, TransactionRequest, Hex } from '../api/models';
+import type { Base64String } from './primitive';
+import type { SignDataPayload, TransactionEmulatedPreview, TransactionRequest, Hex } from '../api/models';
 
 // export type EventConnectRequest = ConnectRequest;
 

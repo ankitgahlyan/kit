@@ -7,17 +7,17 @@
  */
 
 import type { StateCreator } from 'zustand';
-import {
-    type Wallet,
-    type EventConnectRequest,
-    type EventTransactionRequest,
-    type EventSignDataRequest,
-    type EventDisconnect,
-    type JettonTransfer,
-    type JettonInfo,
-    type ITonWalletKit,
-    type NFT,
-    type Jetton,
+import type {
+    Wallet,
+    EventConnectRequest,
+    EventTransactionRequest,
+    EventSignDataRequest,
+    EventDisconnect,
+    JettonTransfer,
+    JettonInfo,
+    ITonWalletKit,
+    NFT,
+    Jetton,
 } from '@ton/walletkit';
 
 import type {

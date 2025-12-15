@@ -6,15 +6,13 @@
  *
  */
 
-import {
-    type EventConnectRequest,
-    type EventTransactionRequest,
-    type EventSignDataRequest,
-    type EventDisconnect,
-    type Wallet,
-    SEND_TRANSACTION_ERROR_CODES,
-    WalletKitError,
-    ERROR_CODES,
+import { SEND_TRANSACTION_ERROR_CODES, WalletKitError, ERROR_CODES } from '@ton/walletkit';
+import type {
+    EventConnectRequest,
+    EventTransactionRequest,
+    EventSignDataRequest,
+    EventDisconnect,
+    Wallet,
 } from '@ton/walletkit';
 import { toast } from 'sonner';
 
