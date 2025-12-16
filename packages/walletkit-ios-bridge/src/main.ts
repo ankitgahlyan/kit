@@ -353,7 +353,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport) => {
             console.log('✅ Bridge: Approving sign data request:', request);
 
             try {
-                const result = await walletKit.signDataRequest(request);
+                const result = await walletKit.approveSignDataRequest(request);
                 console.log('✅ Sign data request approved:', result);
                 return result;
             } catch (error) {
