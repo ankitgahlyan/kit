@@ -98,8 +98,8 @@ export class RequestProcessor {
      */
     async approveConnectRequest(event: ConnectionRequestEvent | EventConnectApproval): Promise<void> {
         try {
-            // If event is EventConnectRequest, we need to create approval ourself
-            if ('preview' in event && 'request' in event) {
+            // If event is ConnectionRequestEvent, we need to create approval ourself
+            if ('preview' in event) {
                 const walletId = event.walletId;
 
                 if (!walletId) {
