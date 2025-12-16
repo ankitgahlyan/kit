@@ -250,7 +250,7 @@ export function processToncenterMoneyFlow(emulation: ToncenterEmulationResponse)
         inputs,
         allJettonTransfers: jettonTransfers,
         ourTransfers: selfTransfers,
-        ourAddress: ourAddress.toRawString().toUpperCase(),
+        ourAddress: ourAddress.toString(),
     };
 }
 

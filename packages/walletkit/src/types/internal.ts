@@ -20,6 +20,7 @@ import type { JSBridgeTransportFunction } from './jsBridge';
 import type { WalletId } from '../utils/walletId';
 import type { ExtraCurrencies, TransactionRequest, TransactionRequestMessage, BridgeEvent } from '../api/models';
 import { SendModeFromValue, SendModeToValue } from '../api/models';
+import { asMaybeAddressFriendly } from './primitive';
 
 // import type { WalletInterface } from './wallet';
 
@@ -164,7 +165,7 @@ export function toTransactionRequest(params: ConnectTransactionParamContent): Tr
         messages: params.messages.map(toTransactionRequestMessage),
         network: params.network ? { chainId: params.network } : undefined,
         validUntil: params.valid_until,
-        fromAddress: params.from,
+        fromAddress: asMaybeAddressFriendly(params.from) || undefined,
     };
 }
 
