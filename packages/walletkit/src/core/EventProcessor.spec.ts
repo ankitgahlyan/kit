@@ -317,7 +317,7 @@ describe('EventProcessor with Real EventStore', () => {
                 method: 'connect',
                 from: 'session-new',
                 walletId: 'no-wallet',
-                walletAddress: 'no-wallet',
+                walletAddress: undefined,
             });
         });
 
@@ -547,7 +547,7 @@ describe('EventProcessor with Real EventStore', () => {
                 method: 'connect',
                 from: 'session-new',
                 walletId: 'no-wallet',
-                walletAddress: 'no-wallet',
+                walletAddress: undefined,
             });
 
             expect(eventRouter.routeEvent).not.toHaveBeenCalledWith(

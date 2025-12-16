@@ -61,6 +61,7 @@ import type {
     UserFriendlyAddress,
     UserNFTsRequest,
 } from '../api/models';
+import { asAddressFriendly } from '../types/primitive';
 
 const log = globalLogger.createChild('ApiClientToncenter');
 
@@ -441,8 +442,8 @@ export class ApiClientToncenter implements ApiClient {
         const userJettons: Jetton[] = rawResponse.jetton_wallets.map((wallet) => {
             const jettonInfo = this.extractJettonInfoFromMetadata(wallet.jetton, rawResponse.metadata);
             const jetton: Jetton = {
-                address: wallet.jetton,
-                walletAddress: wallet.address,
+                address: asAddressFriendly(wallet.jetton),
+                walletAddress: asAddressFriendly(wallet.address),
                 balance: wallet.balance,
                 info: {
                     name: jettonInfo.name,
