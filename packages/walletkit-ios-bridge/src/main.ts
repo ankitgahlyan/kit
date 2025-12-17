@@ -147,7 +147,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport) => {
             console.log('➕ Bridge: Creating V4R2 wallet using mnemonic');
 
             const configuredNetworks = walletKit.getConfiguredNetworks();
-            const network = configuredNetworks.find((net) => net.chainId === parameters.network);
+            const network = configuredNetworks.find((net) => net.chainId === parameters.network.chainId);
 
             if (!network) {
                 throw new Error('Network is required to create V4R2 wallet');
