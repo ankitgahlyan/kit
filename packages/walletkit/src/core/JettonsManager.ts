@@ -20,7 +20,7 @@ import { JettonError, JettonErrorCode } from '../types/jettons';
 import type { NetworkManager } from './NetworkManager';
 import type { Jetton, UserFriendlyAddress } from '../api/models';
 import { Network } from '../api/models';
-import { asAddressFriendly, asMaybeAddressFriendly } from '../types/primitive';
+import { asAddressFriendly, asMaybeAddressFriendly } from '../utils';
 
 const log = globalLogger.createChild('JettonsManager');
 

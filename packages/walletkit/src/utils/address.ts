@@ -23,7 +23,12 @@ export function asAddressFriendly(data?: Address | string | null): UserFriendlyA
         return data.toString() as UserFriendlyAddress;
     }
     try {
-        if (data) return Address.parse(data).toString() as UserFriendlyAddress;
+        if (data) {
+            if (Address.isFriendly(data)) {
+                return Address.parseFriendly(data).address.toString() as UserFriendlyAddress;
+            }
+            return Address.parse(data).toString() as UserFriendlyAddress;
+        }
     } catch {
         /* empty */
     }
