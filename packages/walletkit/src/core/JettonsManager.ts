@@ -18,9 +18,8 @@ import type { EventEmitter } from './EventEmitter';
 import type { JettonInfo, JettonsAPI } from '../types/jettons';
 import { JettonError, JettonErrorCode } from '../types/jettons';
 import type { NetworkManager } from './NetworkManager';
-import type { Jetton, UserFriendlyAddress } from '../api/models';
+import type { Jetton } from '../api/models';
 import { Network } from '../api/models';
-import { asAddressFriendly, asMaybeAddressFriendly } from '../types/primitive';
 
 const log = globalLogger.createChild('JettonsManager');
 
@@ -104,26 +103,20 @@ export class JettonsManager implements JettonsAPI {
         const targetNetwork = network;
 
         try {
-            const cacheKey = createCacheKey(targetNetwork, jettonAddress);
+            const normalizedAddress = this.normalizeAddress(jettonAddress);
+            const cacheKey = createCacheKey(targetNetwork, normalizedAddress);
             const cachedInfo = this.cache.get(cacheKey);
 
             if (cachedInfo) {
-                log.debug('Jetton info found in cache', { jettonAddress: jettonAddress, network: targetNetwork });
+                log.debug('Jetton info found in cache', { jettonAddress: normalizedAddress, network: targetNetwork });
                 return cachedInfo;
             }
 
-            log.debug('Jetton info not found in cache', { jettonAddress: jettonAddress, network: targetNetwork });
-
-            const address = asMaybeAddressFriendly(jettonAddress);
-
-            if (!address) {
-                log.warn('Invalid jetton address format', { jettonAddress });
-                return null;
-            }
+            log.debug('Jetton info not found in cache', { jettonAddress: normalizedAddress, network: targetNetwork });
 
             const apiClient = this.networkManager.getClient(targetNetwork);
             const jettonFromApi = await apiClient.jettonsByAddress({
-                address: address,
+                address: normalizedAddress,
                 offset: 0,
                 limit: 1,
             });
@@ -180,16 +173,16 @@ export class JettonsManager implements JettonsAPI {
 
         try {
             const apiClient = this.networkManager.getClient(targetNetwork);
+            const normalizedAddress = this.normalizeAddress(userAddress);
             log.debug('Getting address jettons', {
-                userAddress: userAddress,
+                userAddress: normalizedAddress,
                 network: targetNetwork,
                 offset,
                 limit,
             });
 
-            const address = asAddressFriendly(userAddress);
             const response = await apiClient.jettonsByOwnerAddress({
-                ownerAddress: address,
+                ownerAddress: normalizedAddress,
                 offset,
                 limit,
             });
@@ -219,16 +212,13 @@ export class JettonsManager implements JettonsAPI {
     /**
      * Add jetton info to cache from emulation data for a specific network
      */
-    addJettonFromEmulation(
-        network: Network,
-        jettonAddress: UserFriendlyAddress,
-        emulationInfo: EmulationTokenInfoMasters,
-    ): void {
+    addJettonFromEmulation(network: Network, jettonAddress: string, emulationInfo: EmulationTokenInfoMasters): void {
         try {
-            const cacheKey = createCacheKey(network, jettonAddress);
+            const normalizedAddress = this.normalizeAddress(jettonAddress);
+            const cacheKey = createCacheKey(network, normalizedAddress);
 
             const jettonInfo: JettonInfo = {
-                address: jettonAddress,
+                address: normalizedAddress,
                 name: emulationInfo.name,
                 symbol: emulationInfo.symbol,
                 description: emulationInfo.description,
@@ -242,7 +232,7 @@ export class JettonsManager implements JettonsAPI {
 
             this.cache.set(cacheKey, jettonInfo);
             log.debug('Added jetton info from emulation to cache', {
-                jettonAddress: jettonAddress,
+                jettonAddress: normalizedAddress,
                 network,
                 name: jettonInfo.name,
                 symbol: jettonInfo.symbol,
@@ -269,9 +259,7 @@ export class JettonsManager implements JettonsAPI {
             let addedCount = 0;
 
             for (const [jettonAddress, addressMetadata] of Object.entries(metadata)) {
-                const address = asMaybeAddressFriendly(jettonAddress);
-
-                if (!addressMetadata.is_indexed || !addressMetadata.token_info || !address) {
+                if (!addressMetadata.is_indexed || !addressMetadata.token_info) {
                     continue;
                 }
 
@@ -284,8 +272,8 @@ export class JettonsManager implements JettonsAPI {
                 ) as EmulationTokenInfoMasters | undefined;
 
                 if (jettonMasterInfo) {
-                    log.debug('Adding jetton from emulation metadata', { address, network });
-                    this.addJettonFromEmulation(network, address, jettonMasterInfo);
+                    log.debug('Adding jetton from emulation metadata', { jettonAddress, network });
+                    this.addJettonFromEmulation(network, jettonAddress, jettonMasterInfo);
                     addedCount++;
                 }
             }
@@ -296,6 +284,16 @@ export class JettonsManager implements JettonsAPI {
         } catch (error) {
             log.error('Error adding jettons from emulation metadata', { error, network });
         }
+    }
+
+    /**
+     * Normalize jetton address for consistent caching
+     */
+    private normalizeAddress(address: string): string {
+        if (address === 'TON') {
+            return 'TON';
+        }
+        return Address.parse(address).toRawString().toUpperCase();
     }
 
     /**
