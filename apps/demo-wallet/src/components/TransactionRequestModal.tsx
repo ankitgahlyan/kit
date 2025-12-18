@@ -8,7 +8,7 @@
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import { Network } from '@ton/walletkit';
-import type { EventTransactionRequest, JettonInfo, TransactionTraceMoneyFlowItem } from '@ton/walletkit';
+import type { JettonInfo, TransactionRequestEvent, TransactionTraceMoneyFlowItem } from '@ton/walletkit';
 import { Address } from '@ton/core';
 import { useWalletKit, useAuth, useWalletStore } from '@ton/demo-core';
 import type { SavedWallet } from '@ton/demo-core';
@@ -25,7 +25,7 @@ import { formatUnits } from '../utils/units';
 const log = createComponentLogger('TransactionRequestModal');
 
 interface TransactionRequestModalProps {
-    request: EventTransactionRequest;
+    request: TransactionRequestEvent;
     savedWallets: SavedWallet[];
     isOpen: boolean;
     onApprove: () => void;
@@ -164,29 +164,31 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                             </div>
                         )}
 
-                        {request.preview.result === 'success' && (
+                        {request.preview.data.result === 'success' && (
                             <>
                                 {/* Money Flow Summary */}
                                 <div>
                                     <div className="space-y-3">
                                         {/* No transfers message */}
-                                        {request.preview.moneyFlow?.outputs === '0' &&
-                                        request.preview.moneyFlow.inputs === '0' &&
-                                        request.preview.moneyFlow.ourTransfers.length === 0 ? (
+                                        {request.preview.data.moneyFlow?.outputs === '0' &&
+                                        request.preview.data.moneyFlow.inputs === '0' &&
+                                        request.preview.data.moneyFlow.ourTransfers.length === 0 ? (
                                             <div className="border rounded-lg p-3 bg-gray-50">
                                                 <p className="text-sm text-gray-600 text-center">
                                                     This transaction doesn't involve any token transfers
                                                 </p>
                                             </div>
                                         ) : (
-                                            <JettonFlow transfers={request.preview.moneyFlow?.ourTransfers || []} />
+                                            <JettonFlow
+                                                transfers={request.preview.data.moneyFlow?.ourTransfers || []}
+                                            />
                                         )}
                                     </div>
                                 </div>
                                 {/* Parsed Actions from Emulation */}
-                                {/*{request.preview.result && (*/}
+                                {/*{request.preview.data.result && (*/}
                                 {/*    <ActionPreviewList*/}
-                                {/*        emulationResult={request.preview.emulationResult}*/}
+                                {/*        emulationResult={request.preview.data.trace}*/}
                                 {/*        walletAddress={request.walletAddress || currentWallet?.address}*/}
                                 {/*        className="mt-4"*/}
                                 {/*        title="Actions:"*/}
@@ -195,10 +197,10 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                             </>
                         )}
 
-                        {(request.preview.result === 'failure' || request.preview.error) && (
+                        {(request.preview.data.result === 'failure' || request.preview.data.error) && (
                             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                                 <p className="text-sm text-red-800">
-                                    <strong>Error:</strong> {request.preview.error?.message}
+                                    <strong>Error:</strong> {request.preview.data.error?.message}
                                 </p>
                             </div>
                         )}
