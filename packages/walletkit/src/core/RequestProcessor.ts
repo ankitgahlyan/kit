@@ -871,6 +871,20 @@ export class RequestProcessor {
                 { walletId, walletAddress, eventId: event.id },
             );
         }
+
+        const validUntil = event.request.validUntil;
+        if (validUntil) {
+            const now = Math.floor(Date.now() / 1000);
+            if (validUntil < now) {
+                throw new WalletKitError(
+                    ERROR_CODES.VALIDATION_ERROR,
+                    'Transaction valid_until timestamp is in the past',
+                    undefined,
+                    { validUntil, currentTime: now },
+                );
+            }
+        }
+
         return await signTransactionInternal(wallet, event.request);
     }
 
