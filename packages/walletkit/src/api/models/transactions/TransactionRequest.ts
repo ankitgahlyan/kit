@@ -49,7 +49,7 @@ export interface TransactionRequestMessage {
     /**
      * Recipient wallet address
      */
-    originalAddress?: string;
+    originalAddress: string;
 
     /**
      * Recipient wallet address in user-friendly format

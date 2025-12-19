@@ -85,6 +85,7 @@ export class WalletNftClass implements WalletNftInterface {
             )
             .endCell();
         const message: TransactionRequestMessage = {
+            originalAddress: nftTransferMessage.nftAddress,
             address: nftTransferMessage.nftAddress,
             amount: nftTransferMessage.transferAmount?.toString() ?? '100000000', // Default 0.1 TON
             payload: nftPayload.toBoc().toString('base64') as Base64String,
@@ -132,6 +133,7 @@ export class WalletNftClass implements WalletNftInterface {
         };
         const nftPayload = beginCell().store(storeNftTransferMessage(transferMessage)).endCell();
         const message: TransactionRequestMessage = {
+            originalAddress: params.nftAddress,
             address: params.nftAddress,
             amount: params.transferAmount.toString(),
             payload: nftPayload.toBoc().toString('base64') as Base64String,

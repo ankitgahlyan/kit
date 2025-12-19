@@ -54,6 +54,7 @@ export class WalletTonClass implements WalletTonInterface {
                 .toString('base64') as Base64String;
         }
         const message: TransactionRequestMessage = {
+            originalAddress: param.recipientAddress,
             address: param.recipientAddress,
             amount: param.transferAmount,
             payload: body,
@@ -94,6 +95,7 @@ export class WalletTonClass implements WalletTonInterface {
                     .toString('base64') as Base64String;
             }
             const message: TransactionRequestMessage = {
+                originalAddress: param.recipientAddress,
                 address: param.recipientAddress,
                 amount: param.transferAmount,
                 payload: body,
