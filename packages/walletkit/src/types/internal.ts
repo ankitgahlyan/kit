@@ -159,7 +159,7 @@ export function toTransactionRequestMessage(msg: ConnectTransactionParamMessage)
 
 export function toConnectTransactionParamMessage(message: TransactionRequestMessage): ConnectTransactionParamMessage {
     return {
-        address: message.originalAddress,
+        address: message.originalAddress ?? undefined,
         amount: message.amount,
         payload: message.payload,
         stateInit: message.stateInit,
