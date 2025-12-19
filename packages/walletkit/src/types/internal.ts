@@ -147,6 +147,7 @@ export interface ConnectTransactionParamContent {
 
 export function toTransactionRequestMessage(msg: ConnectTransactionParamMessage): TransactionRequestMessage {
     return {
+        originalAddress: msg.address,
         address: asAddressFriendly(msg.address),
         amount: msg.amount,
         payload: msg.payload ? (msg.payload as Base64String) : undefined,
@@ -158,7 +159,7 @@ export function toTransactionRequestMessage(msg: ConnectTransactionParamMessage)
 
 export function toConnectTransactionParamMessage(message: TransactionRequestMessage): ConnectTransactionParamMessage {
     return {
-        address: message.address,
+        address: message.originalAddress,
         amount: message.amount,
         payload: message.payload,
         stateInit: message.stateInit,

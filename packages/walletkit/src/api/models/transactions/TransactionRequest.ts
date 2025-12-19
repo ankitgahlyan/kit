@@ -49,6 +49,11 @@ export interface TransactionRequestMessage {
     /**
      * Recipient wallet address
      */
+    originalAddress?: string;
+
+    /**
+     * Recipient wallet address in user-friendly format
+     */
     address: UserFriendlyAddress;
 
     /**
