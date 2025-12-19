@@ -110,6 +110,7 @@ export class WalletJettonClass implements WalletJettonInterface {
 
         return {
             messages: [message],
+            originalFromAddress: this.getAddress(),
             fromAddress: this.getAddress(),
         };
     }

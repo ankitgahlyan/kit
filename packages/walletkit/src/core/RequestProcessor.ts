@@ -923,14 +923,14 @@ function toTonConnectSignDataPayload(payload: SignDataPayload): TonConnectSignDa
     if (payload.data.type === 'text') {
         return {
             network: network,
-            from: payload.fromAddress,
+            from: payload.originalFromAddress,
             type: 'text',
             text: payload.data.value.content,
         };
     } else if (payload.data.type === 'cell') {
         return {
             network: network,
-            from: payload.fromAddress,
+            from: payload.originalFromAddress,
             type: 'cell',
             schema: payload.data.value.schema,
             cell: payload.data.value.content,
@@ -938,7 +938,7 @@ function toTonConnectSignDataPayload(payload: SignDataPayload): TonConnectSignDa
     } else {
         return {
             network: network,
-            from: payload.fromAddress,
+            from: payload.originalFromAddress,
             type: 'binary',
             bytes: payload.data.value.content,
         };

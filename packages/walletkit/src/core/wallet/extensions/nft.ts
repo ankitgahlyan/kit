@@ -101,6 +101,7 @@ export class WalletNftClass implements WalletNftInterface {
 
         return {
             messages: [message],
+            originalFromAddress: this.getAddress(),
             fromAddress: this.getAddress(),
         };
     }
@@ -147,6 +148,7 @@ export class WalletNftClass implements WalletNftInterface {
 
         return {
             messages: [message],
+            originalFromAddress: this.getAddress(),
             fromAddress: this.getAddress(),
         };
     }

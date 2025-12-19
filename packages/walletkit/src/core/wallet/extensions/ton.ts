@@ -68,6 +68,7 @@ export class WalletTonClass implements WalletTonInterface {
 
         return {
             messages: [message],
+            originalFromAddress: this.getAddress(),
             fromAddress: this.getAddress(),
         };
     }
@@ -109,6 +110,7 @@ export class WalletTonClass implements WalletTonInterface {
         }
         return {
             messages,
+            originalFromAddress: this.getAddress(),
             fromAddress: this.getAddress(),
         };
     }

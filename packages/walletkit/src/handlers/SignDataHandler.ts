@@ -170,6 +170,7 @@ export class SignDataHandler
 
             return {
                 network: parsed.network ? Network.custom(parsed.network) : undefined,
+                originalFromAddress: parsed.from ?? '',
                 fromAddress: asMaybeAddressFriendly(parsed.from) ?? undefined,
                 data: signData,
             };
