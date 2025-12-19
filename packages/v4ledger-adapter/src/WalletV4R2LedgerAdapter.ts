@@ -150,7 +150,7 @@ export class WalletV4R2LedgerAdapter implements WalletAdapter {
             }
 
             const signedCell = await tonTransport.signTransaction(this.derivationPath, {
-                to: Address.parse(message.address),
+                to: Address.parse(message.originalAddress),
                 sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
                 seqno: seqno,
                 timeout: timeout,
