@@ -14,7 +14,6 @@ import type {
     EventDisconnect,
     Wallet,
 } from '@ton/walletkit';
-import { toast } from 'sonner';
 
 import { createComponentLogger } from '../../utils/logger';
 import type { QueuedRequest, QueuedRequestData, DisconnectNotification } from '../../types/wallet';
@@ -165,10 +164,32 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 log.error('Failed to approve transaction request:', state.tonConnect.pendingTransactionRequest);
-                if (error?.message?.toLocaleLowerCase()?.includes('ledger')) {
-                    toast.error('Could not approve transaction request with Ledger, please unlock it and open TON App');
+                const errorMessage = error?.message?.toLowerCase() ?? '';
+                const isLedgerError = errorMessage.includes('ledger');
+                const isUserRejection = errorMessage.includes('rejected') || errorMessage.includes('denied');
+
+                if (isLedgerError && isUserRejection) {
+                    // User rejected transaction on Ledger device - close modal and reject
+                    log.warn('Transaction was rejected on Ledger device');
+                    try {
+                        await state.walletCore.walletKit!.rejectTransactionRequest(
+                            state.tonConnect.pendingTransactionRequest!,
+                            'User rejected transaction on Ledger device',
+                        );
+                    } catch (rejectError) {
+                        log.error('Failed to send rejection after Ledger reject:', rejectError);
+                    }
+                    set((state) => {
+                        state.tonConnect.pendingTransactionRequest = undefined;
+                        state.tonConnect.isTransactionModalOpen = false;
+                    });
+                    state.clearCurrentRequestFromQueue();
+                } else if (isLedgerError) {
+                    // Other Ledger errors (device not connected, app not open) - keep modal open for retry
+                    log.warn('Could not approve transaction request with Ledger, please unlock it and open TON App');
+                    throw error; // Re-throw to let modal reset loading state
                 } else {
-                    toast.error('Could not approve transaction request');
+                    log.warn('Could not approve transaction request');
                     setTimeout(() => {
                         set((state) => {
                             state.tonConnect.pendingTransactionRequest = undefined;
@@ -215,7 +236,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
                     state.tonConnect.pendingTransactionRequest = undefined;
                     state.tonConnect.isTransactionModalOpen = false;
                 });
-                toast.error('Could not properly reject transaction request: Session not found');
+                log.warn('Could not properly reject transaction request: Session not found');
 
                 state.clearCurrentRequestFromQueue();
                 return;
@@ -261,9 +282,36 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
 
                 state.clearCurrentRequestFromQueue();
             }, 3000);
-        } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
             log.error('Failed to approve sign data request:', error);
-            throw error;
+            const errorMessage = error?.message?.toLowerCase() ?? '';
+            const isLedgerError = errorMessage.includes('ledger');
+            const isUserRejection = errorMessage.includes('rejected') || errorMessage.includes('denied');
+
+            if (isLedgerError && isUserRejection) {
+                // User rejected signing on Ledger device - close modal and reject
+                log.warn('Sign request was rejected on Ledger device');
+                try {
+                    await state.walletCore.walletKit!.rejectSignDataRequest(
+                        state.tonConnect.pendingSignDataRequest!,
+                        'User rejected sign request on Ledger device',
+                    );
+                } catch (rejectError) {
+                    log.error('Failed to send rejection after Ledger reject:', rejectError);
+                }
+                set((state) => {
+                    state.tonConnect.pendingSignDataRequest = undefined;
+                    state.tonConnect.isSignDataModalOpen = false;
+                });
+                state.clearCurrentRequestFromQueue();
+            } else if (isLedgerError) {
+                // Other Ledger errors - keep modal open for retry
+                log.warn('Could not sign data with Ledger, please unlock it and open TON App');
+                throw error;
+            } else {
+                throw error;
+            }
         }
     },
 
@@ -332,9 +380,8 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
 
             const updatedState = get();
             if (updatedState.tonConnect.requestQueue.items.length >= MAX_QUEUE_SIZE) {
-                log.error('Queue overflow: cannot add more requests');
-                toast.error(
-                    `Request queue is full (${MAX_QUEUE_SIZE} items). Please approve or reject pending requests.`,
+                log.error(
+                    `Queue overflow: cannot add more requests. Queue is full (${MAX_QUEUE_SIZE} items). Please approve or reject pending requests.`,
                 );
                 return;
             }
