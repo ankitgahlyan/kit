@@ -52,6 +52,12 @@ module.exports = [
         },
     },
     {
+        files: ['packages/examples/**/*.ts', 'packages/walletkit/scripts/**/*.ts'],
+        rules: {
+            'no-console': 'off',
+        },
+    },
+    {
         files: ['**/**/*.ts', '**/**/*.tsx'],
         plugins: {
             import: importPlugin,

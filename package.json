@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "kit": "pnpm --filter @ton/walletkit",
+    "examples": "pnpm --filter @ton/walletkit-examples",
     "demo-wallet": "pnpm --filter demo-wallet",
     "demo-wallet-native": "pnpm --filter demo-wallet-native",
     "build": "turbo build",
