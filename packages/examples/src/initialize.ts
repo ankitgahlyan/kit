@@ -29,8 +29,9 @@ import 'dotenv/config';
  * 4. Properly closing it
  * 5. Exiting the process
  */
-async function main() {
-    console.log('=== WalletKit Initialize Sample ===');
+
+export async function walletKitInitializeSample(): Promise<TonWalletKit> {
+    console.log('=== WalletKit Initialize ===');
     console.log('Step 1: Creating WalletKit instance...');
     // SAMPLE_START: INIT_KIT_2
     const kit = new TonWalletKit({
@@ -88,14 +89,18 @@ async function main() {
         console.log('V5R1 Balance:', await walletV5R1.getBalance());
     }
     // SAMPLE_END: INIT_KIT_4
+    return kit;
+}
 
+async function main() {
+    const kit = await walletKitInitializeSample();
     console.log('Step 3: Closing WalletKit...');
     await kit.close();
     console.log('✓ WalletKit closed successfully');
     console.log(`Status after close: ${JSON.stringify(kit.getStatus())}`);
 
     console.log('Step 5: Exiting process...');
-    console.log('✓ WalletKit Initialize Sample completed successfully');
+    console.log('✓ WalletKit Initialize completed successfully');
 }
 
 main().catch((error) => {

@@ -118,60 +118,61 @@ Register callbacks that show UI and then approve or reject via kit methods. Note
 
 ```ts
 // Connect requests - triggered when a dApp wants to connect
-kit.onConnectRequest(async (req) => {
-  try {
-    // Use req.preview to display dApp info in your UI
-    const name = req.dAppInfo?.name;
-    if (confirm(`Connect to ${name}?`)) {
-      // Set wallet address on the request before approving
-      req.walletAddress = getSelectedWalletAddress(); // Your wallet selection logic
-      await kit.approveConnectRequest(req);
-    } else {
-      await kit.rejectConnectRequest(req, 'User rejected');
+kit.onConnectRequest(async (event: ConnectionRequestEvent) => {
+    try {
+        // Use req.preview to display dApp info in your UI
+        const name = event.dAppInfo?.name;
+        if (confirm(`Connect to ${name}?`)) {
+            // Set wallet address on the request before approving
+            event.walletAddress = getSelectedWalletAddress(); // Your wallet selection logic
+            await kit.approveConnectRequest(event);
+        } else {
+            await kit.rejectConnectRequest(event, 'User rejected');
+        }
+    } catch (error) {
+        console.error('Connect request failed:', error);
+        await kit.rejectConnectRequest(event, 'Error processing request');
     }
-  } catch (error) {
-    console.error('Connect request failed:', error);
-    await kit.rejectConnectRequest(req, 'Error processing request');
-  }
 });
 
 // Transaction requests - triggered when a dApp wants to execute a transaction
-kit.onTransactionRequest(async (tx) => {
-  try {
-    // Use tx.preview.moneyFlow.ourTransfers to show net asset changes
-    // Each transfer shows positive amounts for incoming, negative for outgoing
-    if (confirm('Do you confirm this transaction?')) {
-      await kit.approveTransactionRequest(tx);
-    } else {
-      await kit.rejectTransactionRequest(tx, 'User rejected');
+kit.onTransactionRequest(async (event: TransactionRequestEvent) => {
+    try {
+        // Use tx.preview.moneyFlow.ourTransfers to show net asset changes
+        // Each transfer shows positive amounts for incoming, negative for outgoing
+        if (confirm('Do you confirm this transaction?')) {
+            await kit.approveTransactionRequest(event);
+        } else {
+            await kit.rejectTransactionRequest(event, 'User rejected');
+        }
+    } catch (error) {
+        console.error('Transaction request failed:', error);
+        await kit.rejectTransactionRequest(event, 'Error processing request');
     }
-  } catch (error) {
-    console.error('Transaction request failed:', error);
-    await kit.rejectTransactionRequest(tx, 'Error processing request');
-  }
 });
 
 // Sign data requests - triggered when a dApp wants to sign arbitrary data
-kit.onSignDataRequest(async (sd) => {
-  try {
-    // Use sd.preview.kind to determine how to display the data
-    if (confirm('Sign this data?')) {
-      await kit.signDataRequest(sd);
-    } else {
-      await kit.rejectSignDataRequest(sd, 'User rejected');
+kit.onSignDataRequest(async (event: SignDataRequestEvent) => {
+    try {
+        // Use event.preview.kind to determine how to display the data
+        if (confirm('Sign this data?')) {
+            await kit.approveSignDataRequest(event);
+        } else {
+            await kit.rejectSignDataRequest(event, 'User rejected');
+        }
+    } catch (error) {
+        console.error('Sign data request failed:', error);
+        await kit.rejectSignDataRequest(event, 'Error processing request');
     }
-  } catch (error) {
-    console.error('Sign data request failed:', error);
-    await kit.rejectSignDataRequest(sd, 'Error processing request');
-  }
 });
 
 // Disconnect events - triggered when a dApp disconnects
-kit.onDisconnect((evt) => {
-  // Clean up any UI state related to this connection
-  console.log(`Disconnected from wallet: ${evt.walletAddress}`);
+kit.onDisconnect((event: DisconnectionEvent) => {
+    // Clean up any UI state related to this connection
+    console.log(`Disconnected from wallet: ${event.walletAddress}`);
 });
 ```
+
 
 ### Handle TON Connect links
 
@@ -180,8 +181,8 @@ When users scan a QR code or click a deep link from a dApp, pass the TON Connect
 ```ts
 // Example: from a QR scanner, deep link, or URL parameter
 async function onTonConnectLink(url: string) {
-  // url format: tc://connect?...
-  await kit.handleTonConnectUrl(url);
+    // url format: tc://connect?...
+    await kit.handleTonConnectUrl(url);
 }
 ```
 
