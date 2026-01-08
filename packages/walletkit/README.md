@@ -127,18 +127,17 @@ kit.onConnectRequest(async (event: ConnectionRequestEvent) => {
         // Use event.preview to display dApp info in your UI
         const name = event.dAppInfo?.name;
         if (yourConfirmLogic(`Connect to ${name}?`)) {
-            // Set wallet ID and address on the request before approving
-            const wallets = kit.getWallets();
-            console.log(`Available wallets: ${wallets.length}`);
-            const walletInfo = await yourWalletSelectionLogic();
-            if (!walletInfo) {
-                console.error('No wallet available. Wallets count:', wallets.length);
+            const selectedWalletId = getSelectedWalletId();
+            const wallet = kit.getWallet(selectedWalletId);
+            if (!wallet) {
+                console.error('Selected wallet not found');
                 await kit.rejectConnectRequest(event, 'No wallet available');
                 return;
             }
-            console.log(`Using wallet ID: ${walletInfo.walletId}, address: ${walletInfo.walletAddress}`);
-            event.walletId = walletInfo.walletId;
-            event.walletAddress = walletInfo.walletAddress;
+            console.log(`Using wallet ID: ${wallet.getWalletId()}, address: ${wallet.getAddress()}`);
+
+            // Set walletId on the request before approving
+            event.walletId = wallet.getWalletId();
             await kit.approveConnectRequest(event);
         } else {
             await kit.rejectConnectRequest(event, 'User rejected');
@@ -203,22 +202,15 @@ async function onTonConnectLink(url: string) {
 ### Basic wallet operations
 
 ```ts
-// Get wallet instance (is your own logic)
-async function yourWalletSelectionLogic(): Promise<{
-    walletId: string;
-    walletAddress: UserFriendlyAddress;
-    balance: TokenAmount;
-}> {
-    const wallet = kit.getWallets().pop();
-    if (!wallet) {
-        throw new Error('Wallet not found');
-    }
-    return {
-        walletId: wallet.getWalletId(),
-        walletAddress: wallet.getAddress(),
-        balance: await wallet.getBalance(), // Query balance
-    };
+const selectedWalletId = getSelectedWalletId();
+const wallet = kit.getWallet(selectedWalletId);
+if (!wallet) {
+    console.error('Selected wallet not found');
+    return;
 }
+// Query balance
+const balance = await wallet.getBalance();
+console.log('WalletBalance', wallet.getAddress(), balance.toString());
 ```
 
 ### Rendering previews (reference)

@@ -13,8 +13,6 @@ import type {
     TransactionRequestEvent,
     DisconnectionEvent,
     ConnectionRequestEvent,
-    UserFriendlyAddress,
-    TokenAmount,
 } from '@ton/walletkit';
 
 import 'dotenv/config';
@@ -29,24 +27,26 @@ async function main() {
     console.log('=== Listen for requests from dApps ===');
     const kit = await walletKitInitializeSample();
 
-    // SAMPLE_START: BASIC_WALLET_OPERATIONS_1
-    // Get wallet instance (is your own logic)
-    async function yourWalletSelectionLogic(): Promise<{
-        walletId: string;
-        walletAddress: UserFriendlyAddress;
-        balance: TokenAmount;
-    }> {
-        const wallet = kit.getWallets().pop();
-        if (!wallet) {
-            throw new Error('Wallet not found');
-        }
-        return {
-            walletId: wallet.getWalletId(),
-            walletAddress: wallet.getAddress(),
-            balance: await wallet.getBalance(), // Query balance
-        };
+    // For demo purposes, we select the last wallet in the list
+    function getSelectedWalletId() {
+        return kit.getWallets().pop()?.getWalletId() ?? '';
     }
-    // SAMPLE_END: BASIC_WALLET_OPERATIONS_1
+
+    async function getWalletInfo() {
+        // SAMPLE_START: BASIC_WALLET_OPERATIONS_1
+        const selectedWalletId = getSelectedWalletId();
+        const wallet = kit.getWallet(selectedWalletId);
+        if (!wallet) {
+            console.error('Selected wallet not found');
+            return;
+        }
+        // Query balance
+        const balance = await wallet.getBalance();
+        console.log('WalletBalance', wallet.getAddress(), balance.toString());
+        // SAMPLE_END: BASIC_WALLET_OPERATIONS_1
+    }
+
+    getWalletInfo();
 
     function yourConfirmLogic(message: string): boolean {
         return message.startsWith('Connect to');
@@ -67,18 +67,17 @@ async function main() {
             // Use event.preview to display dApp info in your UI
             const name = event.dAppInfo?.name;
             if (yourConfirmLogic(`Connect to ${name}?`)) {
-                // Set wallet ID and address on the request before approving
-                const wallets = kit.getWallets();
-                console.log(`Available wallets: ${wallets.length}`);
-                const walletInfo = await yourWalletSelectionLogic();
-                if (!walletInfo) {
-                    console.error('No wallet available. Wallets count:', wallets.length);
+                const selectedWalletId = getSelectedWalletId();
+                const wallet = kit.getWallet(selectedWalletId);
+                if (!wallet) {
+                    console.error('Selected wallet not found');
                     await kit.rejectConnectRequest(event, 'No wallet available');
                     return;
                 }
-                console.log(`Using wallet ID: ${walletInfo.walletId}, address: ${walletInfo.walletAddress}`);
-                event.walletId = walletInfo.walletId;
-                event.walletAddress = walletInfo.walletAddress;
+                console.log(`Using wallet ID: ${wallet.getWalletId()}, address: ${wallet.getAddress()}`);
+
+                // Set walletId on the request before approving
+                event.walletId = wallet.getWalletId();
                 await kit.approveConnectRequest(event);
             } else {
                 await kit.rejectConnectRequest(event, 'User rejected');
