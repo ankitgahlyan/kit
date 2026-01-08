@@ -203,14 +203,22 @@ async function onTonConnectLink(url: string) {
 ### Basic wallet operations
 
 ```ts
-// Get wallet instance (getSelectedWalletAddress is your own logic)
-const address = getSelectedWalletAddress();
-const current = kit.getWallet(address);
-if (!current) return;
-
-// Query balance
-const balance = await current.getBalance();
-console.log(address, balance.toString());
+// Get wallet instance (is your own logic)
+async function yourWalletSelectionLogic(): Promise<{
+    walletId: string;
+    walletAddress: UserFriendlyAddress;
+    balance: TokenAmount;
+}> {
+    const wallet = kit.getWallets().pop();
+    if (!wallet) {
+        throw new Error('Wallet not found');
+    }
+    return {
+        walletId: wallet.getWalletId(),
+        walletAddress: wallet.getAddress(),
+        balance: await wallet.getBalance(), // Query balance
+    };
+}
 ```
 
 ### Rendering previews (reference)

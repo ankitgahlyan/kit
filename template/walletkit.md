@@ -77,16 +77,7 @@ When users scan a QR code or click a deep link from a dApp, pass the TON Connect
 
 ### Basic wallet operations
 
-```ts
-// Get wallet instance (getSelectedWalletAddress is your own logic)
-const address = getSelectedWalletAddress();
-const current = kit.getWallet(address);
-if (!current) return;
-
-// Query balance
-const balance = await current.getBalance();
-console.log(address, balance.toString());
-```
+%%packages/examples/src#BASIC_WALLET_OPERATIONS%%
 
 ### Rendering previews (reference)
 

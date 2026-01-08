@@ -14,6 +14,7 @@ import type {
     DisconnectionEvent,
     ConnectionRequestEvent,
     UserFriendlyAddress,
+    TokenAmount,
 } from '@ton/walletkit';
 
 import 'dotenv/config';
@@ -28,16 +29,24 @@ async function main() {
     console.log('=== Listen for requests from dApps ===');
     const kit = await walletKitInitializeSample();
 
-    function yourWalletSelectionLogic(): { walletId: string; walletAddress: UserFriendlyAddress } | undefined {
+    // SAMPLE_START: BASIC_WALLET_OPERATIONS_1
+    // Get wallet instance (is your own logic)
+    async function yourWalletSelectionLogic(): Promise<{
+        walletId: string;
+        walletAddress: UserFriendlyAddress;
+        balance: TokenAmount;
+    }> {
         const wallet = kit.getWallets().pop();
         if (!wallet) {
-            return;
+            throw new Error('Wallet not found');
         }
         return {
             walletId: wallet.getWalletId(),
             walletAddress: wallet.getAddress(),
+            balance: await wallet.getBalance(), // Query balance
         };
     }
+    // SAMPLE_END: BASIC_WALLET_OPERATIONS_1
 
     function yourConfirmLogic(_message: string): boolean {
         return true;
