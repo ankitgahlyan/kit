@@ -6,7 +6,7 @@
  *
  */
 
-import type { AnalyticsEvent } from './types';
+import type { AnalyticsEvent } from './swagger';
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 

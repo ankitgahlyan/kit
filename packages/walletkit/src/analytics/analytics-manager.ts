@@ -7,8 +7,8 @@
  */
 
 import { globalLogger } from '../core/Logger';
-import type { AnalyticsEvent } from './types';
 import type { Analytics } from './analytics';
+import type { AnalyticsEvent } from './swagger';
 import { pascalToKebab } from './utils';
 
 const log = globalLogger.createChild('AnalyticsManager');
@@ -76,7 +76,7 @@ export class AnalyticsManager {
                         const executedData = Object.fromEntries(
                             Object.entries(sharedData ?? {}).map(([key, value]) => [
                                 key,
-                                typeof value === 'function' ? value() : value,
+                                typeof value === 'function' ? (value as () => unknown)() : value,
                             ]),
                         );
 
@@ -88,7 +88,7 @@ export class AnalyticsManager {
                     };
                 }
 
-                return (target as any)[prop];
+                return Reflect.get(target, prop);
             },
         }) as unknown as Analytics<TEvent, TOptional>;
     }

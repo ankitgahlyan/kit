@@ -6,9 +6,9 @@
  *
  */
 
+import { Api } from './swagger';
 import { globalLogger } from '../core/Logger';
 import type { AnalyticsConfig } from '../types/config';
-import { Api } from './Api';
 
 const log = globalLogger.createChild('AnalyticsApi');
 
