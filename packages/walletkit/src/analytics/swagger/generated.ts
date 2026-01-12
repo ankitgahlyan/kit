@@ -2174,7 +2174,7 @@ export interface WalletConnectAcceptedEvent {
    * @format base64
    * @example "ZXhhbXBsZQ=="
    */
-  wallet_id: string;
+  wallet_id?: string;
 }
 
 /** When the user approves the connection in the wallet. */
@@ -2240,7 +2240,7 @@ export interface WalletConnectRejectedEvent {
    * @format base64
    * @example "ZXhhbXBsZQ=="
    */
-  wallet_id: string;
+  wallet_id?: string;
 }
 
 /** When the wallet receives a connection request from the dApp. */
@@ -2421,7 +2421,7 @@ export interface WalletConnectResponseSentEvent {
    * @format base64
    * @example "ZXhhbXBsZQ=="
    */
-  wallet_id: string;
+  wallet_id?: string;
 }
 
 /** When the user approves the data signing in the wallet. */

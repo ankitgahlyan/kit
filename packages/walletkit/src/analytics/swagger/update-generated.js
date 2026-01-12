@@ -165,10 +165,6 @@ function transformEventName(content) {
                             example: 'ZXhhbXBsZQ==',
                         };
                     }
-                    // Make it required
-                    if (!definition.required.includes('wallet_id')) {
-                        definition.required.push('wallet_id');
-                    }
                 }
             }
         }

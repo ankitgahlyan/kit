@@ -358,7 +358,7 @@ export class TonWalletKit implements ITonWalletKit {
 
         const removeSession = async (sessionId: string) => {
             // Get session to check if it's a JS bridge session
-            const session = this.sessionManager.getSession(sessionId);
+            const session = await this.sessionManager.getSession(sessionId);
 
             if (session) {
                 try {

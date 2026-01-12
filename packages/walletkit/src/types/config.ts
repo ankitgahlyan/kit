@@ -63,7 +63,9 @@ export interface TonWalletKitOptions {
     /** Event processor settings */
     eventProcessor?: EventProcessorConfig;
 
-    analytics?: AnalyticsManagerOptions;
+    analytics?: AnalyticsManagerOptions & {
+        enabled?: boolean;
+    };
 
     dev?: {
         disableNetworkSend?: boolean;

@@ -43,7 +43,7 @@ export interface AnalyticsAppInfo {
 export type AnalyticsManagerOptions = {
     appInfo?: AnalyticsAppInfo;
     endpoint?: string;
-    enabled?: boolean;
     batchTimeoutMs?: number;
     maxBatchSize?: number;
+    maxQueueSize?: number;
 };

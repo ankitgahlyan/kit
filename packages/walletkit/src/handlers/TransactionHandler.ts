@@ -138,22 +138,19 @@ export class TransactionHandler
             walletAddress: walletAddress ?? wallet.getAddress(),
         };
 
-        if (this.analytics && event.from) {
-            const sessionData = this.sessionManager.getSession(event.from);
+        if (this.analytics) {
+            const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-            if (sessionData?.publicKey) {
-                // Send wallet-transaction-request-received event
-                this.analytics?.emitWalletTransactionRequestReceived({
-                    trace_id: event.traceId,
-                    client_id: event.from,
-                    wallet_id: sessionData?.publicKey,
+            this.analytics?.emitWalletTransactionRequestReceived({
+                trace_id: event.traceId,
+                client_id: event.from,
+                wallet_id: sessionData?.publicKey,
 
-                    dapp_name: event.dAppInfo?.name,
-                    network_id: wallet.getNetwork().chainId,
-                    // manifest_json_url: event.dAppInfo?.url, // todo
-                    origin_url: event.dAppInfo?.url,
-                });
-            }
+                dapp_name: event.dAppInfo?.name,
+                network_id: wallet.getNetwork().chainId,
+                // manifest_json_url: event.dAppInfo?.url, // todo
+                origin_url: event.dAppInfo?.url,
+            });
         }
 
         return txEvent;

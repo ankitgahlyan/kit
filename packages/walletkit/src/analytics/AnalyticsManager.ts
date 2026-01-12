@@ -29,7 +29,7 @@ export class AnalyticsManager {
 
     private readonly batchTimeoutMs: number;
     private readonly maxBatchSize: number;
-    private enabled: boolean;
+    private readonly maxQueueSize: number;
 
     private static readonly HTTP_STATUS = {
         TOO_MANY_REQUESTS: 429,
@@ -44,7 +44,7 @@ export class AnalyticsManager {
         this.batchTimeoutMs = options.batchTimeoutMs ?? 5000;
         this.currentBatchTimeoutMs = this.batchTimeoutMs;
         this.maxBatchSize = options.maxBatchSize ?? 100;
-        this.enabled = options.enabled ?? true;
+        this.maxQueueSize = options.maxQueueSize ?? 1000;
         this.appInfo = options.appInfo;
 
         this.api = new Api({
@@ -93,10 +93,6 @@ export class AnalyticsManager {
     }
 
     private emit(event: AnalyticsEvent): void {
-        if (!this.enabled) {
-            return;
-        }
-
         const enhancedEvent: AnalyticsEvent = {
             ...this.baseEvent,
             ...event,
@@ -116,6 +112,12 @@ export class AnalyticsManager {
         log.debug('Analytics event emitted', { event: enhancedEvent });
 
         this.events.push(enhancedEvent);
+
+        if (this.events.length > this.maxQueueSize) {
+            const removed = this.events.length - this.maxQueueSize;
+            this.events = this.events.slice(removed);
+            log.warn('Analytics queue overflow, dropped oldest events', { count: removed });
+        }
 
         if (this.events.length >= this.maxBatchSize) {
             void this.flush();
@@ -171,10 +173,6 @@ export class AnalyticsManager {
     }
 
     private async processEventsBatch(eventsToSend: AnalyticsEvent[]): Promise<void> {
-        if (!this.enabled) {
-            return;
-        }
-
         log.debug('Sending analytics events', { count: eventsToSend.length });
 
         try {
@@ -199,6 +197,12 @@ export class AnalyticsManager {
 
     private restoreEvents(eventsToSend: AnalyticsEvent[]): void {
         this.events.unshift(...eventsToSend);
+
+        if (this.events.length > this.maxQueueSize) {
+            const removed = this.events.length - this.maxQueueSize;
+            this.events = this.events.slice(0, this.maxQueueSize);
+            log.warn('Analytics queue overflow after restore, dropped oldest events', { count: removed });
+        }
     }
 
     private scheduleNextFlushIfNeeded(): void {
@@ -244,13 +248,5 @@ export class AnalyticsManager {
 
     private handleTooManyRequests(status: number, statusText: string): void {
         throw new Error(`Analytics API error: ${status} ${statusText}`);
-    }
-
-    setEnabled(enabled: boolean): void {
-        this.enabled = enabled;
-    }
-
-    isEnabled(): boolean {
-        return this.enabled;
     }
 }

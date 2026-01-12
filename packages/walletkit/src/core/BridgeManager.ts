@@ -141,7 +141,7 @@ export class BridgeManager {
         // this.sessions.set(appSessionId, walletSession);
         log.info('[BRIDGE] Creating session', { appSessionId });
 
-        const session = this.sessionManager.getSession(appSessionId);
+        const session = await this.sessionManager.getSession(appSessionId);
         if (!session) {
             throw new WalletKitError(ERROR_CODES.SESSION_NOT_FOUND, `Session not found`, undefined, {
                 appSessionId,
@@ -221,7 +221,7 @@ export class BridgeManager {
             );
         }
 
-        const session = _session ?? this.sessionManager.getSession(sessionId);
+        const session = _session ?? (await this.sessionManager.getSession(sessionId));
         if (!session) {
             throw new WalletKitError(ERROR_CODES.SESSION_NOT_FOUND, `Session not found for response`, undefined, {
                 sessionId,
@@ -594,7 +594,7 @@ export class BridgeManager {
 
             await this.sessionManager.initialize();
             if (rawEvent.from) {
-                const session = this.sessionManager.getSession(rawEvent.from);
+                const session = await this.sessionManager.getSession(rawEvent.from);
                 rawEvent.domain = session?.domain || '';
                 if (session) {
                     if (session?.walletId) {

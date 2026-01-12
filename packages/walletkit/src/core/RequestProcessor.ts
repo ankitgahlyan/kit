@@ -145,38 +145,38 @@ export class RequestProcessor {
                 // event.from = newSession.sessionId;
                 await this.bridgeManager.sendResponse(event, response.result);
 
-                if (this.analytics && event.from) {
-                    const sessionData = this.sessionManager.getSession(newSession.sessionId);
+                if (this.analytics) {
+                    const sessionData = event.from
+                        ? await this.sessionManager.getSession(newSession.sessionId)
+                        : undefined;
 
-                    if (sessionData?.publicKey) {
-                        // Send wallet-sign-data-request-received event
-                        this.analytics?.emitWalletConnectAccepted({
-                            client_id: event.from,
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            network_id: wallet.getNetwork().chainId,
-                            origin_url: event.dAppInfo?.url,
-                            dapp_name: event.dAppInfo?.name,
-                            is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
-                            is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
-                            manifest_json_url: event.dAppInfo?.manifestUrl,
-                            proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
-                                ?.payload?.length,
-                        });
-                        this.analytics?.emitWalletConnectResponseSent({
-                            client_id: event.from,
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            dapp_name: event.dAppInfo?.name,
-                            origin_url: event.dAppInfo?.url,
-                            is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
-                            is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
-                            manifest_json_url: event.preview.dAppInfo?.manifestUrl,
-                            proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
-                                .payload?.length,
-                            network_id: wallet.getNetwork().chainId,
-                        });
-                    }
+                    // Send wallet-sign-data-request-received event
+                    this.analytics.emitWalletConnectAccepted({
+                        client_id: event.from,
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        network_id: wallet.getNetwork().chainId,
+                        origin_url: event.dAppInfo?.url,
+                        dapp_name: event.dAppInfo?.name,
+                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                        manifest_json_url: event.dAppInfo?.manifestUrl,
+                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
+                            ?.payload?.length,
+                    });
+                    this.analytics.emitWalletConnectResponseSent({
+                        client_id: event.from,
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        dapp_name: event.dAppInfo?.name,
+                        origin_url: event.dAppInfo?.url,
+                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                        manifest_json_url: event.preview.dAppInfo?.manifestUrl,
+                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
+                            .payload?.length,
+                        network_id: wallet.getNetwork().chainId,
+                    });
                 }
             } else if ('result' in event) {
                 const walletId = event.walletId;
@@ -215,44 +215,42 @@ export class RequestProcessor {
                 );
                 await this.bridgeManager.sendResponse(event, event.result.response);
 
-                if (this.analytics && event.from) {
-                    const sessionData = this.sessionManager.getSession(event.from);
+                if (this.analytics) {
+                    const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-                    if (sessionData?.publicKey) {
-                        // Send wallet-sign-data-request-received event
-                        this.analytics?.emitWalletConnectAccepted({
-                            client_id: event.from,
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            network_id: wallet.getNetwork().chainId,
-                            is_ton_addr: event.result.response.payload.items.some((item) => item.name === 'ton_addr'),
-                            is_ton_proof: event.result.response.payload.items.some((item) => item.name === 'ton_proof'),
-                            manifest_json_url: event.result.dAppUrl,
-                            proof_payload_size: (
-                                event.result.response.payload.items.find(
-                                    (item) => item.name === 'ton_proof',
-                                ) as TonProofItemReplySuccess
-                            )?.proof?.payload?.length,
-                            dapp_name: event.result.dAppName,
-                            origin_url: event.result.dAppUrl,
-                        });
-                        this.analytics?.emitWalletConnectResponseSent({
-                            client_id: event.from,
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            dapp_name: event.result.dAppName,
-                            origin_url: event.result.dAppUrl,
-                            is_ton_addr: event.result.response.payload.items.some((item) => item.name === 'ton_addr'),
-                            is_ton_proof: event.result.response.payload.items.some((item) => item.name === 'ton_proof'),
-                            manifest_json_url: event.result.dAppUrl,
-                            proof_payload_size: (
-                                event.result.response.payload.items.find(
-                                    (item) => item.name === 'ton_proof',
-                                ) as TonProofItemReplySuccess
-                            )?.proof?.payload?.length,
-                            network_id: wallet.getNetwork().chainId,
-                        });
-                    }
+                    // Send wallet-sign-data-request-received event
+                    this.analytics.emitWalletConnectAccepted({
+                        client_id: event.from,
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        network_id: wallet.getNetwork().chainId,
+                        is_ton_addr: event.result.response.payload.items.some((item) => item.name === 'ton_addr'),
+                        is_ton_proof: event.result.response.payload.items.some((item) => item.name === 'ton_proof'),
+                        manifest_json_url: event.result.dAppUrl,
+                        proof_payload_size: (
+                            event.result.response.payload.items.find(
+                                (item) => item.name === 'ton_proof',
+                            ) as TonProofItemReplySuccess
+                        )?.proof?.payload?.length,
+                        dapp_name: event.result.dAppName,
+                        origin_url: event.result.dAppUrl,
+                    });
+                    this.analytics.emitWalletConnectResponseSent({
+                        client_id: event.from,
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        dapp_name: event.result.dAppName,
+                        origin_url: event.result.dAppUrl,
+                        is_ton_addr: event.result.response.payload.items.some((item) => item.name === 'ton_addr'),
+                        is_ton_proof: event.result.response.payload.items.some((item) => item.name === 'ton_proof'),
+                        manifest_json_url: event.result.dAppUrl,
+                        proof_payload_size: (
+                            event.result.response.payload.items.find(
+                                (item) => item.name === 'ton_proof',
+                            ) as TonProofItemReplySuccess
+                        )?.proof?.payload?.length,
+                        network_id: wallet.getNetwork().chainId,
+                    });
                 }
             } else {
                 log.error('Invalid event', { event });
@@ -313,36 +311,34 @@ export class RequestProcessor {
                 log.error('Failed to send connect request rejection response', { error });
             }
 
-            if (this.analytics && event.from) {
-                const sessionData = this.sessionManager.getSession(newSession.sessionId);
+            if (this.analytics) {
+                const sessionData = event.from ? await this.sessionManager.getSession(newSession.sessionId) : undefined;
 
-                if (sessionData?.publicKey) {
-                    // Send wallet-sign-data-request-received event
-                    this.analytics?.emitWalletConnectRejected({
-                        client_id: event.from,
-                        wallet_id: sessionData?.publicKey,
-                        trace_id: event.traceId,
-                        dapp_name: event.preview.dAppInfo?.name || '',
-                        origin_url: event.preview.dAppInfo?.url || '',
-                        manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
-                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
-                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
-                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
-                            .payload?.length,
-                    });
-                    this.analytics?.emitWalletConnectResponseSent({
-                        wallet_id: sessionData?.publicKey,
-                        trace_id: event.traceId,
-                        dapp_name: event.preview.dAppInfo?.name || '',
-                        origin_url: event.preview.dAppInfo?.url || '',
-                        manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
-                        is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
-                        is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
-                        proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value
-                            .payload?.length,
-                        client_id: event.from,
-                    });
-                }
+                // Send wallet-sign-data-request-received event
+                this.analytics.emitWalletConnectRejected({
+                    client_id: event.from,
+                    wallet_id: sessionData?.publicKey,
+                    trace_id: event.traceId,
+                    dapp_name: event.preview.dAppInfo?.name || '',
+                    origin_url: event.preview.dAppInfo?.url || '',
+                    manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
+                    is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                    is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                    proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value.payload
+                        ?.length,
+                });
+                this.analytics.emitWalletConnectResponseSent({
+                    wallet_id: sessionData?.publicKey,
+                    trace_id: event.traceId,
+                    dapp_name: event.preview.dAppInfo?.name || '',
+                    origin_url: event.preview.dAppInfo?.url || '',
+                    manifest_json_url: event.preview.dAppInfo?.manifestUrl || '',
+                    is_ton_addr: event.requestedItems.some((item) => item.type === 'ton_addr'),
+                    is_ton_proof: event.requestedItems.some((item) => item.type === 'ton_proof'),
+                    proof_payload_size: event.requestedItems.find((item) => item.type === 'ton_proof')?.value.payload
+                        ?.length,
+                    client_id: event.from,
+                });
             }
 
             return;
@@ -414,9 +410,11 @@ export class RequestProcessor {
         event: TransactionRequestEvent | EventTransactionApproval,
         signedBoc: string,
     ): void {
+        if (!this.analytics) return;
+
         const wallet = this.getWalletFromEvent(event);
 
-        this.analytics?.emitWalletTransactionSent({
+        this.analytics.emitWalletTransactionSent({
             trace_id: event.traceId,
             network_id: wallet?.getNetwork().chainId,
             client_id: event.from,
@@ -449,20 +447,18 @@ export class RequestProcessor {
             await this.bridgeManager.sendResponse(event, response);
             const wallet = this.getWalletFromEvent(event);
 
-            if (this.analytics && event.from) {
-                const sessionData = this.sessionManager.getSession(event.from);
+            if (this.analytics) {
+                const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-                if (sessionData?.publicKey) {
-                    this.analytics?.emitWalletTransactionDeclined({
-                        wallet_id: sessionData?.publicKey,
-                        trace_id: event.traceId,
-                        dapp_name: event.preview.dAppInfo?.name,
-                        origin_url: event.preview.dAppInfo?.url,
-                        network_id: wallet?.getNetwork().chainId,
-                        client_id: event.from,
-                        decline_reason: typeof reason === 'string' ? reason : reason?.message,
-                    });
-                }
+                this.analytics.emitWalletTransactionDeclined({
+                    wallet_id: sessionData?.publicKey,
+                    trace_id: event.traceId,
+                    dapp_name: event.preview.dAppInfo?.name,
+                    origin_url: event.preview.dAppInfo?.url,
+                    network_id: wallet?.getNetwork().chainId,
+                    client_id: event.from,
+                    decline_reason: typeof reason === 'string' ? reason : reason?.message,
+                });
             }
 
             return;
@@ -495,23 +491,21 @@ export class RequestProcessor {
                 await this.bridgeManager.sendResponse(event, response);
                 const wallet = this.getWalletFromEvent(event);
 
-                if (this.analytics && event.from) {
-                    const sessionData = this.sessionManager.getSession(event.from);
+                if (this.analytics) {
+                    const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-                    if (sessionData?.publicKey) {
-                        this.analytics?.emitWalletSignDataAccepted({
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            network_id: wallet?.getNetwork().chainId,
-                            client_id: event.from,
-                        });
-                        this.analytics?.emitWalletSignDataSent({
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            network_id: wallet?.getNetwork().chainId,
-                            client_id: event.from,
-                        });
-                    }
+                    this.analytics.emitWalletSignDataAccepted({
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        network_id: wallet?.getNetwork().chainId,
+                        client_id: event.from,
+                    });
+                    this.analytics.emitWalletSignDataSent({
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        network_id: wallet?.getNetwork().chainId,
+                        client_id: event.from,
+                    });
                 }
 
                 return { signature: Base64ToHex(event.result.signature) };
@@ -580,27 +574,25 @@ export class RequestProcessor {
 
                 await this.bridgeManager.sendResponse(event, response);
 
-                if (this.analytics && event.from) {
-                    const sessionData = this.sessionManager.getSession(event.from);
+                if (this.analytics) {
+                    const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-                    if (sessionData?.publicKey) {
-                        this.analytics?.emitWalletSignDataAccepted({
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            dapp_name: event.dAppInfo?.name,
-                            origin_url: event.dAppInfo?.url,
-                            network_id: wallet.getNetwork().chainId,
-                            client_id: event.from,
-                        });
-                        this.analytics?.emitWalletSignDataSent({
-                            wallet_id: sessionData?.publicKey,
-                            trace_id: event.traceId,
-                            dapp_name: event.dAppInfo?.name,
-                            origin_url: event.dAppInfo?.url,
-                            network_id: wallet.getNetwork().chainId,
-                            client_id: event.from,
-                        });
-                    }
+                    this.analytics.emitWalletSignDataAccepted({
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        dapp_name: event.dAppInfo?.name,
+                        origin_url: event.dAppInfo?.url,
+                        network_id: wallet.getNetwork().chainId,
+                        client_id: event.from,
+                    });
+                    this.analytics.emitWalletSignDataSent({
+                        wallet_id: sessionData?.publicKey,
+                        trace_id: event.traceId,
+                        dapp_name: event.dAppInfo?.name,
+                        origin_url: event.dAppInfo?.url,
+                        network_id: wallet.getNetwork().chainId,
+                        client_id: event.from,
+                    });
                 }
 
                 return { signature: signature };
@@ -639,19 +631,17 @@ export class RequestProcessor {
             await this.bridgeManager.sendResponse(event, response);
             const wallet = this.getWalletFromEvent(event);
 
-            if (this.analytics && event.from) {
-                const sessionData = this.sessionManager.getSession(event.from);
+            if (this.analytics) {
+                const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
 
-                if (sessionData?.publicKey) {
-                    this.analytics?.emitWalletSignDataDeclined({
-                        wallet_id: sessionData?.publicKey,
-                        trace_id: event.traceId,
-                        dapp_name: event.dAppInfo?.name,
-                        origin_url: event.dAppInfo?.url,
-                        network_id: wallet?.getNetwork().chainId,
-                        client_id: event.from,
-                    });
-                }
+                this.analytics.emitWalletSignDataDeclined({
+                    wallet_id: sessionData?.publicKey,
+                    trace_id: event.traceId,
+                    dapp_name: event.dAppInfo?.name,
+                    origin_url: event.dAppInfo?.url,
+                    network_id: wallet?.getNetwork().chainId,
+                    client_id: event.from,
+                });
             }
 
             return;
