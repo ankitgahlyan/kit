@@ -33,7 +33,7 @@ import type { BridgeManager } from './BridgeManager';
 import { globalLogger } from './Logger';
 import { CreateTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
-import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
+import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
 import type { WalletManager } from './WalletManager';
 import type { EventConnectApproval, EventTransactionApproval } from '../types/events';
 import type { AnalyticsApi } from '../analytics/sender';
@@ -777,12 +777,15 @@ export class RequestProcessor {
         // Get the wallet's network
         const walletNetwork = wallet.getNetwork();
 
+        // Get device info with wallet-specific features if available
+        const deviceInfo = getDeviceInfoForWallet(wallet, this.walletKitOptions.deviceInfo);
+
         // Create base response data
         const connectResponse: ConnectEventSuccess = {
             event: 'connect',
             id: Date.now(),
             payload: {
-                device: getDeviceInfoWithDefaults(this.walletKitOptions.deviceInfo),
+                device: deviceInfo,
                 items: [
                     {
                         name: 'ton_addr',

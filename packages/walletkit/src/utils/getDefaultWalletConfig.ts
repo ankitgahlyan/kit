@@ -9,6 +9,7 @@
 import type { SendTransactionFeature, SignDataFeature } from '@tonconnect/protocol';
 
 import type { DeviceInfo, WalletInfo } from '../types/jsBridge';
+import type { WalletAdapter } from '../api/interfaces';
 
 /**
  * Default device info for JS Bridge
@@ -99,4 +100,27 @@ export function getWalletInfoWithDefaults(options?: Partial<WalletInfo>): Wallet
     };
 
     return walletInfo;
+}
+
+/**
+ * Get device info with wallet-specific features if available
+ * If wallet adapter has getSupportedFeatures(), use those features
+ * Otherwise, use features from deviceInfo
+ */
+export function getDeviceInfoForWallet(
+    walletAdapter: WalletAdapter | undefined,
+    deviceInfoOptions?: Partial<DeviceInfo>,
+): DeviceInfo {
+    const baseDeviceInfo = getDeviceInfoWithDefaults(deviceInfoOptions);
+
+    // If wallet adapter has getSupportedFeatures(), use those features
+    if (walletAdapter?.getSupportedFeatures) {
+        return {
+            ...baseDeviceInfo,
+            features: walletAdapter.getSupportedFeatures(),
+        };
+    }
+
+    // Otherwise, use features from deviceInfo
+    return baseDeviceInfo;
 }
