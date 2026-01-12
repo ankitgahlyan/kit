@@ -237,6 +237,7 @@ export interface WalletKitBridgeApi {
     addWallet(args: AddWalletArgs): PromiseOrValue<{ address: string; publicKey: string }>;
     getWallets(): PromiseOrValue<WalletDescriptor[]>;
     getWallet(args: { address: string }): PromiseOrValue<WalletDescriptor | null>;
+    getWalletAddress(args: { walletId: string }): PromiseOrValue<{ address: string | null }>;
     removeWallet(args: RemoveWalletArgs): PromiseOrValue<{ removed: boolean }>;
     getBalance(args: GetBalanceArgs): PromiseOrValue<{ balance: string }>;
     getRecentTransactions(args: GetRecentTransactionsArgs): PromiseOrValue<{ items: unknown[] }>;

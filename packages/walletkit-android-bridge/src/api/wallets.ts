@@ -33,30 +33,44 @@ type AdapterInstance = WalletKitAdapter;
 
 /**
  * Lists all wallets with metadata.
- * Enriches wallet objects with address property by calling getAddress() if needed.
+ * Maps wallet objects to plain serializable objects.
  */
-export async function getWallets(): Promise<WalletKitWallet[]> {
+export async function getWallets() {
     return callBridge('getWallets', async (kit) => {
         const wallets = (kit.getWallets?.() ?? []) as WalletKitWallet[];
-        // Ensure each wallet has the address property populated
-        return wallets.map((wallet) => {
-            // If address is not set, call getAddress() to populate it
-            if (!wallet.address && wallet.getAddress) {
-                (wallet as { address: string }).address = wallet.getAddress();
-            }
-            return wallet;
-        });
+        return wallets.map((w) => ({
+            id: w.getWalletId?.(),
+            publicKey: w.getPublicKey?.(),
+            version: (w as unknown as { version?: string }).version ?? 'unknown',
+            network: w.getNetwork?.(),
+        }));
     });
 }
 
 /**
  * Get a single wallet by walletId.
- * Returns raw WalletKit wallet object - Kotlin handles mapping to WalletDescriptor.
+ * Returns serializable wallet object.
  */
-export async function getWallet(args: { walletId: string }): Promise<WalletKitWallet | null> {
+export async function getWallet(args: { walletId: string }) {
     return callBridge('getWallet', async (kit) => {
+        const w = kit.getWallet?.(args.walletId) as WalletKitWallet | undefined;
+        if (!w) return null;
+        return {
+            id: w.getWalletId?.(),
+            publicKey: w.getPublicKey?.(),
+            version: (w as unknown as { version?: string }).version ?? 'unknown',
+            network: w.getNetwork?.(),
+        };
+    });
+}
+
+/**
+ * Gets the address of a wallet by calling its getAddress() method.
+ */
+export async function getWalletAddress(args: { walletId: string }) {
+    return callBridge('getWalletAddress', async (kit) => {
         const wallet = kit.getWallet?.(args.walletId) as WalletKitWallet | undefined;
-        return wallet ?? null;
+        return { address: wallet?.getAddress?.() ?? null };
     });
 }
 
@@ -173,7 +187,7 @@ export async function getAdapterAddress(args: { adapterId: string }) {
 
 /**
  * Adds a wallet to WalletKit using an adapter.
- * Enriches wallet object with address property by calling getAddress().
+ * Returns serializable wallet object.
  */
 export async function addWallet(args: AddWalletArgs) {
     return callBridge('addWallet', async (kit) => {
@@ -182,17 +196,17 @@ export async function addWallet(args: AddWalletArgs) {
             throw new Error(`Adapter not found: ${args.adapterId}`);
         }
 
-        const wallet = await kit.addWallet(adapter);
+        const w = await kit.addWallet(adapter);
 
         // Clean up the adapter from store after use
         adapterStore.delete(args.adapterId);
 
-        // Enrich wallet with address property if not set (address is a method in walletkit)
-        const walletWithAddress = wallet as unknown as { address?: string; getAddress?: () => string };
-        if (!walletWithAddress.address && walletWithAddress.getAddress) {
-            walletWithAddress.address = walletWithAddress.getAddress();
-        }
-
-        return wallet;
+        if (!w) return null;
+        return {
+            id: w.getWalletId?.(),
+            publicKey: w.getPublicKey?.(),
+            version: (w as unknown as { version?: string }).version ?? 'unknown',
+            network: w.getNetwork?.(),
+        };
     });
 }
