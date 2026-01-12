@@ -62,7 +62,6 @@ const walletKitConfig: WalletKitConfig = {
     tonApiKeyTestnet: ENV_TON_API_KEY_TESTNET,
     createLedgerTransport: createWebLedgerTransport,
     analytics: {
-        enabled: true,
         appInfo: {
             env: 'web',
             platform: getPlatform(),

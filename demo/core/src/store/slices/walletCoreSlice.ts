@@ -48,7 +48,10 @@ async function createWalletKitInstance(walletKitConfig?: WalletKitConfig): Promi
 
         storage: walletKitConfig?.storage,
 
-        analytics: walletKitConfig?.analytics,
+        analytics: {
+            ...walletKitConfig?.analytics,
+            enabled: true,
+        },
 
         dev: {
             disableNetworkSend: walletKitConfig?.disableNetworkSend,
