@@ -23,6 +23,7 @@ import type {
     PreparedSignData,
     ProofMessage,
     UserFriendlyAddress,
+    Feature,
 } from '@ton/walletkit';
 import {
     formatWalletAddress,
@@ -285,6 +286,15 @@ export class WalletV4R2LedgerAdapter implements WalletAdapter {
             return false;
         }
         return true;
+    }
+
+    getSupportedFeatures(): Feature[] {
+        return [
+            {
+                name: 'SendTransaction',
+                maxMessages: 1,
+            },
+        ];
     }
 }
 
