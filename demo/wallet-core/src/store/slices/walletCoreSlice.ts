@@ -50,6 +50,7 @@ function createWalletKitInstance(walletKitConfig?: WalletKitConfig): ITonWalletK
         storage: walletKitConfig?.storage,
 
         analytics: {
+            ...walletKitConfig?.analytics,
             enabled: true,
         },
 

@@ -39,8 +39,8 @@ import type { StorageEventProcessor } from './EventProcessor';
 import type { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
 import type { ApiClient } from '../types/toncenter/ApiClient';
+import { AnalyticsManager } from '../analytics';
 import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
-import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { CallForSuccess } from '../utils/retry';
 import { NetworkManager } from './NetworkManager';
@@ -96,20 +96,27 @@ export class TonWalletKit implements ITonWalletKit {
     // State
     private isInitialized = false;
     private initializationPromise?: Promise<void>;
-    private analyticsApi?: AnalyticsApi;
+    private analyticsManager?: AnalyticsManager;
 
     constructor(options: TonWalletKitOptions) {
         this.config = options;
 
         if (options?.analytics?.enabled) {
-            this.analyticsApi = new AnalyticsApi(options?.analytics);
+            this.analyticsManager = new AnalyticsManager({
+                ...options?.analytics,
+                appInfo: {
+                    appName: options?.deviceInfo?.appName,
+                    appVersion: options?.deviceInfo?.appVersion,
+                    ...options?.analytics?.appInfo,
+                },
+            });
         }
 
         // Initialize NetworkManager for multi-network support
         this.networkManager = new NetworkManager(options);
 
         this.eventEmitter = new EventEmitter();
-        this.initializer = new Initializer(options, this.eventEmitter, this.analyticsApi);
+        this.initializer = new Initializer(options, this.eventEmitter, this.analyticsManager);
         // Auto-initialize (lazy)
         this.initializationPromise = this.initialize();
 
