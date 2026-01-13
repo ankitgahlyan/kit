@@ -290,7 +290,6 @@ export class WalletV4R2LedgerAdapter implements WalletAdapter {
 
     getSupportedFeatures(): Feature[] {
         return [
-            'SendTransaction',
             {
                 name: 'SendTransaction',
                 maxMessages: 1,
