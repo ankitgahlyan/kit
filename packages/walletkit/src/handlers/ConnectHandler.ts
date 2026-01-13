@@ -198,7 +198,7 @@ export class ConnectHandler
                 iconUrl: sanitizedManifest?.iconUrl,
                 manifestUrl: manifestUrl,
             },
-            manifestFetchErrorCode: manifestFetchErrorCode ?? undefined,
+            manifestFetchErrorCode: finalManifestFetchErrorCode ?? undefined,
         };
     }
 

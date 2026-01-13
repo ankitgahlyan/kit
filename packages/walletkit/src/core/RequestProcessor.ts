@@ -33,12 +33,14 @@ import type { BridgeManager } from './BridgeManager';
 import { globalLogger } from './Logger';
 import { CreateTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
-import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
+import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
 import type { WalletManager } from './WalletManager';
 import type { EventConnectApproval, EventTransactionApproval } from '../types/events';
 import { WalletKitError, ERROR_CODES } from '../errors';
-import { Base64ToHex, HexToBase64 } from '../utils/base64';
-import { getAddressFromWalletId } from '../utils/walletId';
+import { uuidv7 } from '../utils/uuid';
+import { getUnixtime } from '../utils/time';
+import { getEventsSubsystem, getVersion } from '../utils/version';
+import { Base64Normalize, Base64ToHex, HexToBase64 } from '../utils/base64';
 import type {
     TransactionRequest,
     SignDataPayload,
@@ -89,7 +91,7 @@ export class RequestProcessor {
             return event.walletAddress;
         }
         if (event.walletId) {
-            return getAddressFromWalletId(event.walletId);
+            return this.walletManager.getWallet(event.walletId)?.getAddress();
         }
         return undefined;
     }
@@ -690,12 +692,15 @@ export class RequestProcessor {
         // Get the wallet's network
         const walletNetwork = wallet.getNetwork();
 
+        // Get device info with wallet-specific features if available
+        const deviceInfo = getDeviceInfoForWallet(wallet, this.walletKitOptions.deviceInfo);
+
         // Create base response data
         const connectResponse: ConnectEventSuccess = {
             event: 'connect',
             id: Date.now(),
             payload: {
-                device: getDeviceInfoWithDefaults(this.walletKitOptions.deviceInfo),
+                device: deviceInfo,
                 items: [
                     {
                         name: 'ton_addr',

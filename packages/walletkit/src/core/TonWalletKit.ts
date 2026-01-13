@@ -41,6 +41,8 @@ import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } 
 import type { ApiClient } from '../types/toncenter/ApiClient';
 import { getDeviceInfoWithDefaults } from '../utils/getDefaultWalletConfig';
 import { AnalyticsManager } from '../analytics';
+import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
+import { AnalyticsApi } from '../analytics/sender';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { CallForSuccess } from '../utils/retry';
 import { NetworkManager } from './NetworkManager';
@@ -143,7 +145,9 @@ export class TonWalletKit implements ITonWalletKit {
 
             const walletAddress = wallet.getAddress();
 
-            const deviceInfo = getDeviceInfoWithDefaults(this.config.deviceInfo);
+            // Get device info with wallet-specific features if available
+            const deviceInfo = getDeviceInfoForWallet(wallet, this.config.deviceInfo);
+
             // Create base response data
             const connectResponse: ConnectEventSuccess = {
                 event: 'connect',
@@ -244,7 +248,7 @@ export class TonWalletKit implements ITonWalletKit {
     /**
      * Ensure initialization is complete
      */
-    private async ensureInitialized(): Promise<void> {
+    async ensureInitialized(): Promise<void> {
         if (this.initializationPromise) {
             await this.initializationPromise;
         }

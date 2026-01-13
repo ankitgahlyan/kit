@@ -17,7 +17,6 @@ import { globalLogger } from '../core/Logger';
 import { validateSignDataPayload } from '../validation/signData';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import type { WalletManager } from '../core/WalletManager';
-import { getAddressFromWalletId } from '../utils/walletId';
 import type { SignDataPayload, SignData, SignDataRequestEvent, SignDataPreview, Base64String } from '../api/models';
 import { Network } from '../api/models';
 import type { Analytics, AnalyticsManager } from '../analytics';
@@ -52,7 +51,7 @@ export class SignDataHandler
     async handle(event: RawBridgeEventSignData): Promise<SignDataRequestEvent> {
         // Support both walletId (new) and walletAddress (legacy)
         const walletId = event.walletId;
-        const walletAddress = event.walletAddress ?? (walletId ? getAddressFromWalletId(walletId) : undefined);
+        const walletAddress = event.walletAddress;
 
         if (!walletId && !walletAddress) {
             throw new WalletKitError(ERROR_CODES.WALLET_REQUIRED, 'No wallet ID found in sign data event', undefined, {

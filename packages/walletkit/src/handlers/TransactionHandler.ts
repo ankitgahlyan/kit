@@ -28,7 +28,11 @@ import type { EventEmitter } from '../core/EventEmitter';
 import type { WalletManager } from '../core/WalletManager';
 import type { ReturnWithValidationResult } from '../validation/types';
 import { WalletKitError, ERROR_CODES } from '../errors';
-import { getAddressFromWalletId } from '../utils/walletId';
+import type { AnalyticsApi } from '../analytics/sender';
+import { getEventsSubsystem, getVersion } from '../utils/version';
+import { uuidv7 } from '../utils/uuid';
+import { getUnixtime } from '../utils/time';
+import { Base64Normalize } from '../utils/base64';
 import type { Wallet } from '../api/interfaces';
 import type { TransactionEmulatedPreview, TransactionRequest, TransactionRequestEvent } from '../api/models';
 import { Result } from '../api/models';
@@ -63,7 +67,7 @@ export class TransactionHandler
     async handle(event: RawBridgeEventTransaction): Promise<TransactionRequestEvent | WalletResponseTemplateError> {
         // Support both walletId (new) and walletAddress (legacy)
         const walletId = event.walletId;
-        const walletAddress = event.walletAddress ?? (walletId ? getAddressFromWalletId(walletId) : undefined);
+        const walletAddress = event.walletAddress;
 
         if (!walletId && !walletAddress) {
             log.error('Wallet ID not found', { event });

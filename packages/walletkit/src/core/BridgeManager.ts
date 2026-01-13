@@ -30,7 +30,6 @@ import { WalletKitError, ERROR_CODES } from '../errors';
 import type { Analytics, AnalyticsManager } from '../analytics';
 import type { TonWalletKitOptions } from '../types/config';
 import { TONCONNECT_BRIDGE_RESPONSE } from '../bridge/JSBridgeInjector';
-import { getAddressFromWalletId } from '../utils/walletId';
 import type { BridgeEvent } from '../api/models';
 
 const log = globalLogger.createChild('BridgeManager');
@@ -599,7 +598,9 @@ export class BridgeManager {
                 if (session) {
                     if (session?.walletId) {
                         rawEvent.walletId = session.walletId;
-                        rawEvent.walletAddress = getAddressFromWalletId(session.walletId);
+                    }
+                    if (session?.walletAddress) {
+                        rawEvent.walletAddress = session.walletAddress;
                     }
 
                     rawEvent.dAppInfo = {
@@ -613,7 +614,9 @@ export class BridgeManager {
                 const session = await this.sessionManager.getSessionByDomain(rawEvent.domain);
                 if (session?.walletId) {
                     rawEvent.walletId = session.walletId;
-                    rawEvent.walletAddress = getAddressFromWalletId(session.walletId);
+                }
+                if (session?.walletAddress) {
+                    rawEvent.walletAddress = session.walletAddress;
                 }
 
                 if (session?.sessionId) {
