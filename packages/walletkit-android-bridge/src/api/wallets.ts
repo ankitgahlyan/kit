@@ -9,7 +9,8 @@
 /**
  * wallets.ts – Wallet management operations
  *
- * Simplified bridge for wallet creation, listing, removal, and state retrieval.
+ * Pure pass-through bridge - returns raw JS objects/proxies.
+ * Kotlin is responsible for adapting to whatever JS returns.
  */
 
 import type { Hex } from '@ton/walletkit';
@@ -20,9 +21,8 @@ import type {
     CreateSignerArgs,
     CreateAdapterArgs,
     AddWalletArgs,
-    WalletKitWallet,
-    WalletKitAdapter,
     WalletKitSigner,
+    WalletKitAdapter,
 } from '../types';
 import { Signer, WalletV4R2Adapter, WalletV5R1Adapter } from '../core/moduleLoader';
 import { callBridge } from '../utils/bridgeWrapper';
@@ -32,56 +32,61 @@ type SignerInstance = WalletKitSigner;
 type AdapterInstance = WalletKitAdapter;
 
 /**
- * Lists all wallets with metadata.
- * Enriches wallet objects with address property by calling getAddress() if needed.
+ * Lists all wallets.
+ * Returns walletId with each wallet since network can't be inferred from wallet properties.
  */
-export async function getWallets(): Promise<WalletKitWallet[]> {
+export async function getWallets() {
     return callBridge('getWallets', async (kit) => {
-        const wallets = (kit.getWallets?.() ?? []) as WalletKitWallet[];
-        // Ensure each wallet has the address property populated
-        return wallets.map((wallet) => {
-            // If address is not set, call getAddress() to populate it
-            if (!wallet.address && wallet.getAddress) {
-                (wallet as { address: string }).address = wallet.getAddress();
-            }
-            return wallet;
-        });
+        const wallets = kit.getWallets?.() ?? [];
+        // Include walletId since getNetwork()/getAddress() are methods that don't serialize
+        return wallets.map((w) => ({
+            walletId: w.getWalletId?.(),
+            wallet: w,
+        }));
     });
 }
 
 /**
  * Get a single wallet by walletId.
- * Returns raw WalletKit wallet object - Kotlin handles mapping to WalletDescriptor.
+ * Returns walletId with wallet since network can't be inferred from wallet properties.
  */
-export async function getWallet(args: { walletId: string }): Promise<WalletKitWallet | null> {
+export async function getWallet(args: { walletId: string }) {
     return callBridge('getWallet', async (kit) => {
-        const wallet = kit.getWallet?.(args.walletId) as WalletKitWallet | undefined;
-        return wallet ?? null;
+        const w = kit.getWallet?.(args.walletId);
+        if (!w) return null;
+        return { walletId: w.getWalletId?.(), wallet: w };
+    });
+}
+
+/**
+ * Gets the address of a wallet.
+ * Returns raw result - Kotlin adapts to the response.
+ */
+export async function getWalletAddress(args: { walletId: string }) {
+    return callBridge('getWalletAddress', async (kit) => {
+        const wallet = kit.getWallet?.(args.walletId);
+        return wallet?.getAddress?.() ?? null;
     });
 }
 
 /**
  * Removes a wallet from storage.
+ * Returns raw result - Kotlin adapts to the response.
  */
 export async function removeWallet(args: RemoveWalletArgs) {
     return callBridge('removeWallet', async (kit) => {
-        const wallet = kit.getWallet?.(args.walletId) as WalletKitWallet | undefined;
-        if (!wallet) {
-            return { removed: false };
-        }
-        await kit.removeWallet(args.walletId);
-        return { removed: true };
+        return await kit.removeWallet?.(args.walletId);
     });
 }
 
 /**
  * Fetches wallet balance.
- * Returns raw balance value - Kotlin handles conversion to BigInteger.
+ * Returns raw balance - Kotlin adapts to the response.
  */
 export async function getBalance(args: GetBalanceArgs) {
     return callBridge('getBalance', async (kit) => {
-        const wallet = kit.getWallet(args.walletId) as WalletKitWallet;
-        return await wallet.getBalance();
+        const wallet = kit.getWallet?.(args.walletId);
+        return await wallet?.getBalance?.();
     });
 }
 
@@ -157,8 +162,8 @@ export async function createAdapter(args: CreateAdapterArgs) {
     });
 }
 /**
- * Gets the address from a stored adapter by calling its getAddress() method.
- * This is needed because adapter properties are now methods, not serializable properties.
+ * Gets the address from a stored adapter.
+ * Returns raw address - Kotlin adapts to the response.
  */
 export async function getAdapterAddress(args: { adapterId: string }) {
     return callBridge('getAdapterAddress', async (_kit) => {
@@ -166,14 +171,13 @@ export async function getAdapterAddress(args: { adapterId: string }) {
         if (!adapter) {
             throw new Error(`Adapter not found: ${args.adapterId}`);
         }
-
-        return { address: adapter.getAddress() };
+        return adapter.getAddress();
     });
 }
 
 /**
  * Adds a wallet to WalletKit using an adapter.
- * Enriches wallet object with address property by calling getAddress().
+ * Returns walletId with wallet since getWalletId() is a method that doesn't serialize.
  */
 export async function addWallet(args: AddWalletArgs) {
     return callBridge('addWallet', async (kit) => {
@@ -187,12 +191,7 @@ export async function addWallet(args: AddWalletArgs) {
         // Clean up the adapter from store after use
         adapterStore.delete(args.adapterId);
 
-        // Enrich wallet with address property if not set (address is a method in walletkit)
-        const walletWithAddress = wallet as unknown as { address?: string; getAddress?: () => string };
-        if (!walletWithAddress.address && walletWithAddress.getAddress) {
-            walletWithAddress.address = walletWithAddress.getAddress();
-        }
-
-        return wallet;
+        if (!wallet) return null;
+        return { walletId: wallet.getWalletId?.(), wallet };
     });
 }
