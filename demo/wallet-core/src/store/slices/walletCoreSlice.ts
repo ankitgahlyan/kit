@@ -57,6 +57,10 @@ async function createWalletKitInstance(walletKitConfig?: WalletKitConfig): Promi
         },
     }) as ITonWalletKit;
 
+    while (!walletKit?.isReady()) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     log.info(`WalletKit initialized with network: ${isExtension() ? 'extension' : 'web'}`);
     return walletKit;
 }
