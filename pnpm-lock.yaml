@@ -368,6 +368,24 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  demo/examples:
+    dependencies:
+      '@ton/walletkit':
+        specifier: workspace:*
+        version: link:../../packages/walletkit
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.10.1
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   demo/v4ledger-adapter:
     dependencies:
       '@ledgerhq/hw-transport':
@@ -431,24 +449,6 @@ importers:
         version: 6.1.0
       typescript:
         specifier: ~5.9.3
-        version: 5.9.3
-
-  demo/examples:
-    dependencies:
-      '@ton/walletkit':
-        specifier: workspace:*
-        version: link:../../packages/walletkit
-      '@types/node':
-        specifier: ^24.10.1
-        version: 24.10.1
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.9.3
         version: 5.9.3
 
   packages/walletkit:
