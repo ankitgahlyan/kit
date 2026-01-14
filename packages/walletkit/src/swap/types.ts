@@ -1,0 +1,88 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type { Network, TransactionRequest, UserFriendlyAddress } from '../api/models';
+
+/**
+ * Parameters for requesting a swap quote
+ */
+export interface SwapQuoteParams {
+    fromToken: UserFriendlyAddress | 'TON';
+    toToken: UserFriendlyAddress | 'TON';
+    amount: string;
+    network: Network;
+    slippageTolerance?: number;
+}
+
+/**
+ * Swap quote response with pricing information
+ */
+export interface SwapQuote {
+    fromToken: UserFriendlyAddress | 'TON';
+    toToken: UserFriendlyAddress | 'TON';
+    fromAmount: string;
+    toAmount: string;
+    minReceived: string;
+    priceImpact: number;
+    route?: SwapRoute[];
+    fee?: SwapFee;
+    provider: string;
+    expiresAt?: number;
+    metadata?: Record<string, unknown>;
+}
+
+/**
+ * Route information for multi-hop swaps
+ */
+export interface SwapRoute {
+    pool: string;
+    fromToken: UserFriendlyAddress | 'TON';
+    toToken: UserFriendlyAddress | 'TON';
+    share: number;
+}
+
+/**
+ * Fee information for swap
+ */
+export interface SwapFee {
+    amount: string;
+    token: UserFriendlyAddress | 'TON';
+    percentage?: number;
+}
+
+/**
+ * Parameters for building swap transaction
+ */
+export interface SwapParams {
+    quote: SwapQuote;
+    userAddress: UserFriendlyAddress;
+    slippageTolerance?: number;
+    deadline?: number;
+    referralAddress?: UserFriendlyAddress;
+}
+
+/**
+ * Swap API interface exposed by SwapManager
+ */
+export interface SwapAPI {
+    registerProvider(name: string, provider: SwapProviderInterface): void;
+    setDefaultProvider(name: string): void;
+    getProvider(name?: string): SwapProviderInterface;
+    getQuote(params: SwapQuoteParams, provider?: string): Promise<SwapQuote>;
+    buildSwapTransaction(params: SwapParams, provider?: string): Promise<TransactionRequest>;
+    getRegisteredProviders(): string[];
+    hasProvider(name: string): boolean;
+}
+
+/**
+ * Interface that all swap providers must implement
+ */
+export interface SwapProviderInterface {
+    getQuote(params: SwapQuoteParams): Promise<SwapQuote>;
+    buildSwapTransaction(params: SwapParams): Promise<TransactionRequest>;
+}
