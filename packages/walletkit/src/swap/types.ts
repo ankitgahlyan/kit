@@ -16,7 +16,7 @@ export interface SwapQuoteParams {
     toToken: UserFriendlyAddress | 'TON';
     amount: string;
     network: Network;
-    slippageTolerance?: number;
+    slippageBps?: number;
 }
 
 /**
@@ -28,22 +28,11 @@ export interface SwapQuote {
     fromAmount: string;
     toAmount: string;
     minReceived: string;
-    priceImpact: number;
-    route?: SwapRoute[];
-    fee?: SwapFee;
+    priceImpact?: number;
+    fee?: SwapFee[];
     provider: string;
-    expiresAt?: number;
-    metadata?: Record<string, unknown>;
-}
-
-/**
- * Route information for multi-hop swaps
- */
-export interface SwapRoute {
-    pool: string;
-    fromToken: UserFriendlyAddress | 'TON';
-    toToken: UserFriendlyAddress | 'TON';
-    share: number;
+    expiresAt?: number; // Unix timestamp in seconds
+    metadata?: unknown;
 }
 
 /**
@@ -52,7 +41,6 @@ export interface SwapRoute {
 export interface SwapFee {
     amount: string;
     token: UserFriendlyAddress | 'TON';
-    percentage?: number;
 }
 
 /**
@@ -61,7 +49,7 @@ export interface SwapFee {
 export interface SwapParams {
     quote: SwapQuote;
     userAddress: UserFriendlyAddress;
-    slippageTolerance?: number;
+    slippageBps?: number;
     deadline?: number;
     referralAddress?: UserFriendlyAddress;
 }
