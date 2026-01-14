@@ -6,8 +6,6 @@
  *
  */
 
-// TonConnect wallet wrapper that implements TonWalletKit Wallet interface
-
 import type { Builder, Cell } from '@ton/core';
 import { Address, beginCell } from '@ton/core';
 import type { ITonConnect, Wallet as TonConnectWallet } from '@tonconnect/sdk';
@@ -47,10 +45,17 @@ import {
     ParseStack,
 } from '@ton/walletkit';
 
-import type { TonConnectWalletWrapper } from './types';
+import type { TonConnectWalletWrapper, WalletConnectionInfo } from '../types';
+import { getValidUntil } from '../utils';
 
 // Jetton transfer op code
 const JETTON_TRANSFER_OP = 0xf8a7ea5;
+
+// Default gas fee for jetton transfers (0.05 TON)
+const DEFAULT_JETTON_GAS_FEE = '50000000';
+
+// Default forward amount for jetton transfers (1 nanoton)
+const DEFAULT_FORWARD_AMOUNT = 1n;
 
 interface JettonTransferMessage {
     queryId: bigint;
@@ -76,34 +81,47 @@ function storeJettonTransferMessage(src: JettonTransferMessage) {
 }
 
 /**
- * Wrapper that makes a TonConnect wallet behave like a TonWalletKit wallet
+ * Creates a comment payload cell
+ */
+function createCommentPayload(comment: string): Cell {
+    return beginCell()
+        .storeUint(0, 32) // op code for comment
+        .storeStringTail(comment)
+        .endCell();
+}
+
+/**
+ * Configuration for TonConnectWalletWrapper
+ */
+export interface TonConnectWalletWrapperConfig {
+    tonConnectWallet: TonConnectWallet;
+    tonConnect: ITonConnect;
+    client: ApiClient;
+}
+
+/**
+ * Adapter that makes TonConnect wallet compatible with TonWalletKit interface
  */
 export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
     public readonly tonConnectWallet: TonConnectWallet;
     public readonly tonConnect: ITonConnect;
     public readonly client: ApiClient;
 
-    constructor({
-        tonConnectWallet,
-        tonConnect,
-        client,
-    }: {
-        tonConnectWallet: TonConnectWallet;
-        tonConnect: ITonConnect;
-        client: ApiClient;
-    }) {
-        this.tonConnectWallet = tonConnectWallet;
-        this.tonConnect = tonConnect;
-        this.client = client;
+    constructor(config: TonConnectWalletWrapperConfig) {
+        this.tonConnectWallet = config.tonConnectWallet;
+        this.tonConnect = config.tonConnect;
+        this.client = config.client;
     }
 
-    // === TonConnect-specific methods ===
+    // ==========================================
+    // TonConnect-specific methods
+    // ==========================================
 
     isConnected(): boolean {
         return true;
     }
 
-    getConnectionInfo() {
+    getConnectionInfo(): WalletConnectionInfo | null {
         if (!this.isConnected()) {
             return null;
         }
@@ -114,7 +132,9 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         };
     }
 
-    // === WalletAdapter implementation ===
+    // ==========================================
+    // WalletAdapter implementation
+    // ==========================================
 
     getPublicKey(): Hex {
         const account = this.tonConnectWallet.account;
@@ -164,9 +184,8 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
             throw new Error('Fake signature not supported with TonConnect wallet');
         }
 
-        // Convert TransactionRequest to TonConnect transaction format
         const transaction = {
-            validUntil: input.validUntil || Math.floor(Date.now() / 1000) + 300,
+            validUntil: input.validUntil || getValidUntil(),
             messages: input.messages.map((msg) => ({
                 address: msg.address,
                 amount: String(msg.amount),
@@ -188,7 +207,9 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         throw new Error('TON Proof not yet supported with TonConnect wrapper');
     }
 
-    // === WalletTonInterface implementation ===
+    // ==========================================
+    // WalletTonInterface implementation
+    // ==========================================
 
     async createTransferTonTransaction(params: TONTransferRequest): Promise<TransactionRequest> {
         const message: TransactionRequestMessage = {
@@ -200,18 +221,14 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
             extraCurrency: params.extraCurrency,
         };
 
-        // Add comment if provided
         if (params.comment) {
-            const commentCell = beginCell();
-            commentCell.storeUint(0, 32); // op code for comment
-            commentCell.storeStringTail(params.comment);
-            message.payload = commentCell.endCell().toBoc().toString('base64') as Base64String;
+            message.payload = createCommentPayload(params.comment).toBoc().toString('base64') as Base64String;
         }
 
         return {
             messages: [message],
             network: this.getNetwork(),
-            validUntil: Math.floor(Date.now() / 1000) + 300,
+            validUntil: getValidUntil(),
             fromAddress: this.getAddress(),
         };
     }
@@ -227,12 +244,8 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
                 extraCurrency: transfer.extraCurrency,
             };
 
-            // Add comment if provided
             if (transfer.comment) {
-                const commentCell = beginCell();
-                commentCell.storeUint(0, 32);
-                commentCell.storeStringTail(transfer.comment);
-                message.payload = commentCell.endCell().toBoc().toString('base64') as Base64String;
+                message.payload = createCommentPayload(transfer.comment).toBoc().toString('base64') as Base64String;
             }
 
             return message;
@@ -241,7 +254,7 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         return {
             messages,
             network: this.getNetwork(),
-            validUntil: Math.floor(Date.now() / 1000) + 300,
+            validUntil: getValidUntil(),
             fromAddress: this.getAddress(),
         };
     }
@@ -249,7 +262,6 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
     async getTransactionPreview(
         _data: TransactionRequest | Promise<TransactionRequest>,
     ): Promise<TransactionEmulatedPreview> {
-        // For now, we'll return an error preview since TonConnect doesn't support emulation
         return {
             result: Result.failure,
             error: {
@@ -268,10 +280,11 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         return await this.client.getBalance(address.toString());
     }
 
-    // === WalletJettonInterface implementation ===
+    // ==========================================
+    // WalletJettonInterface implementation
+    // ==========================================
 
     async createTransferJettonTransaction(params: JettonsTransferRequest): Promise<TransactionRequest> {
-        // Validate input parameters
         if (!isValidAddress(params.recipientAddress)) {
             throw new Error(`Invalid recipient address: ${params.recipientAddress}`);
         }
@@ -287,15 +300,10 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
             throw new Error(`Invalid amount: ${params.transferAmount}`);
         }
 
-        // Get jetton wallet address for this user
         const jettonWalletAddress = await CallForSuccess(() => this.getJettonWalletAddress(params.jettonAddress));
 
-        // Create forward payload for comment if provided
-        const forwardPayload = params.comment
-            ? beginCell().storeUint(0, 32).storeStringTail(params.comment).endCell()
-            : null;
+        const forwardPayload = params.comment ? createCommentPayload(params.comment) : null;
 
-        // Create jetton transfer message payload
         const jettonPayload = beginCell()
             .store(
                 storeJettonTransferMessage({
@@ -304,16 +312,15 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
                     destination: Address.parse(params.recipientAddress),
                     responseDestination: Address.parse(this.getAddress()),
                     customPayload: null,
-                    forwardAmount: 1n, //1 nanoton default
+                    forwardAmount: DEFAULT_FORWARD_AMOUNT,
                     forwardPayload: forwardPayload,
                 }),
             )
             .endCell();
 
-        // Create transaction message
         const message: TransactionRequestMessage = {
             address: jettonWalletAddress,
-            amount: '50000000', // 0.05 TON for gas fees
+            amount: DEFAULT_JETTON_GAS_FEE,
             payload: jettonPayload.toBoc().toString('base64') as Base64String,
             stateInit: undefined,
             extraCurrency: undefined,
@@ -322,7 +329,6 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
             },
         };
 
-        // Validate the transaction message
         if (!validateTransactionMessage(message, false).isValid) {
             throw new Error(`Invalid transaction message: ${JSON.stringify(message)}`);
         }
@@ -345,22 +351,21 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         }
 
         try {
-            // Create the stack item with the owner address as base64 encoded BOC
             const ownerAddressCell = beginCell().storeAddress(Address.parse(this.getAddress())).endCell();
             const stackParam = [{ type: 'slice' as const, value: ownerAddressCell.toBoc().toString('base64') }];
 
-            // Call get_wallet_address method on jetton master contract
             const result = await this.client.runGetMethod(jettonAddress, 'get_wallet_address', stackParam);
 
             const parsedStack = ParseStack(result.stack);
-            // Extract the jetton wallet address from the result
             const jettonWalletAddressResult =
                 parsedStack[0].type === 'slice' || parsedStack[0].type === 'cell'
                     ? parsedStack[0].cell.asSlice().loadAddress()
                     : null;
+
             if (!jettonWalletAddressResult) {
                 throw new Error('Failed to get jetton wallet address');
             }
+
             return jettonWalletAddressResult.toString();
         } catch (error) {
             throw new Error(
@@ -377,7 +382,9 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
         );
     }
 
-    // === WalletNftInterface implementation ===
+    // ==========================================
+    // WalletNftInterface implementation
+    // ==========================================
 
     async createTransferNftTransaction(_params: NFTTransferRequest): Promise<TransactionRequest> {
         throw new Error(

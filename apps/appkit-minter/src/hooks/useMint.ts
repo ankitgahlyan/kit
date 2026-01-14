@@ -42,7 +42,7 @@ export function useMint() {
 
         try {
             // Wrap the wallet using AppKit
-            const wrappedWallet = appKit.wrapWallet(wallet);
+            const wrappedWallet = appKit.wrapTonConnectWallet(wallet, tonConnect);
 
             // Create a simple transfer transaction as a "mint" action
             // In a real app, this would call an NFT minting contract

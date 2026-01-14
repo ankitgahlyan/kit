@@ -8,8 +8,8 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useTonConnectUI, useTonWallet, useTonAddress } from '@tonconnect/ui-react';
-import { AppKit } from '@ton/appkit';
-import { ApiClientToncenter } from '@ton/walletkit';
+import { CreateAppKit } from '@ton/appkit';
+import type { AppKit } from '@ton/appkit';
 
 export function useAppKit() {
     const [tonConnectUI] = useTonConnectUI();
@@ -20,8 +20,8 @@ export function useAppKit() {
     // Initialize AppKit when TonConnect is ready
     useEffect(() => {
         if (tonConnectUI.connector) {
-            const client = new ApiClientToncenter();
-            appKitRef.current = new AppKit({}, tonConnectUI.connector, client);
+            // const client = new ApiClientToncenter();
+            appKitRef.current = CreateAppKit({});
         }
     }, [tonConnectUI.connector]);
 

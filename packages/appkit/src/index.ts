@@ -9,11 +9,30 @@
 // AppKit - Bridge between @tonconnect/sdk and TonWalletKit
 // Allows dApps to use TonConnect wallets with TonWalletKit-compatible interface
 
-export { AppKitImpl as AppKit } from './AppKit';
-export { TonConnectWalletWrapperImpl as TonConnectWalletWrapper } from './TonConnectWalletWrapper';
+// Adapter exports
+export { TonConnectWalletWrapperImpl as TonConnectWalletWrapper } from './adapters';
+export type { TonConnectWalletWrapperConfig } from './adapters';
 
-// Export types
-export type { AppKitConfig, AppKit as IAppKit, TonConnectWalletWrapper as ITonConnectWalletWrapper } from './types';
+// Type exports
+export type {
+    // Config types
+    AppKitConfig,
+    AppKitDependencies,
+    // Wallet types
+    TonConnectWalletWrapper as ITonConnectWalletWrapper,
+    WalletConnectionInfo,
+    // AppKit types
+    AppKit,
+    TransactionResult,
+} from './types';
+
+// Utility exports (for advanced usage)
+export {
+    toTonConnectTransaction,
+    toTonConnectMessage,
+    getValidUntil,
+    DEFAULT_TRANSACTION_VALIDITY_SECONDS,
+} from './utils';
 
 // Re-export commonly used types from dependencies
 export type { Wallet } from '@tonconnect/sdk';
@@ -24,3 +43,5 @@ export type {
     JettonsTransferRequest,
     TransactionRequest,
 } from '@ton/walletkit';
+
+export { CreateAppKit } from './core/AppKit';

@@ -56,7 +56,7 @@ await tonConnectWallet.connect({
 ```typescript
 if (tonConnectWallet.connected) {
     // Wrap the TonConnect wallet to get TonWalletKit-compatible interface
-    const wrappedWallet = appKit.wrapWallet(tonConnectWallet);
+    const wrappedWallet = appKit.wrapTonConnectWallet(tonConnectWallet, tonConnect);
     
     // Now you can use the familiar TonWalletKit wallet interface!
     const transaction = await wrappedWallet.createTransferTonTransaction({
@@ -82,7 +82,7 @@ Creates a new AppKit instance.
 - `config.walletKit` - Your TonWalletKit instance
 - `config.manifestUrl` - Optional manifest URL for TonConnect
 
-#### `appKit.wrapWallet(wallet: Wallet): TonConnectWalletWrapper`
+#### `appKit.wrapTonConnectWallet(wallet: Wallet, tonConnect: ITonConnect): Wallet`
 
 Wraps a connected TonConnect wallet to provide TonWalletKit-compatible interface.
 
