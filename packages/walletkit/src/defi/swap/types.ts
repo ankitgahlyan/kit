@@ -6,6 +6,7 @@
  *
  */
 
+import type { DefiManagerAPI } from '../types';
 import type { Network, TransactionRequest, UserFriendlyAddress } from '../../api/models';
 
 /**
@@ -58,7 +59,7 @@ export interface SwapParams {
 /**
  * Swap API interface exposed by SwapManager
  */
-export interface SwapAPI {
+export interface SwapAPI extends DefiManagerAPI<SwapProviderInterface> {
     getQuote(params: SwapQuoteParams, provider?: string): Promise<SwapQuote>;
     buildSwapTransaction(params: SwapParams, provider?: string): Promise<TransactionRequest>;
 }

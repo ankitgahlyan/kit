@@ -129,7 +129,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
         try {
             log.info('Getting swap quote', { fromToken, toToken, fromAmount });
 
-            const decimals = fromToken === 'TON' ? 9 : 9;
+            const decimals = fromToken === 'TON' ? 9 : 6;
             const amountInUnits = Math.floor(parseFloat(fromAmount) * Math.pow(10, decimals)).toString();
 
             const quoteParams: SwapQuoteParams = {
@@ -142,7 +142,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
 
             const quote = await state.walletCore.walletKit.swap.getQuote(quoteParams, 'omniston');
 
-            const toDecimals = toToken === 'TON' ? 9 : 9;
+            const toDecimals = toToken === 'TON' ? 9 : 6;
             const toAmountFormatted = (parseFloat(quote.toAmount) / Math.pow(10, toDecimals)).toFixed(6);
 
             set((state) => {

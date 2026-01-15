@@ -14,8 +14,6 @@ import type { OmnistonQuoteMetadata } from './types';
 import { SwapProvider } from '../SwapProvider';
 import type { SwapQuoteParams, SwapQuote, SwapParams, SwapFee } from '../types';
 import { SwapError } from '../errors';
-import type { NetworkManager } from '../../../core/NetworkManager';
-import type { EventEmitter } from '../../../core/EventEmitter';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, addressToToken, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';
 import type { Base64String, TransactionRequest } from '../../../api/models';
@@ -49,8 +47,6 @@ export interface OmnistonSwapProviderConfig {
  * });
  *
  * const provider = new OmnistonSwapProvider(
- *   kit.getNetworkManager(),
- *   kit.getEventEmitter(),
  *   {
  *     omnistonInstance: omniston,
  *     defaultSlippageBps: 100, // 1%
@@ -72,14 +68,14 @@ export class OmnistonSwapProvider extends SwapProvider {
 
     private omniston$?: Omniston;
 
-    constructor(networkManager: NetworkManager, eventEmitter: EventEmitter, config: OmnistonSwapProviderConfig) {
-        super(networkManager, eventEmitter);
-        this.apiUrl = config.apiUrl ?? 'wss://omni-ws.ston.fi';
-        this.defaultSlippageBps = config.defaultSlippageBps ?? 100; // 1% default
-        this.quoteTimeoutMs = config.quoteTimeoutMs ?? 7000; // 10 seconds
-        this.referrerAddress = config.referrerAddress;
-        this.referrerFeeBps = config.referrerFeeBps;
-        this.flexibleReferrerFee = config.flexibleReferrerFee ?? false;
+    constructor(config?: OmnistonSwapProviderConfig) {
+        super();
+        this.apiUrl = config?.apiUrl ?? 'wss://omni-ws.ston.fi';
+        this.defaultSlippageBps = config?.defaultSlippageBps ?? 100; // 1% default
+        this.quoteTimeoutMs = config?.quoteTimeoutMs ?? 7000; // 10 seconds
+        this.referrerAddress = config?.referrerAddress;
+        this.referrerFeeBps = config?.referrerFeeBps;
+        this.flexibleReferrerFee = config?.flexibleReferrerFee ?? false;
 
         log.info('OmnistonSwapProvider initialized', {
             defaultSlippageBps: this.defaultSlippageBps,
@@ -187,11 +183,6 @@ export class OmnistonSwapProvider extends SwapProvider {
                 askUnits: quote.askUnits,
             });
 
-            this.emitEvent('swap:quote:received', {
-                provider: 'omniston',
-                quote: swapQuote,
-            });
-
             return swapQuote;
         } catch (error) {
             log.error('Failed to get Omniston quote', { error, params });
@@ -245,6 +236,7 @@ export class OmnistonSwapProvider extends SwapProvider {
             }
 
             const transaction: TransactionRequest = {
+                fromAddress: params.userAddress,
                 messages: messages.map((message) => ({
                     address: message.targetAddress,
                     amount: message.sendAmount,
@@ -255,12 +247,6 @@ export class OmnistonSwapProvider extends SwapProvider {
             };
 
             log.debug('Built Omniston swap transaction', {
-                quoteId: metadata.quoteId,
-                transaction,
-            });
-
-            this.emitEvent('swap:transaction:built', {
-                provider: 'omniston',
                 quoteId: metadata.quoteId,
                 transaction,
             });

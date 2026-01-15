@@ -6,10 +6,7 @@
  *
  */
 
-import type { ApiClient } from '../../types/toncenter/ApiClient';
-import type { Network, TransactionRequest } from '../../api/models';
-import type { NetworkManager } from '../../core/NetworkManager';
-import type { EventEmitter } from '../../core/EventEmitter';
+import type { TransactionRequest } from '../../api/models';
 import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderInterface } from './types';
 
 /**
@@ -32,14 +29,6 @@ import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderInterface } fr
  * ```
  */
 export abstract class SwapProvider implements SwapProviderInterface {
-    protected networkManager: NetworkManager;
-    protected eventEmitter: EventEmitter;
-
-    constructor(networkManager: NetworkManager, eventEmitter: EventEmitter) {
-        this.networkManager = networkManager;
-        this.eventEmitter = eventEmitter;
-    }
-
     /**
      * Get a quote for swapping tokens
      * @param params - Quote parameters including tokens, amount, and network
@@ -53,22 +42,4 @@ export abstract class SwapProvider implements SwapProviderInterface {
      * @returns Promise resolving to transaction request ready to be signed
      */
     abstract buildSwapTransaction(params: SwapParams): Promise<TransactionRequest>;
-
-    /**
-     * Get API client for a specific network
-     * @param network - The network to get client for
-     * @returns API client instance
-     */
-    protected getApiClient(network: Network): ApiClient {
-        return this.networkManager.getClient(network);
-    }
-
-    /**
-     * Emit an event through the event emitter
-     * @param event - Event name
-     * @param data - Event data
-     */
-    protected emitEvent(event: string, data: unknown): void {
-        this.eventEmitter.emit(event, data);
-    }
 }
