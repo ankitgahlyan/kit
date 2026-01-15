@@ -356,7 +356,7 @@ export const WalletDashboard: React.FC = () => {
                     request={pendingConnectRequest}
                     availableWallets={getAvailableWallets()}
                     savedWallets={savedWallets}
-                    currentWallet={getAvailableWallets().find((w) => w.getWalletId() === activeWalletId)}
+                    currentWallet={getAvailableWallets().find((w) => w.getWalletId() === activeWallet?.kitWalletId)}
                     isOpen={isConnectModalOpen}
                     onApprove={approveConnectRequest}
                     onReject={rejectConnectRequest}
