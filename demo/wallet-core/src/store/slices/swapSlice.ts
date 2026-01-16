@@ -9,6 +9,7 @@
 import type { SwapQuote, SwapQuoteParams } from '@ton/walletkit';
 
 import { createComponentLogger } from '../../utils/logger';
+import { formatTon, formatUnits } from '../../utils/units';
 import type { SetState, SwapSliceCreator } from '../../types/store';
 
 const log = createComponentLogger('SwapSlice');
@@ -37,6 +38,7 @@ export interface SwapSlice {
     getQuote: () => Promise<void>;
     executeSwap: () => Promise<void>;
     clearSwap: () => void;
+    validateSwapInputs: () => string | null;
 }
 
 export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
@@ -71,9 +73,13 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
 
     setFromAmount: (amount: string) => {
         set((state) => {
-            state.swap.fromAmount = amount;
-            state.swap.currentQuote = null;
-            state.swap.toAmount = '';
+            // Allow empty string or valid number input
+            if (amount === '' || /^\d*\.?\d*$/.test(amount)) {
+                state.swap.fromAmount = amount;
+                state.swap.currentQuote = null;
+                state.swap.toAmount = '';
+                state.swap.error = null;
+            }
         });
     },
 
@@ -91,15 +97,103 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             state.swap.toToken = tempToken;
             state.swap.toAmount = '';
             state.swap.currentQuote = null;
+            state.swap.error = null;
         });
+    },
+
+    validateSwapInputs: () => {
+        const state = get();
+        const { fromToken, toToken, fromAmount } = state.swap;
+
+        // Check if tokens are selected
+        if (!fromToken) {
+            return 'Please select a token to swap from';
+        }
+
+        if (!toToken) {
+            return 'Please select a token to swap to';
+        }
+
+        // Check if tokens are the same
+        if (fromToken === toToken) {
+            return 'Cannot swap the same token';
+        }
+
+        // Check if amount is entered
+        if (!fromAmount || fromAmount === '') {
+            return 'Please enter an amount';
+        }
+
+        // Check if amount is valid number
+        const amount = parseFloat(fromAmount);
+        if (isNaN(amount)) {
+            return 'Please enter a valid number';
+        }
+
+        // Check if amount is positive
+        if (amount <= 0) {
+            return 'Amount must be greater than 0';
+        }
+
+        // Check balance
+        if (fromToken === 'TON') {
+            const balance = state.walletManagement.balance;
+            if (balance) {
+                const balanceInTon = parseFloat(formatTon(balance));
+                const minReserve = 0.1; // Keep 0.1 TON for fees
+                const maxAvailable = balanceInTon - minReserve;
+
+                if (amount > balanceInTon) {
+                    return `Insufficient balance. You have ${balanceInTon.toFixed(4)} TON`;
+                }
+
+                if (amount > maxAvailable) {
+                    return `Please keep at least ${minReserve} TON for transaction fees`;
+                }
+            }
+        } else {
+            // Check jetton balance
+            const jetton = state.jettons.userJettons.find((j) => j.address === fromToken);
+
+            if (jetton && jetton.balance) {
+                const decimals = jetton.decimalsNumber || 9;
+                const balanceInUnits = parseFloat(formatUnits(jetton.balance, decimals));
+
+                if (amount > balanceInUnits) {
+                    return `Insufficient balance`;
+                }
+            } else {
+                return 'Insufficient balance';
+            }
+
+            // Check TON balance for gas fees when swapping jettons
+            const tonBalance = state.walletManagement.balance;
+            if (tonBalance) {
+                const balanceInTon = parseFloat(formatTon(tonBalance));
+                const minGasReserve = 0.5; // Need at least 0.5 TON for jetton swap fees
+
+                if (balanceInTon < minGasReserve) {
+                    return `Insufficient TON for gas fees. You need at least ${minGasReserve} TON`;
+                }
+            } else {
+                return 'Unable to check TON balance for gas fees';
+            }
+        }
+
+        return null;
     },
 
     getQuote: async () => {
         const state = get();
         const { fromToken, toToken, fromAmount, slippageBps } = state.swap;
 
-        if (!fromToken || !toToken || !fromAmount || parseFloat(fromAmount) <= 0) {
-            log.warn('Invalid swap parameters', { fromToken, toToken, fromAmount });
+        // Validate inputs
+        const validationError = get().validateSwapInputs();
+        if (validationError) {
+            log.warn('Validation failed', { validationError });
+            set((state) => {
+                state.swap.error = validationError;
+            });
             return;
         }
 
@@ -171,6 +265,16 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
     executeSwap: async () => {
         const state = get();
         const { currentQuote } = state.swap;
+
+        // Validate inputs
+        const validationError = get().validateSwapInputs();
+        if (validationError) {
+            log.warn('Validation failed', { validationError });
+            set((state) => {
+                state.swap.error = validationError;
+            });
+            return;
+        }
 
         if (!currentQuote) {
             log.warn('No quote available for swap');

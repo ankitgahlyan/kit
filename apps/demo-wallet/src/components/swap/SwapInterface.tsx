@@ -60,9 +60,6 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
     const toSymbol = getTokenSymbol(toToken);
 
     const handleGetQuote = async () => {
-        if (!fromToken || !toToken || !fromAmount || parseFloat(fromAmount) <= 0) {
-            return;
-        }
         await getQuote();
     };
 
@@ -79,8 +76,7 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
         return `Swap ${fromSymbol} for ${toSymbol}`;
     };
 
-    const isSwapDisabled =
-        !fromToken || !toToken || !fromAmount || parseFloat(fromAmount) <= 0 || isLoadingQuote || isSwapping;
+    const isSwapDisabled = !!error || isLoadingQuote || isSwapping;
 
     return (
         <Card className={cn('mx-auto w-full max-w-md', className)}>
@@ -166,11 +162,9 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
                 )}
 
                 {error && (
-                    <>
-                        <div className="border-t border-gray-200 my-6" />
-
-                        <div className="rounded-lg bg-red-50 p-3 text-center text-red-600 text-sm">{error}</div>
-                    </>
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center text-red-600 text-sm">
+                        {error}
+                    </div>
                 )}
             </div>
 

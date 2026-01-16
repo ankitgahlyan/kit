@@ -223,6 +223,7 @@ export const useSwap = () => {
             getQuote: state.getQuote,
             executeSwap: state.executeSwap,
             clearSwap: state.clearSwap,
+            validateSwapInputs: state.validateSwapInputs,
         })),
     );
 };

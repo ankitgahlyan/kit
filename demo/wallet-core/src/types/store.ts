@@ -224,6 +224,7 @@ export interface SwapSlice {
     getQuote: () => Promise<void>;
     executeSwap: () => Promise<void>;
     clearSwap: () => void;
+    validateSwapInputs: () => string | null;
 }
 
 // Combined app state

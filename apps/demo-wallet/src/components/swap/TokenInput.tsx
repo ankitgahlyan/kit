@@ -7,13 +7,12 @@
  */
 
 import type { FC } from 'react';
-import { useWallet } from '@demo/wallet-core';
+import { useJettons, useWallet, formatUnits, formatTon } from '@demo/wallet-core';
 
 import { TokenSelector } from './TokenSelector';
 import { Button } from '../Button';
 
 import { cn } from '@/lib/utils';
-import { USDT_ADDRESS } from '@/constants/swap';
 
 interface Props {
     label: string;
@@ -37,29 +36,42 @@ export const TokenInput: FC<Props> = ({
     className,
 }) => {
     const { balance } = useWallet();
+    const { userJettons } = useJettons();
 
-    const getTokenSymbol = (tokenAddress: string): string => {
-        if (tokenAddress === 'TON') return 'TON';
-        if (tokenAddress === USDT_ADDRESS) return 'USDT';
-        return 'Unknown';
-    };
+    const getTokenBalance = (tokenAddress: string): string => {
+        if (tokenAddress === 'TON') {
+            return formatTon(balance || '0');
+        }
 
-    const formatTonAmount = (amount: string): string => {
-        const tonAmount = parseFloat(amount || '0') / 1000000000;
-        return tonAmount.toFixed(4);
+        const jetton = userJettons.find((j) => j.address === tokenAddress);
+        if (jetton && jetton.balance && jetton.decimalsNumber) {
+            const decimals = jetton.decimalsNumber;
+            return formatUnits(jetton.balance, decimals);
+        }
+
+        return '0';
     };
 
     const handleMaxClick = () => {
-        if (!isOutput && token === 'TON') {
-            const currentBalance = parseFloat(formatTonAmount(balance || '0'));
+        if (isOutput) return;
+
+        if (token === 'TON') {
+            const currentBalance = parseFloat(formatTon(balance || '0'));
             const maxAmount = currentBalance - 0.1;
             if (maxAmount > 0) {
                 onAmountChange(maxAmount.toString());
             }
+        } else {
+            const jetton = userJettons.find((j) => j.address === token);
+            if (jetton && jetton.balance) {
+                const decimals = jetton.decimalsNumber || 9;
+                const balanceInUnits = formatUnits(jetton.balance, decimals);
+                onAmountChange(balanceInUnits);
+            }
         }
     };
 
-    const tokenSymbol = getTokenSymbol(token);
+    const tokenBalance = getTokenBalance(token);
 
     return (
         <div className={cn('space-y-3 overflow-hidden rounded-lg bg-secondary px-4 py-5.5', className)}>
@@ -68,12 +80,12 @@ export const TokenInput: FC<Props> = ({
 
                 {token && (
                     <div className="flex items-center text-muted-foreground text-xs">
-                        <p className="mr-0.5">Balance: </p>
-                        <span className="mr-1 text-muted-foreground text-xs">
-                            {token === 'TON' ? formatTonAmount(balance || '0') : '0.00'} {tokenSymbol}
+                        <p>Balance: </p>
+                        <span className="ml-1 text-muted-foreground text-xs">
+                            {parseFloat(tokenBalance).toFixed(6)}
                         </span>
-                        {!isOutput && token === 'TON' && (
-                            <Button className="h-5 px-2 text-xs" onClick={handleMaxClick} size="sm">
+                        {!isOutput && parseFloat(tokenBalance) > 0 && (
+                            <Button className="h-5 px-2! ml-2 text-xs" onClick={handleMaxClick} size="sm">
                                 Max
                             </Button>
                         )}
