@@ -17,7 +17,7 @@ import { SwapError } from '../errors';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, addressToToken, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';
 import type { Base64String, TransactionRequest } from '../../../api/models';
-import { getUnixtime } from '../../../utils';
+import { asBase64, getUnixtime } from '../../../utils';
 
 const log = globalLogger.createChild('OmnistonSwapProvider');
 
@@ -73,7 +73,9 @@ export class OmnistonSwapProvider extends SwapProvider {
         this.apiUrl = config?.apiUrl ?? 'wss://omni-ws.ston.fi';
         this.defaultSlippageBps = config?.defaultSlippageBps ?? 100; // 1% default
         this.quoteTimeoutMs = config?.quoteTimeoutMs ?? 7000; // 10 seconds
-        this.referrerAddress = config?.referrerAddress;
+        this.referrerAddress = config?.referrerAddress
+            ? Address.parse(config?.referrerAddress).toString({ bounceable: true })
+            : undefined;
         this.referrerFeeBps = config?.referrerFeeBps;
         this.flexibleReferrerFee = config?.flexibleReferrerFee ?? false;
 
@@ -240,8 +242,8 @@ export class OmnistonSwapProvider extends SwapProvider {
                 messages: messages.map((message) => ({
                     address: message.targetAddress,
                     amount: message.sendAmount,
-                    payload: message.payload as Base64String,
-                    stateInit: message.jettonWalletStateInit as Base64String,
+                    payload: asBase64(message.payload),
+                    stateInit: message.jettonWalletStateInit ? asBase64(message.jettonWalletStateInit) : undefined,
                 })),
                 network: params.quote.network,
             };
