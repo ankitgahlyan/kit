@@ -24,7 +24,6 @@ export interface SwapState {
     isSwapping: boolean;
     error: string | null;
     slippageBps: number;
-    lastQuoteUpdate: number;
 }
 
 export interface SwapSlice {
@@ -52,7 +51,6 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
         isSwapping: false,
         error: null,
         slippageBps: 100,
-        lastQuoteUpdate: 0,
     },
 
     setFromToken: (token: string) => {
@@ -242,7 +240,6 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.currentQuote = quote;
                 state.swap.toAmount = toAmountFormatted;
-                state.swap.lastQuoteUpdate = Date.now();
                 state.swap.isLoadingQuote = false;
                 state.swap.error = null;
             });
@@ -362,7 +359,6 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             state.swap.isSwapping = false;
             state.swap.error = null;
             state.swap.slippageBps = 100;
-            state.swap.lastQuoteUpdate = 0;
         });
     },
 });

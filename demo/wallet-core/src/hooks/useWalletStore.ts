@@ -214,7 +214,6 @@ export const useSwap = () => {
             isSwapping: state.swap.isSwapping,
             error: state.swap.error,
             slippageBps: state.swap.slippageBps,
-            lastQuoteUpdate: state.swap.lastQuoteUpdate,
             setFromToken: state.setFromToken,
             setToToken: state.setToToken,
             setFromAmount: state.setFromAmount,

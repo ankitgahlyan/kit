@@ -213,7 +213,6 @@ export interface SwapSlice {
         isSwapping: boolean;
         error: string | null;
         slippageBps: number;
-        lastQuoteUpdate: number;
     };
 
     setFromToken: (token: string) => void;

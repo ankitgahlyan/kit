@@ -9,9 +9,11 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 import { useSwap } from '@demo/wallet-core';
+import { useNavigate } from 'react-router-dom';
 
 import { SwapSettings } from './SwapSettings';
 import { TokenInput } from './TokenInput';
+import { QuoteTimer } from './QuoteTimer';
 import { Button } from '../Button';
 import { Card } from '../Card';
 
@@ -48,6 +50,8 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
         executeSwap,
     } = useSwap();
 
+    const navigate = useNavigate();
+
     const [showSlippageSettings, setShowSlippageSettings] = useState(false);
 
     const getTokenSymbol = (tokenAddress: string): string => {
@@ -65,6 +69,10 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
 
     const handleExecuteSwap = async () => {
         await executeSwap();
+
+        navigate('/wallet', {
+            state: { message: `${fromSymbol} sent successfully!` },
+        });
     };
 
     const getSwapButtonText = () => {
@@ -129,6 +137,12 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
 
                 {currentQuote && (
                     <>
+                        <QuoteTimer
+                            expiresAt={currentQuote.expiresAt}
+                            onRefresh={handleGetQuote}
+                            isLoading={isLoadingQuote}
+                        />
+
                         <div className="border-t border-gray-200 my-6" />
 
                         <div className="space-y-2 text-sm">
