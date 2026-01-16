@@ -8,9 +8,7 @@ A production-ready wallet-side integration layer for TON Connect, designed for b
 
 [![npm @ton/walletkit version](https://img.shields.io/npm/v/@ton/walletkit)](https://www.npmjs.com/package/@ton/walletkit)
 [![Release](https://github.com/ton-connect/kit/actions/workflows/release.yml/badge.svg)](https://github.com/ton-connect/kit/actions/workflows/release.yml)
-[![Basic build and tests](https://github.com/ton-connect/kit/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/ton-connect/kit/actions/workflows/test.yml)
-[![e2e extension](https://github.com/ton-connect/kit/actions/workflows/e2e_extension.yml/badge.svg?branch=main)](https://github.com/ton-connect/kit/actions/workflows/e2e_extension.yml)
-[![e2e web](https://github.com/ton-connect/kit/actions/workflows/e2e_web.yml/badge.svg?branch=main)](https://github.com/ton-connect/kit/actions/workflows/e2e_web.yml)
+[![Tests](https://github.com/ton-connect/kit/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/ton-connect/kit/actions/workflows/test.yml)
 
 ## Overview
 
