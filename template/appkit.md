@@ -1,3 +1,7 @@
+---
+target: packages/appkit/README.md
+---
+
 # TonAppKit
 
 A dApp-side integration layer for TON Connect with a unified asset API for TON, Jettons, and NFTs
@@ -31,159 +35,35 @@ npm install @ton/appkit @tonconnect/sdk
 
 ## Initialize AppKit and wrap wallet
 
-```ts
-import { CreateAppKit } from '@ton/appkit';
-import type { ITonConnect, Wallet } from '@tonconnect/sdk';
-
-// Create AppKit instance - typically done once at app startup
-const appKit = CreateAppKit({});
-
-// After user connects via TonConnect, wrap their wallet
-function getWrappedWallet(tonConnectWallet: Wallet, tonConnect: ITonConnect) {
-    return appKit.wrapTonConnectWallet(tonConnectWallet, tonConnect);
-}
-
-export { appKit, getWrappedWallet };
-```
+%%demo/examples/src/appkit#APPKIT_INIT%%
 
 ## Send TON
 
-```ts
-async function sendTon(wallet: Wallet) {
-    const tonTransfer: TONTransferRequest = {
-        recipientAddress: 'EQC...recipient...',
-        transferAmount: (1n * 10n ** 9n).toString(), // 1 TON in nanotons
-        comment: 'Payment for services',
-    };
-
-    // Build the transaction
-    const transaction = await wallet.createTransferTonTransaction(tonTransfer);
-
-    // Sign and send via TonConnect
-    const result = await wallet.sendTransaction(transaction);
-    console.log('Transaction sent:', result.boc);
-}
-```
+%%demo/examples/src/appkit#APPKIT_SEND_TON%%
 
 ## Send Jettons
 
-```ts
-async function sendJettons(wallet: Wallet) {
-    const jettonTransfer: JettonsTransferRequest = {
-        recipientAddress: 'EQC...recipient...',
-        jettonAddress: 'EQD...jetton-master...',
-        transferAmount: '1000000000', // raw amount per token decimals
-        comment: 'Jetton payment',
-    };
-
-    // Build the transaction
-    const transaction = await wallet.createTransferJettonTransaction(jettonTransfer);
-
-    // Sign and send via TonConnect
-    const result = await wallet.sendTransaction(transaction);
-    console.log('Jetton transfer sent:', result.boc);
-}
-```
+%%demo/examples/src/appkit#APPKIT_SEND_JETTONS%%
 
 ## Send NFTs
 
-```ts
-async function sendNft(wallet: Wallet) {
-    const nftTransfer: NFTTransferRequest = {
-        nftAddress: 'EQD...nft-item...',
-        recipientAddress: 'EQC...recipient...',
-        comment: 'Sending NFT',
-    };
-
-    // Build the transaction
-    const transaction = await wallet.createTransferNftTransaction(nftTransfer);
-
-    // Sign and send via TonConnect
-    const result = await wallet.sendTransaction(transaction);
-    console.log('NFT transfer sent:', result.boc);
-}
-```
+%%demo/examples/src/appkit#APPKIT_SEND_NFT%%
 
 ## Fetch Assets
 
 ### Fetch Jettons
 
-```ts
-async function fetchJettons(wallet: Wallet) {
-    // Fetch jetton balances
-    const response = await wallet.getJettons({
-        pagination: { offset: 0, limit: 50 },
-    });
-
-    // response.jettons is an array of Jetton objects
-    for (const jetton of response.jettons) {
-        console.log(`${jetton.info.name}: ${jetton.balance}`);
-    }
-
-    return response.jettons;
-}
-```
+%%demo/examples/src/appkit#APPKIT_FETCH_JETTONS%%
 
 ### Fetch NFTs
 
-```ts
-async function fetchNfts(wallet: Wallet) {
-    // Fetch owned NFTs
-    const response = await wallet.getNfts({
-        pagination: { offset: 0, limit: 50 },
-    });
-
-    // response.nfts is an array of NFT objects
-    for (const nft of response.nfts) {
-        console.log(`NFT: ${nft.info?.name ?? nft.address}`);
-    }
-
-    return response.nfts;
-}
-```
+%%demo/examples/src/appkit#APPKIT_FETCH_NFTS%%
 
 ## React Integration
 
 For React/Next.js apps using `@tonconnect/ui-react`:
 
-```tsx
-import { useEffect, useCallback, useRef, useMemo } from 'react';
-import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
-import { CreateAppKit } from '@ton/appkit';
-import type { AppKit } from '@ton/appkit';
-
-export function useAppKit() {
-    const [tonConnectUI] = useTonConnectUI();
-    const wallet = useTonWallet();
-    const appKitRef = useRef<AppKit | null>(null);
-
-    // Initialize AppKit when TonConnect is ready
-    useEffect(() => {
-        if (tonConnectUI.connector && !appKitRef.current) {
-            appKitRef.current = CreateAppKit({});
-        }
-    }, [tonConnectUI.connector]);
-
-    // Create wrapped wallet when connected
-    const wrappedWallet = useMemo(() => {
-        if (!wallet || !appKitRef.current || !tonConnectUI.connector) {
-            return null;
-        }
-        return appKitRef.current.wrapTonConnectWallet(wallet, tonConnectUI.connector);
-    }, [wallet, tonConnectUI.connector]);
-
-    const disconnect = useCallback(async () => {
-        await tonConnectUI.disconnect();
-    }, [tonConnectUI]);
-
-    return {
-        isConnected: !!wallet,
-        address: wallet?.account.address ?? null,
-        wallet: wrappedWallet,
-        disconnect,
-    };
-}
-```
+%%demo/examples/src/appkit#APPKIT_REACT_HOOK%%
 
 ## Demo App
 

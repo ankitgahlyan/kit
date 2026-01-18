@@ -464,9 +464,18 @@ importers:
 
   demo/examples:
     dependencies:
+      '@ton/appkit':
+        specifier: workspace:*
+        version: link:../../packages/appkit
       '@ton/walletkit':
         specifier: workspace:*
         version: link:../../packages/walletkit
+      '@tonconnect/sdk':
+        specifier: ^3.2.0
+        version: 3.3.1
+      '@tonconnect/ui-react':
+        specifier: ^2.0.0
+        version: 2.3.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1
