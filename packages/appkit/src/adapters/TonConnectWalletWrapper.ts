@@ -7,8 +7,8 @@
  */
 
 import { Address } from '@ton/core';
-import type { ITonConnect, Wallet as TonConnectWallet } from '@tonconnect/sdk';
-import { CHAIN } from '@tonconnect/protocol';
+import type { ITonConnect, SignDataPayload, SignDataPayloadCell, Wallet as TonConnectWallet } from '@tonconnect/sdk';
+import type { CHAIN } from '@tonconnect/protocol';
 import type {
     ApiClient,
     TONTransferRequest,
@@ -27,12 +27,12 @@ import type {
     TokenAmount,
     PreparedSignData,
     ProofMessage,
-    Network,
     UserFriendlyAddress,
     Hex,
     Base64String,
     WalletId,
 } from '@ton/walletkit';
+import { Network } from '@ton/walletkit';
 import {
     CallForSuccess,
     isValidAddress,
@@ -110,14 +110,12 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
             return asHex(`0x${account.publicKey}`);
         }
 
-        // Generate a deterministic public key from the address as fallback
-        const address = Address.parse(account?.address || '');
-        return asHex(`0x${address.hash.toString('hex')}`);
+        throw new Error('Public key not found');
     }
 
     getNetwork(): Network {
         const account = this.tonConnectWallet.account;
-        return account?.chain === CHAIN.TESTNET ? { chainId: CHAIN.TESTNET } : { chainId: CHAIN.MAINNET };
+        return Network.custom(account?.chain ?? Network.testnet().chainId);
     }
 
     getClient(): ApiClient {
@@ -160,15 +158,37 @@ export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
                 payload: msg.payload,
                 stateInit: msg.stateInit,
             })),
-            network: (input.network?.chainId as CHAIN) || CHAIN.MAINNET,
+            network: (input.network?.chainId as CHAIN) ?? (this.tonConnectWallet.account?.chain as CHAIN),
         };
 
         const result = await this.tonConnect.sendTransaction(transaction);
         return result.boc as Base64String;
     }
 
-    async getSignedSignData(_input: PreparedSignData, _options?: { fakeSignature: boolean }): Promise<Hex> {
-        throw new Error('Sign data not yet supported with TonConnect wrapper');
+    async getSignedSignData(input: PreparedSignData, _options?: { fakeSignature: boolean }): Promise<Hex> {
+        if (_options?.fakeSignature) {
+            throw new Error('Fake signature not supported with TonConnect wallet');
+        }
+
+        const payload: SignDataPayload = {
+            network: input.payload.network ? (input.payload.network.chainId as CHAIN) : undefined,
+            from: this.getAddress(),
+            ...(input.payload.data.type === 'text'
+                ? { type: 'text' as const, text: input.payload.data.value.content }
+                : {}),
+            ...(input.payload.data.type === 'cell'
+                ? {
+                      type: 'cell' as const,
+                      schema: input.payload.data.value.schema,
+                      cell: input.payload.data.value.content,
+                  }
+                : {}),
+            ...(input.payload.data.type === 'binary'
+                ? { type: 'binary' as const, bytes: input.payload.data.value.content }
+                : {}),
+        } as SignDataPayloadCell;
+        const response = await this.tonConnect.signData(payload);
+        return asHex(response.signature);
     }
 
     async getSignedTonProof(_input: ProofMessage, _options?: { fakeSignature: boolean }): Promise<Hex> {
