@@ -49,14 +49,14 @@ export class TONConnectStoredSessionManager implements TONConnectSessionManager 
     async createSession(
         sessionId: string,
         dAppInfo: DAppInfo,
-        wallet?: Wallet,
-        { disablePersist = false, isJsBridge = false }: { disablePersist?: boolean; isJsBridge?: boolean } = {},
+        wallet: Wallet,
+        isJsBridge: boolean,
     ): Promise<TONConnectSession> {
         const now = new Date();
         const randomKeyPair = new SessionCrypto().stringifyKeypair();
 
         // Create walletId from wallet if provided
-        const walletId = wallet ? createWalletId(wallet.getNetwork(), wallet.getAddress()) : '';
+        const walletId = wallet.getWalletId();
 
         const session: TONConnectSession = {
             sessionId,
@@ -70,9 +70,6 @@ export class TONConnectStoredSessionManager implements TONConnectSessionManager 
             isJsBridge,
         };
 
-        if (disablePersist) {
-            return session;
-        }
         this.sessions.set(sessionId, session);
         await this.persistSessions();
 

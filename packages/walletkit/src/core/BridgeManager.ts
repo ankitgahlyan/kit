@@ -188,7 +188,7 @@ export class BridgeManager {
         event: BridgeEvent,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         response: any,
-        _session?: TONConnectSession,
+        sessionCrypto?: SessionCrypto,
     ): Promise<void> {
         if (event.isLocal) {
             return;
@@ -220,20 +220,28 @@ export class BridgeManager {
             );
         }
 
-        const session = _session ?? (await this.sessionManager.getSession(sessionId));
-        if (!session) {
-            throw new WalletKitError(ERROR_CODES.SESSION_NOT_FOUND, `Session not found for response`, undefined, {
-                sessionId,
-                eventId: event.id,
-            });
+        let _sessionCrypto: SessionCrypto;
+
+        if (sessionCrypto) {
+            _sessionCrypto = sessionCrypto;
+        } else {
+            const session = await this.sessionManager.getSession(sessionId);
+
+            if (session) {
+                _sessionCrypto = new SessionCrypto({
+                    publicKey: session.publicKey,
+                    secretKey: session.privateKey,
+                });
+            } else {
+                throw new WalletKitError(ERROR_CODES.SESSION_NOT_FOUND, `Session not found for response`, undefined, {
+                    sessionId,
+                    eventId: event.id,
+                });
+            }
         }
 
         try {
-            const sessionCrypto = new SessionCrypto({
-                publicKey: session.publicKey,
-                secretKey: session.privateKey,
-            });
-            await this.bridgeProvider.send(response, sessionCrypto, sessionId, {
+            await this.bridgeProvider.send(response, _sessionCrypto, sessionId, {
                 traceId: event?.traceId,
             });
 

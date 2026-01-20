@@ -16,7 +16,7 @@ import type {
     DisconnectEvent,
     SendTransactionRpcResponseError,
 } from '@tonconnect/protocol';
-import { CHAIN } from '@tonconnect/protocol';
+import { CHAIN, SessionCrypto } from '@tonconnect/protocol';
 
 import type { ITonWalletKit, TonWalletKitOptions } from '../types';
 import { Initializer, wrapWalletInterface } from './Initializer';
@@ -353,6 +353,11 @@ export class TonWalletKit implements ITonWalletKit {
 
             if (session) {
                 try {
+                    const sessionCrypto = new SessionCrypto({
+                        publicKey: session.publicKey,
+                        secretKey: session.privateKey,
+                    });
+
                     // For HTTP bridge sessions, send as a response
                     await CallForSuccess(
                         () =>
@@ -368,7 +373,7 @@ export class TonWalletKit implements ITonWalletKit {
                                     id: Date.now(),
                                     payload: {},
                                 } as DisconnectEvent,
-                                session,
+                                sessionCrypto,
                             ),
                         10,
                         100,

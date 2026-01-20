@@ -21,14 +21,14 @@ export interface TONConnectSessionManager {
      * Create a new session
      * @param sessionId - Unique session identifier
      * @param dAppInfo - Information about the dApp (name, url, iconUrl, description)
-     * @param wallet - The wallet to associate with this session (optional for connect requests before wallet selection)
+     * @param wallet - The wallet to associate with this session
      * @param options - Additional options for session creation
      */
     createSession(
         sessionId: string,
         dAppInfo: DAppInfo,
-        wallet?: Wallet,
-        options?: { disablePersist?: boolean; isJsBridge?: boolean },
+        wallet: Wallet,
+        isJsBridge: boolean,
     ): Promise<TONConnectSession>;
 
     /**

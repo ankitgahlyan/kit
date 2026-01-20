@@ -23,6 +23,7 @@ import {
     CHAIN,
     CONNECT_EVENT_ERROR_CODES,
     SEND_TRANSACTION_ERROR_CODES,
+    SessionCrypto,
     SIGN_DATA_ERROR_CODES,
 } from '@tonconnect/protocol';
 import { getSecureRandomBytes } from '@ton/crypto';
@@ -133,9 +134,7 @@ export class RequestProcessor {
                         description: event.preview.dAppInfo?.description || '',
                     },
                     wallet,
-                    {
-                        isJsBridge: event.isJsBridge,
-                    },
+                    event.isJsBridge ?? false,
                 );
                 // Create bridge session
                 await this.bridgeManager.createSession(newSession.sessionId);
@@ -201,6 +200,7 @@ export class RequestProcessor {
                     throw error;
                 }
 
+                const isJsBridge = false;
                 // If event is EventConnectApproval, we need to send response to dApp and create session
                 await this.sessionManager.createSession(
                     event.from || (await getSecureRandomBytes(32)).toString('hex'),
@@ -211,6 +211,7 @@ export class RequestProcessor {
                         description: event.result.dAppDescription,
                     },
                     wallet,
+                    isJsBridge,
                 );
                 await this.bridgeManager.sendResponse(event, event.result.response);
 
@@ -292,28 +293,17 @@ export class RequestProcessor {
                     message: reason || 'User rejected connection',
                 },
             };
-            const newSession = await this.sessionManager.createSession(
-                event.from || '',
-                {
-                    name: event.preview.dAppInfo?.name || '',
-                    url: '',
-                    iconUrl: '',
-                    description: '',
-                },
-                undefined,
-                {
-                    disablePersist: true,
-                },
-            );
+
+            const sessionId = event.from || '';
 
             try {
-                await this.bridgeManager.sendResponse(event, response, newSession);
+                await this.bridgeManager.sendResponse(event, response, new SessionCrypto());
             } catch (error) {
                 log.error('Failed to send connect request rejection response', { error });
             }
 
             if (this.analytics) {
-                const sessionData = event.from ? await this.sessionManager.getSession(newSession.sessionId) : undefined;
+                const sessionData = event.from ? await this.sessionManager.getSession(sessionId) : undefined;
 
                 // Send wallet-sign-data-request-received event
                 this.analytics.emitWalletConnectRejected({
