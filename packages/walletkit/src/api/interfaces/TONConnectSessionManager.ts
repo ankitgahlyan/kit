@@ -57,9 +57,8 @@ export interface TONConnectSessionManager {
     /**
      * Remove session by ID
      * @param sessionId - The session ID to remove
-     * @returns true if the session was removed, false otherwise
      */
-    removeSession(sessionId: string): Promise<boolean>;
+    removeSession(sessionId: string): Promise<void>;
 
     /**
      * Remove all sessions for a wallet by wallet ID

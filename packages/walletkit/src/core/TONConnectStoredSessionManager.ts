@@ -129,12 +129,11 @@ export class TONConnectStoredSessionManager implements TONConnectSessionManager 
     /**
      * Remove session by ID
      */
-    async removeSession(sessionId: string): Promise<boolean> {
+    async removeSession(sessionId: string): Promise<void> {
         const removed = this.sessions.delete(sessionId);
         if (removed) {
             await this.persistSessions();
         }
-        return removed;
     }
 
     /**
