@@ -104,15 +104,15 @@ export class TONConnectStoredSessionManager implements TONConnectSessionManager 
     /**
      * Get all sessions as array
      */
-    getSessions(): TONConnectSession[] {
+    async getSessions(): Promise<TONConnectSession[]> {
         return Array.from(this.sessions.values());
     }
 
     /**
      * Get sessions for specific wallet by wallet ID
      */
-    getSessionsForWallet(walletId: WalletId): TONConnectSession[] {
-        return this.getSessions().filter((session) => session.walletId === walletId);
+    async getSessionsForWallet(walletId: WalletId): Promise<TONConnectSession[]> {
+        return (await this.getSessions()).filter((session) => session.walletId === walletId);
     }
 
     /**
@@ -141,7 +141,7 @@ export class TONConnectStoredSessionManager implements TONConnectSessionManager 
      * Remove all sessions for a wallet by wallet ID or wallet adapter
      */
     async removeSessionsForWallet(walletId: WalletId): Promise<void> {
-        const sessionsToRemove = this.getSessionsForWallet(walletId);
+        const sessionsToRemove = await this.getSessionsForWallet(walletId);
 
         let removedCount = 0;
         for (const session of sessionsToRemove) {

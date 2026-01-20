@@ -145,7 +145,7 @@ export class StorageEventProcessor implements IEventProcessor {
     private async processNextAvailableEvent(): Promise<boolean> {
         try {
             // Get all active sessions for registered wallets
-            const allLocalSessions = this.sessionManager.getSessions();
+            const allLocalSessions = await this.sessionManager.getSessions();
 
             const allSessions = allLocalSessions.filter(
                 (session) => session.walletId && this.registeredWallets.has(session.walletId),

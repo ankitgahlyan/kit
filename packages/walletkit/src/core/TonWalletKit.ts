@@ -392,7 +392,7 @@ export class TonWalletKit implements ITonWalletKit {
                 log.error('Failed to remove session', { sessionId, error });
             }
         } else {
-            const sessions = this.sessionManager.getSessions();
+            const sessions = await this.sessionManager.getSessions();
             if (sessions.length > 0) {
                 for (const session of sessions) {
                     try {
@@ -407,7 +407,7 @@ export class TonWalletKit implements ITonWalletKit {
 
     async listSessions(): Promise<TONConnectSession[]> {
         await this.ensureInitialized();
-        return this.sessionManager.getSessions();
+        return await this.sessionManager.getSessions();
     }
 
     // === Event Handler Registration (Delegated) ===

@@ -46,13 +46,13 @@ export interface TONConnectSessionManager {
     /**
      * Get all sessions as array
      */
-    getSessions(): TONConnectSession[];
+    getSessions(): Promise<TONConnectSession[]>;
 
     /**
      * Get sessions for specific wallet by wallet ID
      * @param walletId - The wallet ID to filter by
      */
-    getSessionsForWallet(walletId: WalletId): TONConnectSession[];
+    getSessionsForWallet(walletId: WalletId): Promise<TONConnectSession[]>;
 
     /**
      * Remove session by ID

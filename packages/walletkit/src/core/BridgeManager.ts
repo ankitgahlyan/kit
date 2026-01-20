@@ -354,7 +354,7 @@ export class BridgeManager {
     // }
 
     private async getClients(): Promise<ClientConnection[]> {
-        return this.sessionManager.getSessions().map((session) => ({
+        return (await this.sessionManager.getSessions()).map((session) => ({
             session: new SessionCrypto({
                 publicKey: session.publicKey,
                 secretKey: session.privateKey.length > 64 ? session.privateKey.slice(0, 64) : session.privateKey,
