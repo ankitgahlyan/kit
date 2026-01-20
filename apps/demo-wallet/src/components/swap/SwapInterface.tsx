@@ -8,7 +8,7 @@
 
 import type { FC } from 'react';
 import { useState } from 'react';
-import { useSwap } from '@demo/wallet-core';
+import { formatUnits, useSwap } from '@demo/wallet-core';
 import { useNavigate } from 'react-router-dom';
 
 import { SwapSettings } from './SwapSettings';
@@ -192,7 +192,7 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Minimum Received</span>
                                 <span className="font-medium">
-                                    {(parseFloat(currentQuote.minReceived) / Math.pow(10, 6)).toFixed(6)} {toSymbol}
+                                    {Number(formatUnits(currentQuote.minReceived, 6)).toFixed(6)} {toSymbol}
                                 </span>
                             </div>
 

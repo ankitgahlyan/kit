@@ -10,7 +10,7 @@ import type { SwapQuoteParams } from '@ton/walletkit';
 import { getMaxOutgoingMessages } from '@ton/walletkit';
 
 import { createComponentLogger } from '../../utils/logger';
-import { formatTon, formatUnits } from '../../utils/units';
+import { formatTon, formatUnits, parseUnits } from '../../utils/units';
 import type { SetState, SwapSliceCreator } from '../../types/store';
 
 const log = createComponentLogger('SwapSlice');
@@ -237,7 +237,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             let quoteParams: SwapQuoteParams;
             if (fromAmount) {
                 const decimals = fromToken === 'TON' ? 9 : 6;
-                const amountInUnits = Math.floor(parseFloat(fromAmount) * Math.pow(10, decimals)).toString();
+                const amountInUnits = parseUnits(fromAmount, decimals).toString();
                 quoteParams = {
                     fromToken,
                     toToken,
@@ -248,7 +248,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
                 };
             } else {
                 const decimals = toToken === 'TON' ? 9 : 6;
-                const amountInUnits = Math.floor(parseFloat(toAmount) * Math.pow(10, decimals)).toString();
+                const amountInUnits = parseUnits(toAmount, decimals).toString();
                 quoteParams = {
                     fromToken,
                     toToken,
@@ -264,7 +264,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             // Update the opposite amount based on which one was specified
             if (fromAmount) {
                 const toDecimals = toToken === 'TON' ? 9 : 6;
-                const toAmountFormatted = (parseFloat(quote.toAmount) / Math.pow(10, toDecimals)).toFixed(6);
+                const toAmountFormatted = formatUnits(quote.toAmount, toDecimals).toString();
                 set((state) => {
                     state.swap.currentQuote = quote;
                     state.swap.toAmount = toAmountFormatted;
@@ -273,7 +273,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
                 });
             } else {
                 const fromDecimals = fromToken === 'TON' ? 9 : 6;
-                const fromAmountFormatted = (parseFloat(quote.fromAmount) / Math.pow(10, fromDecimals)).toFixed(6);
+                const fromAmountFormatted = formatUnits(quote.toAmount, fromDecimals).toString();
                 set((state) => {
                     state.swap.currentQuote = quote;
                     state.swap.fromAmount = fromAmountFormatted;
