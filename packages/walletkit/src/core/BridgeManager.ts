@@ -188,7 +188,7 @@ export class BridgeManager {
         event: BridgeEvent,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         response: any,
-        sessionCrypto?: SessionCrypto,
+        providedSessionCrypto?: SessionCrypto,
     ): Promise<void> {
         if (event.isLocal) {
             return;
@@ -220,15 +220,13 @@ export class BridgeManager {
             );
         }
 
-        let _sessionCrypto: SessionCrypto;
+        let sessionCrypto = providedSessionCrypto;
 
-        if (sessionCrypto) {
-            _sessionCrypto = sessionCrypto;
-        } else {
+        if (!sessionCrypto) {
             const session = await this.sessionManager.getSession(sessionId);
 
             if (session) {
-                _sessionCrypto = new SessionCrypto({
+                sessionCrypto = new SessionCrypto({
                     publicKey: session.publicKey,
                     secretKey: session.privateKey,
                 });
@@ -241,7 +239,7 @@ export class BridgeManager {
         }
 
         try {
-            await this.bridgeProvider.send(response, _sessionCrypto, sessionId, {
+            await this.bridgeProvider.send(response, sessionCrypto, sessionId, {
                 traceId: event?.traceId,
             });
 
