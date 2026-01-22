@@ -30,8 +30,5 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
-      - name: Typecheck iOS Bridge
-        run: pnpm --filter walletkit-ios-bridge typecheck:bridge
-
-      - name: Typecheck Android Bridge
-        run: pnpm --filter walletkit-android-bridge typecheck:bridge
+      - name: Quality check bridges
+        run: pnpm quality:bridge
