@@ -229,9 +229,7 @@ export interface WalletKitBridgeApi {
     setEventsListeners(args?: SetEventsListenersArgs): PromiseOrValue<{ ok: true }>;
     removeEventListeners(): PromiseOrValue<{ ok: true }>;
     // Returns raw keyPair with Uint8Array - Kotlin handles conversion
-    mnemonicToKeyPair(
-        args: MnemonicToKeyPairArgs,
-    ): PromiseOrValue<{ publicKey: Uint8Array; secretKey: Uint8Array }>;
+    mnemonicToKeyPair(args: MnemonicToKeyPairArgs): PromiseOrValue<{ publicKey: Uint8Array; secretKey: Uint8Array }>;
     // Returns signature string directly
     sign(args: SignArgs): PromiseOrValue<string>;
     // Returns mnemonic words array directly
