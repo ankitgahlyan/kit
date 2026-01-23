@@ -9,9 +9,9 @@
 // SAMPLE_START: APPKIT_REACT_HOOK
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
-import { CreateAppKit, TonConnectProvider, WALLET_EVENTS } from '@ton/appkit';
+import { AppKit, WALLET_EVENTS } from '@ton/appkit';
+import { TonConnectProvider } from '@ton/appkit/tonconnect';
 import { Network } from '@ton/walletkit';
-import type { AppKit } from '@ton/appkit';
 import type { Wallet } from '@ton/walletkit';
 
 export function useAppKit() {
@@ -23,7 +23,7 @@ export function useAppKit() {
     // Initialize AppKit when TonConnect is ready
     useEffect(() => {
         if (tonConnectUI.connector && !appKitRef.current) {
-            const appKit = CreateAppKit({
+            const appKit = new AppKit({
                 networks: {
                     [Network.mainnet().chainId]: {
                         apiClient: {

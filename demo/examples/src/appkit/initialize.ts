@@ -7,11 +7,11 @@
  */
 
 // SAMPLE_START: APPKIT_INIT
-import { CreateAppKit } from '@ton/appkit';
+import { AppKit } from '@ton/appkit';
 import { Network } from '@ton/walletkit';
 
 // Create AppKit instance with network configuration
-const appKit = CreateAppKit({
+const appKit = new AppKit({
     networks: {
         [Network.mainnet().chainId]: {
             apiClient: {

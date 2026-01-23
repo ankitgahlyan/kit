@@ -6,4 +6,5 @@
  *
  */
 
-export { AppKitImpl } from './app-kit';
+export { AppKit } from './app-kit';
+export type { IAppKit, AppKitConfig } from './types';

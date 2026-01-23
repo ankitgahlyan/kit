@@ -6,24 +6,18 @@
  *
  */
 
-import type { Wallet } from '@ton/walletkit';
+import type { NetworkAdapters } from '@ton/walletkit';
 
-import type { EventBus } from '../core/events';
-import type { WalletProvider } from './wallet-provider';
-
-/**
- * Transaction result from sending a transaction
- */
-export interface TransactionResult {
-    boc: string;
-}
+import type { WalletInterface } from '../types/wallet';
+import type { IEventBus } from '../features/events';
+import type { WalletProvider } from '../types/wallet-provider';
 
 /**
  * AppKit main interface - Central hub for wallet management
  */
-export interface AppKit {
+export interface IAppKit {
     /** Centralized event bus for wallet events */
-    readonly eventBus: EventBus;
+    readonly eventBus: IEventBus;
 
     /** Registered wallet providers */
     readonly providers: ReadonlyArray<WalletProvider>;
@@ -32,11 +26,25 @@ export interface AppKit {
     registerProvider(provider: WalletProvider): void;
 
     /** Get all connected wallets from all providers */
-    getConnectedWallets(): Promise<Wallet[]>;
+    getConnectedWallets(): Promise<WalletInterface[]>;
 
     /** Connect wallet using specific provider */
     connectWallet(providerId: string): Promise<void>;
 
     /** Disconnect wallet using specific provider */
     disconnectWallet(providerId: string): Promise<void>;
+}
+
+/**
+ * Configuration for AppKit
+ */
+export interface AppKitConfig {
+    /**
+     * Network configuration
+     * At least one network must be configured.
+     *
+     * Keys are chain IDs (use `Network.mainnet().chainId` or `Network.testnet().chainId`)
+     * Values contain apiClient configuration (url and optional API key)
+     */
+    networks?: NetworkAdapters;
 }

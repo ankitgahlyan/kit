@@ -13,8 +13,10 @@
 import TonConnect from '@tonconnect/sdk';
 import { Network } from '@ton/walletkit';
 
-import { CreateAppKit, TonConnectProvider, WALLET_EVENTS } from '../index';
 import { FSStorage } from './fs-storage';
+import { TonConnectProvider } from '../features/tonconnect';
+import { AppKit } from '../core/app-kit';
+import { WALLET_EVENTS } from '../features/events';
 
 async function main() {
     const tonConnect = new TonConnect({
@@ -23,7 +25,7 @@ async function main() {
     });
 
     // Create AppKit with network configuration
-    const appKit = CreateAppKit({
+    const appKit = new AppKit({
         networks: {
             [Network.mainnet().chainId]: {
                 apiClient: {

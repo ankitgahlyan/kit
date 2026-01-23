@@ -9,7 +9,8 @@
 import React, { useMemo } from 'react';
 import { AppKitProvider } from '@ton/appkit-ui-react';
 import { TonConnectUIProvider, useTonConnectUI } from '@tonconnect/ui-react';
-import { CreateAppKit, TonConnectProvider } from '@ton/appkit';
+import { AppKit } from '@ton/appkit';
+import { TonConnectProvider } from '@ton/appkit/tonconnect';
 import { Network } from '@ton/walletkit';
 import { Toaster } from 'sonner';
 
@@ -29,7 +30,7 @@ function AppKitBridge({ children }: { children: React.ReactNode }) {
         if (!tonConnectUI) return null;
 
         // Create AppKit instance with networks configuration
-        const kit = CreateAppKit({
+        const kit = new AppKit({
             networks: {
                 [Network.mainnet().chainId]: {
                     apiClient: {

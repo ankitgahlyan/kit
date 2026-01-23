@@ -3,22 +3,40 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./tonconnect": {
+      "import": {
+        "types": "./dist/features/tonconnect/index.d.ts",
+        "default": "./dist/features/tonconnect/index.js"
+      },
+      "require": {
+        "types": "./dist/features/tonconnect/index.d.cts",
+        "default": "./dist/features/tonconnect/index.cjs"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "tonconnect": ["./dist/features/tonconnect/index.d.ts"]
     }
   },
   "scripts": {
-    "build": "npm run build:clean && npm run build:cjs && npm run build:esm",
-    "build:clean": "rimraf dist",
-    "build:cjs": "tsc -p tsconfig.json",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "dev": "tsc -p tsconfig.esm.json --watch"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ton-community/assets-sdk": "^0.0.5",
@@ -32,6 +50,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
+    "tsup": "^8.5.0",
     "tsx": "^4.20.5",
     "typescript": "~5.8.3"
   }

@@ -6,14 +6,15 @@
  *
  */
 
-import type { Wallet as WalletInterface, NetworkManager } from '@ton/walletkit';
+import type { NetworkManager } from '@ton/walletkit';
 import { Network } from '@ton/walletkit';
 import type { ITonConnect } from '@tonconnect/sdk';
 
 import { TonConnectWalletWrapperImpl } from '../adapters/ton-connect-wallet-wrapper';
-import type { WalletProvider } from '../types';
-import type { EventBus } from '../core/events';
-import { WALLET_EVENTS } from '../core/events';
+import type { IEventBus } from '../../events';
+import { WALLET_EVENTS } from '../../events';
+import type { WalletProvider } from '../../../types/wallet-provider';
+import type { WalletInterface } from '../../../types/wallet';
 
 export interface TonConnectProviderConfig {
     id?: string;
@@ -26,7 +27,7 @@ export class TonConnectProvider implements WalletProvider {
 
     private tonConnect: ITonConnect;
     private networkManager: NetworkManager | null = null;
-    private eventBus: EventBus | null = null;
+    private eventBus: IEventBus | null = null;
     private unsubscribeTonConnect: (() => void) | null = null;
 
     constructor(config: TonConnectProviderConfig) {
@@ -34,7 +35,7 @@ export class TonConnectProvider implements WalletProvider {
         this.tonConnect = config.tonConnect;
     }
 
-    async initialize(eventBus: EventBus, networkManager: NetworkManager): Promise<void> {
+    async initialize(eventBus: IEventBus, networkManager: NetworkManager): Promise<void> {
         this.eventBus = eventBus;
         this.networkManager = networkManager;
 
@@ -85,6 +86,7 @@ export class TonConnectProvider implements WalletProvider {
                 tonConnect: this.tonConnect,
                 client,
             });
+
             return [wrapper];
         }
         return [];

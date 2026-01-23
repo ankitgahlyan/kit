@@ -6,30 +6,40 @@
  *
  */
 
-import type { NetworkManager, Wallet as WalletInterface } from '@ton/walletkit';
+import type { NetworkManager } from '@ton/walletkit';
 import { Network, KitNetworkManager } from '@ton/walletkit';
 
-import type { AppKit, AppKitConfig, WalletProvider } from '../types';
-import type { EventBus } from './events';
-import { createEventBus } from './events';
+import type { IAppKit, AppKitConfig } from './types';
+import type { WalletProvider } from '../types/wallet-provider';
+import type { IEventBus } from '../features/events';
+import { EventBus } from '../features/events';
+import type { WalletInterface } from '../types/wallet';
 
 /**
  * Central hub for wallet management.
  * Stores eventBus, providers, and manages wallet connections.
  */
-export class AppKitImpl implements AppKit {
+export class AppKit implements IAppKit {
     private networkManager!: NetworkManager;
-    private _eventBus: EventBus;
+    private _eventBus: IEventBus;
     private _providers: WalletProvider[] = [];
 
-    private constructor() {
-        this._eventBus = createEventBus();
+    constructor(config: AppKitConfig) {
+        this._eventBus = new EventBus();
+
+        // Use provided networks config or default to mainnet
+        const networks = config.networks ?? {
+            [Network.mainnet().chainId]: {},
+        };
+
+        const networkManager = new KitNetworkManager({ networks });
+        this.networkManager = networkManager;
     }
 
     /**
      * Centralized event bus for wallet events
      */
-    get eventBus(): EventBus {
+    get eventBus(): IEventBus {
         return this._eventBus;
     }
 
@@ -38,23 +48,6 @@ export class AppKitImpl implements AppKit {
      */
     get providers(): ReadonlyArray<WalletProvider> {
         return this._providers;
-    }
-
-    /**
-     * Create a new AppKit instance
-     */
-    static create(config: AppKitConfig): AppKit {
-        const appKit = new AppKitImpl();
-
-        // Use provided networks config or default to mainnet
-        const networks = config.networks ?? {
-            [Network.mainnet().chainId]: {},
-        };
-
-        const networkManager = new KitNetworkManager({ networks });
-        appKit.networkManager = networkManager;
-
-        return appKit;
     }
 
     /**
@@ -99,8 +92,4 @@ export class AppKitImpl implements AppKit {
         }
         await provider.disconnectWallet();
     }
-}
-
-export function CreateAppKit(config: AppKitConfig): AppKit {
-    return AppKitImpl.create(config);
 }

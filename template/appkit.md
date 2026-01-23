@@ -76,15 +76,15 @@ See [apps/appkit-minter](https://github.com/ton-connect/kit/tree/main/apps/appki
 
 ## API Reference
 
-### CreateAppKit
+### AppKit
 
 Creates a new AppKit instance with network configuration.
 
 ```typescript
-import { CreateAppKit } from '@ton/appkit';
+import { AppKit } from '@ton/appkit';
 import { Network } from '@ton/walletkit';
 
-const appKit = CreateAppKit({
+const appKit = new AppKit({
     networks: {
         [Network.mainnet().chainId]: {
             apiClient: {

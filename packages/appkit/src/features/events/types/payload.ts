@@ -6,16 +6,7 @@
  *
  */
 
-import type { Wallet as WalletInterface } from '@ton/walletkit';
-
-/**
- * Wallet events
- */
-export const WALLET_EVENTS = {
-    CONNECTED: 'wallet:connected',
-    DISCONNECTED: 'wallet:disconnected',
-    CHANGED: 'wallet:changed',
-} as const;
+import type { WalletInterface } from '../../../types/wallet';
 
 export interface WalletConnectedPayload {
     wallets: WalletInterface[];
@@ -30,13 +21,6 @@ export interface WalletChangedPayload {
     wallets: WalletInterface[];
     providerId: string;
 }
-
-/**
- * Plugin events
- */
-export const PLUGIN_EVENTS = {
-    REGISTERED: 'plugin:registered',
-} as const;
 
 export interface PluginRegisteredPayload {
     pluginId: string;

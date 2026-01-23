@@ -6,29 +6,12 @@
  *
  */
 
+import type { EventPayload, EventListener, AppKitEvent, IEventBus } from '../types/event-bus';
+
 /**
  * Centralized EventBus for appkit plugin communication
  */
-
-export type EventPayload = Record<string, unknown>;
-
-export interface AppKitEvent<T extends EventPayload = EventPayload> {
-    type: string;
-    payload: T;
-    source: string;
-    timestamp: number;
-}
-
-export type EventListener<T extends EventPayload = EventPayload> = (event: AppKitEvent<T>) => void;
-
-export interface EventBus {
-    emit<T extends EventPayload>(type: string, payload: T, source: string): void;
-    on<T extends EventPayload>(type: string, listener: EventListener<T>): () => void;
-    off(type: string, listener: EventListener): void;
-    once<T extends EventPayload>(type: string, listener: EventListener<T>): () => void;
-}
-
-class EventBusImpl implements EventBus {
+export class EventBus implements IEventBus {
     private listeners = new Map<string, Set<EventListener>>();
 
     emit<T extends EventPayload>(type: string, payload: T, source: string): void {
@@ -66,5 +49,3 @@ class EventBusImpl implements EventBus {
         return this.on(type, wrapper);
     }
 }
-
-export const createEventBus = (): EventBus => new EventBusImpl();

@@ -8,22 +8,22 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Wallet as WalletInterface } from '@ton/walletkit';
-import type { AppKit, EventBus, WalletProvider } from '@ton/appkit';
+import type { IAppKit, IEventBus, WalletProvider } from '@ton/appkit';
 import { WALLET_EVENTS } from '@ton/appkit';
 
 export interface AppKitContextType {
-    appKit: AppKit;
+    appKit: IAppKit;
     providers: ReadonlyArray<WalletProvider>;
     connectedWallets: WalletInterface[];
     connectWallet: (provider: WalletProvider) => Promise<void>;
     disconnectWallet: (provider: WalletProvider) => Promise<void>;
-    eventBus: EventBus;
+    eventBus: IEventBus;
 }
 
 const AppKitContext = createContext<AppKitContextType | undefined>(undefined);
 
 export interface AppKitProviderProps {
-    appKit: AppKit;
+    appKit: IAppKit;
     children: React.ReactNode;
 }
 

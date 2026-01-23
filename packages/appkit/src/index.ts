@@ -6,49 +6,33 @@
  *
  */
 
-// AppKit - Bridge between @tonconnect/sdk and TonWalletKit
-// Allows dApps to use TonConnect wallets with TonWalletKit-compatible interface
+/**
+ * AppKit - Core wallet management for TON dApps
+ *
+ * This is the main entry point for AppKit. It provides provider-agnostic
+ * wallet management functionality.
+ *
+ * For TonConnect support, import from '@ton/appkit/tonconnect' separately.
+ * This allows tree-shaking for users who don't need TonConnect.
+ *
+ * @example
+ * ```ts
+ * // Core AppKit (provider-agnostic)
+ * import { AppKit } from '@ton/appkit';
+ *
+ * // TonConnect feature (optional, for tree-shaking)
+ * import { TonConnectProvider } from '@ton/appkit/tonconnect';
+ * ```
+ */
 
-// Adapter exports
-export { TonConnectWalletWrapperImpl as TonConnectWalletWrapper } from './adapters';
-export type { TonConnectWalletWrapperConfig } from './adapters';
+// Core AppKit class
+export * from './core';
 
-// Type exports
-export type {
-    // Config types
-    AppKitConfig,
-    AppKitDependencies,
-    // Wallet types
-    TonConnectWalletWrapper as ITonConnectWalletWrapper,
-    WalletConnectionInfo,
-    // AppKit types
-    AppKit,
-    TransactionResult,
-} from './types';
+// Events feature
+export * from './features/events';
 
-// Utility exports (for advanced usage)
-export {
-    toTonConnectTransaction,
-    toTonConnectMessage,
-    getValidUntil,
-    DEFAULT_TRANSACTION_VALIDITY_SECONDS,
-} from './utils';
+export * from './types/wallet';
+export * from './types/wallet-provider';
 
-// Re-export from @tonconnect/sdk
-export type { Wallet } from '@tonconnect/sdk';
-export type {
-    TonWalletKit,
-    Wallet as WalletInterface,
-    TONTransferRequest,
-    JettonsTransferRequest,
-    TransactionRequest,
-} from '@ton/walletkit';
-
-export { CreateAppKit } from './core/app-kit';
-
-// Core exports
-export * from './core/events';
-export * from './providers/ton-connect-provider';
-
-// Provider types
-export type { WalletProvider } from './types';
+// Re-export from @ton/walletkit for convenience
+export type { TonWalletKit, TONTransferRequest, JettonsTransferRequest, TransactionRequest } from '@ton/walletkit';

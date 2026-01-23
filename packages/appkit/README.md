@@ -32,11 +32,11 @@ npm install @ton/appkit @tonconnect/sdk
 ## Initialize AppKit and wrap wallet
 
 ```ts
-import { CreateAppKit } from '@ton/appkit';
+import { AppKit } from '@ton/appkit';
 import { Network } from '@ton/walletkit';
 
 // Create AppKit instance with network configuration
-const appKit = CreateAppKit({
+const appKit = new AppKit({
     networks: {
         [Network.mainnet().chainId]: {
             apiClient: {
@@ -159,21 +159,22 @@ For React/Next.js apps using `@ton/appkit-ui-react`:
 ```tsx
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useTonConnectUI, useTonWallet } from '@ton/appkit-ui-react';
-import { CreateAppKit, TonConnectProvider, WALLET_EVENTS } from '@ton/appkit';
+import { AppKit, WALLET_EVENTS } from '@ton/appkit';
+import { TonConnectProvider } from '@ton/appkit/tonconnect';
 import { Network } from '@ton/walletkit';
-import type { AppKit } from '@ton/appkit';
+import type { IAppKit } from '@ton/appkit';
 import type { Wallet } from '@ton/walletkit';
 
 export function useAppKit() {
     const [tonConnectUI] = useTonConnectUI();
     const wallet = useTonWallet();
-    const appKitRef = useRef<AppKit | null>(null);
+    const appKitRef = useRef<IAppKit | null>(null);
     const [connectedWallet, setConnectedWallet] = useState<Wallet | null>(null);
 
     // Initialize AppKit when TonConnect is ready
     useEffect(() => {
         if (tonConnectUI.connector && !appKitRef.current) {
-            const appKit = CreateAppKit({
+            const appKit = new AppKit({
                 networks: {
                     [Network.mainnet().chainId]: {
                         apiClient: {
@@ -224,15 +225,15 @@ See [apps/appkit-minter](https://github.com/ton-connect/kit/tree/main/apps/appki
 
 ## API Reference
 
-### CreateAppKit
+### AppKit
 
 Creates a new AppKit instance with network configuration.
 
 ```typescript
-import { CreateAppKit } from '@ton/appkit';
+import { AppKit } from '@ton/appkit';
 import { Network } from '@ton/walletkit';
 
-const appKit = CreateAppKit({
+const appKit = new AppKit({
     networks: {
         [Network.mainnet().chainId]: {
             apiClient: {

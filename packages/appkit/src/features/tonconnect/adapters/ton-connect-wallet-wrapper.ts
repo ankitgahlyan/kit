@@ -55,8 +55,8 @@ import {
     getNftFromClient,
 } from '@ton/walletkit';
 
-import type { TonConnectWalletWrapper, WalletConnectionInfo } from '../types';
-import { getValidUntil } from '../utils';
+import type { TonConnectWalletWrapper, WalletConnectionInfo } from '../types/wallet';
+import { getValidUntil } from '../utils/transaction';
 
 /**
  * Configuration for TonConnectWalletWrapper
