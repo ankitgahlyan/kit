@@ -22,6 +22,7 @@ export type { TokenAmount } from './core/TokenAmount';
 export type { TokenAnimation } from './core/TokenAnimation';
 export type { TokenImage } from './core/TokenImage';
 export type { TokenInfo } from './core/TokenInfo';
+export type { RawStackItem } from './core/RawStackItem';
 
 // Bridge models
 export type { BridgeEvent } from './bridge/BridgeEvent';
@@ -72,3 +73,6 @@ export type {
     TransactionTraceMoneyFlow,
     TransactionTraceMoneyFlowItem,
 } from './transactions/TransactionTraceMoneyFlow';
+
+// RPC models
+export type { GetMethodResult } from './rpc/GetMethodResult';
