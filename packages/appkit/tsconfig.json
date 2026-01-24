@@ -1,15 +1,16 @@
 {
     "compilerOptions": {
-        "target": "ES2024",
-        "outDir": "dist/cjs",
-        "module": "commonjs",
+        "target": "es2020",
+        "outDir": "dist",
+        "module": "es2020",
         "baseUrl": "./",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "declaration": true,
-        "declarationDir": "dist/cjs",
+        "declarationDir": "dist",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
+        "noImplicitAny": true,
         "skipLibCheck": true,
         "removeComments": false,
         "declarationMap": true

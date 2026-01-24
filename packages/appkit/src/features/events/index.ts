@@ -15,7 +15,7 @@
 export { EventBus } from './services/event-bus';
 export type { IEventBus, EventPayload, AppKitEvent, EventListener } from './types/event-bus';
 export { WALLET_EVENTS, PLUGIN_EVENTS } from './constants/events';
-export {
+export type {
     WalletConnectedPayload,
     WalletDisconnectedPayload,
     WalletChangedPayload,

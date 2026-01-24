@@ -20,7 +20,7 @@ export default defineConfig({
     platform: 'browser',
     target: 'es2020',
     sourcemap: true,
-    minify: true,
+    minify: false,
     define: {
         'process.env': '{}',
         TON_APPKIT_VERSION: JSON.stringify(packageJson.version),
