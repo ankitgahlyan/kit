@@ -19,10 +19,10 @@ export type { EventTransactionApproval, EventSignDataApproval } from './events';
 export type { TonWalletKitOptions, NetworkConfig, NetworkAdapters, ApiClientConfig } from './config';
 
 // Main kit interface
-export type { ITonWalletKit, SessionInfo } from './kit';
+export type { ITonWalletKit } from './kit';
 
 // Internal types (re-export from internal.ts)
-export type { SessionData, BridgeConfig, EventCallback, RawBridgeEvent, EventType, EventHandler } from './internal';
+export type { BridgeConfig, EventCallback, RawBridgeEvent, EventType, EventHandler } from './internal';
 
 // Durable events types
 export type { EventStatus, StoredEvent, DurableEventsConfig, EventStore, EventProcessor } from './durableEvents';
@@ -51,6 +51,7 @@ export { JettonError, JettonErrorCode } from './jettons';
 export type {
     ToncenterEmulationResponse,
     ToncenterResponseJettonWallets,
+    ToncenterResponseJettonMasters,
     ToncenterJettonWallet,
     EmulationAddressMetadata,
     EmulationTokenInfo,
@@ -60,6 +61,20 @@ export type {
     ToncenterTraceItem,
     TraceMeta,
 } from './toncenter/emulation';
+
+export type { FullAccountState } from './toncenter/api';
+
+export type {
+    TransactionsByAddressRequest,
+    GetTransactionByHashRequest,
+    GetPendingTransactionsRequest,
+    GetTraceRequest,
+    GetPendingTraceRequest,
+    GetJettonsByOwnerRequest,
+    GetJettonsByAddressRequest,
+    GetEventsRequest,
+    GetEventsResponse,
+} from './toncenter/ApiClient';
 
 export type { NftItem } from './toncenter/NftItem';
 

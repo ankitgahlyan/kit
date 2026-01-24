@@ -16,14 +16,14 @@ import type {
     DisconnectEvent,
     SendTransactionRpcResponseError,
 } from '@tonconnect/protocol';
-import { CHAIN } from '@tonconnect/protocol';
+import { CHAIN, SessionCrypto } from '@tonconnect/protocol';
 
-import type { ITonWalletKit, TonWalletKitOptions, SessionInfo } from '../types';
+import type { ITonWalletKit, TonWalletKitOptions } from '../types';
 import { Initializer, wrapWalletInterface } from './Initializer';
 import type { InitializationResult } from './Initializer';
 import { globalLogger } from './Logger';
 import type { WalletManager } from './WalletManager';
-import type { SessionManager } from './SessionManager';
+import type { TONConnectSessionManager } from '../api/interfaces/TONConnectSessionManager';
 import type { EventRouter } from './EventRouter';
 import type { RequestProcessor } from './RequestProcessor';
 import { JettonsManager } from './JettonsManager';
@@ -46,7 +46,6 @@ import { CallForSuccess } from '../utils/retry';
 import type { NetworkManager } from './NetworkManager';
 import { KitNetworkManager } from './NetworkManager';
 import type { WalletId } from '../utils/walletId';
-import { createWalletId } from '../utils/walletId';
 import type { Wallet, WalletAdapter } from '../api/interfaces';
 import type {
     Network,
@@ -59,6 +58,7 @@ import type {
     ConnectionRequestEvent,
     TransactionApprovalResponse,
     SignDataApprovalResponse,
+    TONConnectSession,
 } from '../api/models';
 import { asAddressFriendly } from '../utils';
 
@@ -78,7 +78,7 @@ const log = globalLogger.createChild('TonWalletKit');
 export class TonWalletKit implements ITonWalletKit {
     // Component references
     private walletManager!: WalletManager;
-    private sessionManager!: SessionManager;
+    private sessionManager!: TONConnectSessionManager;
     private eventRouter!: EventRouter;
     private requestProcessor!: RequestProcessor;
     // private responseHandler!: ResponseHandler;
@@ -232,7 +232,7 @@ export class TonWalletKit implements ITonWalletKit {
 
         for (const wallet of wallets) {
             try {
-                const walletId = createWalletId(wallet.getNetwork(), wallet.getAddress());
+                const walletId = wallet.getWalletId();
                 await this.eventProcessor.startProcessing(walletId);
             } catch (error) {
                 log.error('Failed to start event processing for wallet', {
@@ -353,6 +353,11 @@ export class TonWalletKit implements ITonWalletKit {
 
             if (session) {
                 try {
+                    const sessionCrypto = new SessionCrypto({
+                        publicKey: session.publicKey,
+                        secretKey: session.privateKey,
+                    });
+
                     // For HTTP bridge sessions, send as a response
                     await CallForSuccess(
                         () =>
@@ -368,7 +373,7 @@ export class TonWalletKit implements ITonWalletKit {
                                     id: Date.now(),
                                     payload: {},
                                 } as DisconnectEvent,
-                                session,
+                                sessionCrypto,
                             ),
                         10,
                         100,
@@ -387,7 +392,7 @@ export class TonWalletKit implements ITonWalletKit {
                 log.error('Failed to remove session', { sessionId, error });
             }
         } else {
-            const sessions = this.sessionManager.getSessions();
+            const sessions = await this.sessionManager.getSessions();
             if (sessions.length > 0) {
                 for (const session of sessions) {
                     try {
@@ -400,9 +405,9 @@ export class TonWalletKit implements ITonWalletKit {
         }
     }
 
-    async listSessions(): Promise<SessionInfo[]> {
+    async listSessions(): Promise<TONConnectSession[]> {
         await this.ensureInitialized();
-        return this.sessionManager.getSessionsForAPI();
+        return await this.sessionManager.getSessions();
     }
 
     // === Event Handler Registration (Delegated) ===
