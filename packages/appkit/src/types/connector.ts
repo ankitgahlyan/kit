@@ -8,23 +8,23 @@
 
 import type { NetworkManager } from '@ton/walletkit';
 
-import type { EventBus } from '../features/events';
+import type { Emitter } from '../features/events';
 import type { WalletInterface } from './wallet';
 
 /**
- * Interface for wallet providers
+ * Interface for wallet connectors
  */
-export interface WalletProvider {
+export interface Connector {
     /** Provider unique identifier */
     readonly id: string;
 
     /** Protocol type (e.g. 'tonconnect', 'ledger', 'mnemonic') */
     readonly type: string;
 
-    /** Initialize provider (restore connections, setup event listeners) */
-    initialize(eventBus: EventBus, networkManager: NetworkManager): Promise<void>;
+    /** Initialize connector (restore connections, setup event listeners) */
+    initialize(emitter: Emitter, networkManager: NetworkManager): Promise<void>;
 
-    /** Cleanup provider resources */
+    /** Cleanup connector resources */
     destroy(): void;
 
     /** Connect a wallet */

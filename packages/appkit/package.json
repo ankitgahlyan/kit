@@ -20,18 +20,18 @@
     },
     "./tonconnect": {
       "import": {
-        "types": "./dist/providers/tonconnect/index.d.ts",
-        "default": "./dist/providers/tonconnect/index.js"
+        "types": "./dist/connectors/tonconnect/index.d.ts",
+        "default": "./dist/connectors/tonconnect/index.js"
       },
       "require": {
-        "types": "./dist/providers/tonconnect/index.d.cts",
-        "default": "./dist/providers/tonconnect/index.cjs"
+        "types": "./dist/connectors/tonconnect/index.d.cts",
+        "default": "./dist/connectors/tonconnect/index.cjs"
       }
     }
   },
   "typesVersions": {
     "*": {
-      "tonconnect": ["./dist/providers/tonconnect/index.d.ts"]
+      "tonconnect": ["./dist/connectors/tonconnect/index.d.ts"]
     }
   },
   "scripts": {

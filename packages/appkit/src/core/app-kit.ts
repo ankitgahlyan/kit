@@ -10,21 +10,21 @@ import type { NetworkManager } from '@ton/walletkit';
 import { Network, KitNetworkManager } from '@ton/walletkit';
 
 import type { AppKitConfig } from './types';
-import type { WalletProvider } from '../types/wallet-provider';
-import { EventBus, PROVIDER_EVENTS, WALLETS_EVENTS } from '../features/events';
+import type { Connector } from '../types/connector';
+import { Emitter, CONNECTOR_EVENTS, WALLETS_EVENTS } from '../features/events';
 import type { WalletInterface } from '../types/wallet';
 import { WalletsManager } from '../features/wallets-manager';
 
 /**
  * Central hub for wallet management.
- * Stores eventBus, providers, and manages wallet connections.
+ * Stores emitter, providers, and manages wallet connections.
  */
 export class AppKit {
-    readonly eventBus: EventBus;
+    readonly emitter: Emitter;
     readonly walletsManager: WalletsManager;
 
     private networkManager: NetworkManager;
-    private providers: Map<string, WalletProvider> = new Map();
+    private connectors: Map<string, Connector> = new Map();
 
     constructor(config: AppKitConfig) {
         // Use provided networks config or default to mainnet
@@ -35,40 +35,40 @@ export class AppKit {
         this.networkManager = new KitNetworkManager({ networks });
         this.walletsManager = new WalletsManager();
 
-        this.eventBus = new EventBus();
-        this.eventBus.on(PROVIDER_EVENTS.CONNECTED, this.updateWalletsFromProviders.bind(this));
-        this.eventBus.on(PROVIDER_EVENTS.DISCONNECTED, this.updateWalletsFromProviders.bind(this));
+        this.emitter = new Emitter();
+        this.emitter.on(CONNECTOR_EVENTS.CONNECTED, this.updateWalletsFromConnectors.bind(this));
+        this.emitter.on(CONNECTOR_EVENTS.DISCONNECTED, this.updateWalletsFromConnectors.bind(this));
     }
 
     /**
-     * Register a wallet provider
+     * Add a wallet connector
      */
-    registerProvider(provider: WalletProvider): () => void {
-        const id = provider.id;
+    addConnector(connector: Connector): () => void {
+        const id = connector.id;
 
-        if (this.providers.has(id)) {
-            const oldProvider = this.providers.get(id);
-            oldProvider?.destroy();
+        if (this.connectors.has(id)) {
+            const oldConnector = this.connectors.get(id);
+            oldConnector?.destroy();
         }
 
-        this.providers.set(id, provider);
-        provider.initialize(this.eventBus, this.networkManager);
+        this.connectors.set(id, connector);
+        connector.initialize(this.emitter, this.networkManager);
 
-        return () => this.unregisterProvider(id);
+        return () => this.removeConnector(id);
     }
 
     /**
-     * Unregister a wallet provider
+     * Remove a wallet connector
      */
-    unregisterProvider(providerId: string): void {
-        const provider = this.providers.get(providerId);
+    removeConnector(connectorId: string): void {
+        const connector = this.connectors.get(connectorId);
 
-        if (!provider) {
-            throw new Error(`Provider with id "${providerId}" not found`);
+        if (!connector) {
+            throw new Error(`Connector with id "${connectorId}" not found`);
         }
 
-        provider.destroy();
-        this.providers.delete(providerId);
+        connector.destroy();
+        this.connectors.delete(connectorId);
     }
 
     /**
@@ -79,43 +79,43 @@ export class AppKit {
     }
 
     /**
-     * Connect wallet using specific provider
+     * Connect wallet using specific connector
      */
-    async connectWallet(providerId: string): Promise<void> {
-        const provider = this.providers.get(providerId);
+    async connectWallet(connectorId: string): Promise<void> {
+        const connector = this.connectors.get(connectorId);
 
-        if (!provider) {
-            throw new Error(`Provider with id "${providerId}" not found`);
+        if (!connector) {
+            throw new Error(`Connector with id "${connectorId}" not found`);
         }
 
-        await provider.connectWallet();
+        await connector.connectWallet();
     }
 
     /**
-     * Disconnect wallet using specific provider
+     * Disconnect wallet using specific connector
      */
-    async disconnectWallet(providerId: string): Promise<void> {
-        const provider = this.providers.get(providerId);
+    async disconnectWallet(connectorId: string): Promise<void> {
+        const connector = this.connectors.get(connectorId);
 
-        if (!provider) {
-            throw new Error(`Provider with id "${providerId}" not found`);
+        if (!connector) {
+            throw new Error(`Connector with id "${connectorId}" not found`);
         }
 
-        await provider.disconnectWallet();
+        await connector.disconnectWallet();
     }
 
     /**
-     * Get all connected wallets from all providers
+     * Get all connected wallets from all connectors
      */
-    private updateWalletsFromProviders(): void {
+    private updateWalletsFromConnectors(): void {
         const allWallets: WalletInterface[] = [];
 
-        for (const provider of this.providers.values()) {
-            const wallets = provider.getConnectedWallets();
+        for (const connector of this.connectors.values()) {
+            const wallets = connector.getConnectedWallets();
             allWallets.push(...wallets);
         }
 
         this.walletsManager.setWallets(allWallets);
-        this.eventBus.emit(WALLETS_EVENTS.UPDATED, { wallets: allWallets }, 'appkit');
+        this.emitter.emit(WALLETS_EVENTS.UPDATED, { wallets: allWallets }, 'appkit');
     }
 }

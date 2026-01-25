@@ -10,11 +10,11 @@
  * Events Feature
  *
  * Centralized event system for AppKit plugin communication.
- * Provides EventBus implementation and predefined event types.
+ * Provides Emitter implementation and predefined event types.
  */
-export { EventBus } from './services/event-bus';
+export { Emitter } from './services/emitter';
 export type { EventPayload, AppKitEvent, EventListener } from './types/event-bus';
-export { PROVIDER_EVENTS, WALLETS_EVENTS, PLUGIN_EVENTS } from './constants/events';
+export { CONNECTOR_EVENTS, WALLETS_EVENTS, PLUGIN_EVENTS } from './constants/events';
 export type {
     WalletConnectedPayload,
     WalletDisconnectedPayload,

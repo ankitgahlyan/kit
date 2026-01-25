@@ -55,13 +55,13 @@ import {
     getNftFromClient,
 } from '@ton/walletkit';
 
-import type { TonConnectWalletWrapper, WalletConnectionInfo } from '../types/wallet';
 import { getValidUntil } from '../utils/transaction';
+import type { WalletInterface } from '../../../types/wallet';
 
 /**
- * Configuration for TonConnectWalletWrapper
+ * Configuration for TonConnectWalletAdapter
  */
-export interface TonConnectWalletWrapperConfig {
+export interface TonConnectWalletAdapterConfig {
     tonConnectWallet: TonConnectWallet;
     tonConnect: ITonConnect;
     client: ApiClient;
@@ -70,34 +70,15 @@ export interface TonConnectWalletWrapperConfig {
 /**
  * Adapter that makes TonConnect wallet compatible with TonWalletKit interface
  */
-export class TonConnectWalletWrapperImpl implements TonConnectWalletWrapper {
+export class TonConnectWalletAdapter implements WalletInterface {
     public readonly tonConnectWallet: TonConnectWallet;
     public readonly tonConnect: ITonConnect;
     public readonly client: ApiClient;
 
-    constructor(config: TonConnectWalletWrapperConfig) {
+    constructor(config: TonConnectWalletAdapterConfig) {
         this.tonConnectWallet = config.tonConnectWallet;
         this.tonConnect = config.tonConnect;
         this.client = config.client;
-    }
-
-    // ==========================================
-    // TonConnect-specific methods
-    // ==========================================
-
-    isConnected(): boolean {
-        return true;
-    }
-
-    getConnectionInfo(): WalletConnectionInfo | null {
-        if (!this.isConnected()) {
-            return null;
-        }
-
-        return {
-            account: this.tonConnectWallet.account!,
-            device: this.tonConnectWallet.device!,
-        };
     }
 
     // ==========================================

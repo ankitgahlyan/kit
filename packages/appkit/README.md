@@ -194,8 +194,8 @@ export function useAppKit() {
                 setConnectedWallet(wallets[0] ?? null);
             };
 
-            appKit.eventBus.on(PROVIDER_EVENTS.CONNECTED, syncWallet);
-            appKit.eventBus.on(PROVIDER_EVENTS.DISCONNECTED, syncWallet);
+            appKit.emitter.on(PROVIDER_EVENTS.CONNECTED, syncWallet);
+            appKit.emitter.on(PROVIDER_EVENTS.DISCONNECTED, syncWallet);
 
             appKitRef.current = appKit;
         }

@@ -10,33 +10,33 @@ import type { NetworkManager } from '@ton/walletkit';
 import { Network } from '@ton/walletkit';
 import type { ITonConnect } from '@tonconnect/sdk';
 
-import { TonConnectWalletWrapperImpl } from '../adapters/ton-connect-wallet-wrapper';
-import type { EventBus } from '../../../features/events';
-import { PROVIDER_EVENTS } from '../../../features/events';
-import type { WalletProvider } from '../../../types/wallet-provider';
+import { TonConnectWalletAdapter } from '../adapters/ton-connect-wallet-adapter';
+import type { Emitter } from '../../../features/events';
+import { CONNECTOR_EVENTS } from '../../../features/events';
+import type { Connector } from '../../../types/connector';
 import type { WalletInterface } from '../../../types/wallet';
 
-export interface TonConnectProviderConfig {
+export interface TonConnectConnectorConfig {
     id?: string;
     tonConnect: ITonConnect;
 }
 
-export class TonConnectProvider implements WalletProvider {
+export class TonConnectConnector implements Connector {
     readonly id: string;
     readonly type = 'tonconnect/sdk';
 
     private tonConnect: ITonConnect;
     private networkManager: NetworkManager | null = null;
-    private eventBus: EventBus | null = null;
+    private emitter: Emitter | null = null;
     private unsubscribeTonConnect: (() => void) | null = null;
 
-    constructor(config: TonConnectProviderConfig) {
+    constructor(config: TonConnectConnectorConfig) {
         this.id = config.id ?? 'tonconnect-default';
         this.tonConnect = config.tonConnect;
     }
 
-    async initialize(eventBus: EventBus, networkManager: NetworkManager): Promise<void> {
-        this.eventBus = eventBus;
+    async initialize(emitter: Emitter, networkManager: NetworkManager): Promise<void> {
+        this.emitter = emitter;
         this.networkManager = networkManager;
 
         // Subscribe to TonConnect status changes
@@ -44,9 +44,9 @@ export class TonConnectProvider implements WalletProvider {
             const wallets = this.getConnectedWallets();
 
             if (wallet) {
-                this.eventBus?.emit(PROVIDER_EVENTS.CONNECTED, { wallets, providerId: this.id }, this.id);
+                this.emitter?.emit(CONNECTOR_EVENTS.CONNECTED, { wallets, connectorId: this.id }, this.id);
             } else {
-                this.eventBus?.emit(PROVIDER_EVENTS.DISCONNECTED, { providerId: this.id }, this.id);
+                this.emitter?.emit(CONNECTOR_EVENTS.DISCONNECTED, { connectorId: this.id }, this.id);
             }
         });
 
@@ -57,7 +57,7 @@ export class TonConnectProvider implements WalletProvider {
     destroy(): void {
         this.unsubscribeTonConnect?.();
         this.unsubscribeTonConnect = null;
-        this.eventBus = null;
+        this.emitter = null;
         this.networkManager = null;
     }
 
@@ -81,14 +81,15 @@ export class TonConnectProvider implements WalletProvider {
             const wallet = this.tonConnect.wallet;
             const client = this.networkManager.getClient(Network.custom(wallet.account.chain));
 
-            const wrapper = new TonConnectWalletWrapperImpl({
+            const walletAdapter = new TonConnectWalletAdapter({
                 tonConnectWallet: wallet,
                 tonConnect: this.tonConnect,
                 client,
             });
 
-            return [wrapper];
+            return [walletAdapter];
         }
+
         return [];
     }
 }

@@ -8,7 +8,7 @@
 
 import { vi } from 'vitest';
 
-export class TonConnectProvider {
+export class TonConnectConnector {
     readonly id: string;
     readonly type = 'tonconnect/sdk';
 
@@ -27,6 +27,6 @@ export class TonConnectProvider {
     getConnectedWallets = vi.fn(() => []);
 }
 
-export const TonConnectWalletWrapper = vi.fn();
+export const TonConnectWalletAdapter = vi.fn();
 
-export const mockedTonConnectProvider = TonConnectProvider;
+export const mockedTonConnectConnector = TonConnectConnector;

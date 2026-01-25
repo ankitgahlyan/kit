@@ -21,7 +21,7 @@
  * import { AppKit } from '@ton/appkit';
  *
  * // TonConnect feature (optional, for tree-shaking)
- * import { TonConnectProvider } from '@ton/appkit/tonconnect';
+ * import { TonConnectConnector } from '@ton/appkit/tonconnect';
  * ```
  */
 
@@ -32,7 +32,7 @@ export * from './core';
 export * from './features/events';
 
 export * from './types/wallet';
-export * from './types/wallet-provider';
+export * from './types/connector';
 
 // Re-export from @ton/walletkit for convenience
 export type { TonWalletKit, TONTransferRequest, JettonsTransferRequest, TransactionRequest } from '@ton/walletkit';

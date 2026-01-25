@@ -9,7 +9,7 @@
 import React, { useEffect } from 'react';
 import { AppKitProvider } from '@ton/appkit-ui-react';
 import { TonConnectUIProvider, useTonConnectUI } from '@tonconnect/ui-react';
-import { TonConnectProvider } from '@ton/appkit/tonconnect';
+import { TonConnectConnector } from '@ton/appkit/tonconnect';
 import { Toaster } from 'sonner';
 
 import { appKit } from './services/app-kit';
@@ -28,8 +28,8 @@ function AppKitBridge({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!tonConnectUI) return;
 
-        const unregister = appKit.registerProvider(
-            new TonConnectProvider({
+        const unregister = appKit.addConnector(
+            new TonConnectConnector({
                 tonConnect: tonConnectUI.connector,
             }),
         );

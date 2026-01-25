@@ -10,16 +10,16 @@ import type { WalletInterface } from '../../../types/wallet';
 
 export interface WalletConnectedPayload {
     wallets: WalletInterface[];
-    providerId: string;
+    connectorId: string;
 }
 
 export interface WalletDisconnectedPayload {
-    providerId: string;
+    connectorId: string;
 }
 
 export interface WalletChangedPayload {
     wallets: WalletInterface[];
-    providerId: string;
+    connectorId: string;
 }
 
 export interface PluginRegisteredPayload {

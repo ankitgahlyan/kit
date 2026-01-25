@@ -16,7 +16,7 @@ export const useConnectedWallets = () => {
 
     const subscribe = useCallback(
         (callback: () => void) => {
-            return appKit.eventBus.on(WALLETS_EVENTS.UPDATED, callback);
+            return appKit.emitter.on(WALLETS_EVENTS.UPDATED, callback);
         },
         [appKit],
     );

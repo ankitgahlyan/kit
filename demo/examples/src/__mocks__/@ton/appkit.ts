@@ -111,14 +111,14 @@ export const createMockWrappedWallet = (): MockWrappedWallet => {
 
 // Mock AppKit
 export class AppKit {
-    public eventBus = {
+    public emitter = {
         on: vi.fn(),
         off: vi.fn(),
         emit: vi.fn(),
     };
 
     getConnectedWallets = vi.fn().mockReturnValue(Promise.resolve([createMockWrappedWallet()]));
-    registerProvider = vi.fn();
+    addConnector = vi.fn();
     connectWallet = vi.fn();
     disconnectWallet = vi.fn();
 
@@ -129,11 +129,10 @@ export class AppKit {
     ) {}
 }
 
-// PROVIDER_EVENTS constant
-export const PROVIDER_EVENTS = {
-    CONNECTED: 'wallet:connected',
-    DISCONNECTED: 'wallet:disconnected',
-    CHANGED: 'wallet:changed',
+// CONNECTOR_EVENTS constant
+export const CONNECTOR_EVENTS = {
+    CONNECTED: 'connector:connected',
+    DISCONNECTED: 'connector:disconnected',
 } as const;
 
 export default { AppKit };
