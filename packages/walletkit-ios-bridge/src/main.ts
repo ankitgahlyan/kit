@@ -21,6 +21,7 @@ import type {
     ConnectionRequestEvent,
     Network,
     StorageAdapter,
+    TONConnectSessionManager,
 } from '@ton/walletkit';
 import { MemoryStorageAdapter, Signer, WalletV4R2Adapter, WalletV5R1Adapter, TonWalletKit } from '@ton/walletkit';
 import type { WalletAdapter } from '@ton/walletkit';
@@ -28,6 +29,7 @@ import type { WalletAdapter } from '@ton/walletkit';
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 import { SwiftWalletAdapter } from './SwiftWalletAdapter';
 import { SwiftAPIClientAdapter } from './SwiftAPIClientAdapter';
+import { SwiftTONConnectSessionsManager } from './SwiftTONConnectSessionsManager';
 import type {
     SwiftApiClient,
     SwiftBridgeTransport,
@@ -43,12 +45,13 @@ declare global {
             configuration: SwiftWalletKitConfiguration,
             storage?: StorageAdapter,
             bridgeTransport?: SwiftBridgeTransport,
+            sessionManager?: TONConnectSessionManager,
             apiClients?: SwiftApiClient[],
         ) => Promise<void>;
     }
 }
 
-window.initWalletKit = async (configuration, storage, bridgeTransport, apiClients) => {
+window.initWalletKit = async (configuration, storage, bridgeTransport, sessionManager, apiClients) => {
     console.log('🚀 WalletKit iOS Bridge starting...');
 
     console.log('Creating WalletKit instance with configuration', configuration);
@@ -87,6 +90,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, apiClient
         networks,
         walletManifest: configuration.walletManifest,
         deviceInfo: configuration.deviceInfo,
+        sessionManager: sessionManager ? new SwiftTONConnectSessionsManager(sessionManager) : undefined,
         bridge: configuration.bridge,
         eventProcessor: configuration.eventsConfiguration,
         storage: storage ? new SwiftStorageAdapter(storage) : new MemoryStorageAdapter({}),
