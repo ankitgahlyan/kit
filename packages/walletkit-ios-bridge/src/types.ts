@@ -21,7 +21,9 @@ import type {
     BridgeEventMessageInfo,
     InjectedToExtensionBridgeRequestPayload,
     JettonsAPI,
-    SessionInfo,
+    TONConnectSession,
+    TransactionApprovalResponse,
+    SignDataApprovalResponse,
 } from '@ton/walletkit';
 
 export interface SwiftApiClient extends ApiClient {
@@ -90,25 +92,23 @@ export interface SwiftWalletKit {
 
     getWallets(): Wallet[];
 
-    getSessions(): Promise<SessionInfo[]>;
+    getSessions(): Promise<TONConnectSession[]>;
 
-    handleTonConnectUrl(url: string): Promise<unknown>;
+    handleTonConnectUrl(url: string): Promise<void>;
 
-    approveConnectRequest(request: ConnectionRequestEvent): Promise<unknown>;
+    approveConnectRequest(request: ConnectionRequestEvent): Promise<void>;
 
-    rejectConnectRequest(request: ConnectionRequestEvent, reason?: string): Promise<unknown>;
+    rejectConnectRequest(request: ConnectionRequestEvent, reason?: string): Promise<void>;
 
-    approveTransactionRequest(request: TransactionRequestEvent): Promise<unknown>;
+    approveTransactionRequest(request: TransactionRequestEvent): Promise<TransactionApprovalResponse>;
 
-    rejectTransactionRequest(request: TransactionRequestEvent, reason?: string): Promise<unknown>;
+    rejectTransactionRequest(request: TransactionRequestEvent, reason?: string): Promise<void>;
 
-    approveSignDataRequest(request: SignDataRequestEvent): Promise<unknown>;
+    approveSignDataRequest(request: SignDataRequestEvent): Promise<SignDataApprovalResponse>;
 
-    rejectSignDataRequest(request: SignDataRequestEvent, reason?: string): Promise<unknown>;
+    rejectSignDataRequest(request: SignDataRequestEvent, reason?: string): Promise<void>;
 
-    disconnect(sessionId: string): Promise<unknown>;
-
-    getJettons(walletAddress: string): Promise<unknown>;
+    disconnect(sessionId: string): Promise<void>;
 
     sendTransaction(wallet: Wallet, transaction: TransactionRequest): Promise<void>;
 }
