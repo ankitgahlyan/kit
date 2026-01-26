@@ -9,3 +9,4 @@
 export { AppKitProvider } from './components/app-kit-provider';
 export { useAppKit } from './hooks/use-app-kit';
 export { useConnectedWallets } from './hooks/use-connected-wallets';
+export { useSelectedWallet } from './hooks/use-selected-wallet';
