@@ -9,7 +9,24 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { WalletSigner, BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '@ton/walletkit';
+import type {
+    WalletSigner,
+    BridgeEventMessageInfo,
+    InjectedToExtensionBridgeRequestPayload,
+    NetworkAdapters,
+    Wallet,
+    TransactionRequest,
+    SignDataRequestEvent,
+    TransactionRequestEvent,
+    ConnectionRequestEvent,
+    Network,
+    StorageAdapter,
+    TONConnectSessionManager,
+    JettonsAPI,
+    TONConnectSession,
+    TransactionApprovalResponse,
+    SignDataApprovalResponse,
+} from '@ton/walletkit';
 import { MemoryStorageAdapter, Signer, WalletV4R2Adapter, WalletV5R1Adapter, TonWalletKit } from '@ton/walletkit';
 import type { WalletAdapter } from '@ton/walletkit';
 
@@ -17,16 +34,23 @@ import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 import { SwiftWalletAdapter } from './SwiftWalletAdapter';
 import { SwiftAPIClientAdapter } from './SwiftAPIClientAdapter';
 import { SwiftTONConnectSessionsManager } from './SwiftTONConnectSessionsManager';
+import type {
+    SwiftApiClient,
+    SwiftBridgeTransport,
+    SwiftWalletKit,
+    SwiftWalletKitConfiguration,
+    SwiftWalletSigner,
+} from './types';
 
 declare global {
     interface Window {
-        walletKit?: any;
+        walletKit?: SwiftWalletKit;
         initWalletKit: (
-            configuration,
-            storage,
-            bridgeTransport: (response) => void,
-            sessionManager,
-            apiClients,
+            configuration: SwiftWalletKitConfiguration,
+            storage?: StorageAdapter,
+            bridgeTransport?: SwiftBridgeTransport,
+            sessionManager?: TONConnectSessionManager,
+            apiClients?: SwiftApiClient[],
         ) => Promise<void>;
     }
 }
@@ -38,11 +62,13 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
     console.log('Storage', storage);
     console.log('API Clients', apiClients);
 
-    configuration.bridge.jsBridgeTransport = (sessionID, message) => {
-        bridgeTransport({ sessionID, messageID: message.messageId, message });
-    };
+    if (configuration.bridge && bridgeTransport) {
+        configuration.bridge.jsBridgeTransport = (sessionID: string, message: any) => {
+            bridgeTransport({ sessionID, messageID: message.messageId, message });
+        };
+    }
 
-    const networks = {};
+    const networks: NetworkAdapters = {};
     if (configuration.networkConfigurations) {
         for (const netConfig of configuration.networkConfigurations) {
             networks[netConfig.network.chainId] = {
@@ -51,15 +77,17 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         }
     }
 
-    for (const apiClient of apiClients) {
-        const network = apiClient.getNetwork();
-        const client = new SwiftAPIClientAdapter(apiClient);
+    if (apiClients) {
+        for (const apiClient of apiClients) {
+            const network = apiClient.getNetwork();
+            const client = new SwiftAPIClientAdapter(apiClient);
 
-        console.log('API Client Network', network);
+            console.log('API Client Network', network);
 
-        networks[network.chainId] = {
-            apiClient: client,
-        };
+            networks[network.chainId] = {
+                apiClient: client,
+            };
+        }
     }
 
     const walletKit = new TonWalletKit({
@@ -99,15 +127,15 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
     // Main WalletKit logic lives here in JavaScript
     window.walletKit = {
         // Check if initialized
-        isReady() {
-            return initialized && walletKit;
+        isReady(): boolean {
+            return initialized && !!walletKit;
         },
 
-        jettonsManager() {
+        jettonsManager(): JettonsAPI {
             return walletKit.jettons;
         },
 
-        setEventsListeners(callback) {
+        setEventsListeners(callback: (type: string, event: unknown) => Promise<void>): void {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🔔 Bridge: Adding event listeners');
 
@@ -132,7 +160,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             });
         },
 
-        removeEventListeners() {
+        removeEventListeners(): void {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🗑️ Bridge: Removing all event listeners');
 
@@ -144,7 +172,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             console.log('🗑️ All event listeners removed');
         },
 
-        async createSignerFromMnemonic(mnemonic) {
+        async createSignerFromMnemonic(mnemonic: string): Promise<WalletSigner> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
             console.log('➕ Bridge: Creating signer from mnemonic');
@@ -156,7 +184,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await Signer.fromMnemonic(mnemonic, { type: 'ton' });
         },
 
-        async createSignerFromPrivateKey(privateKey) {
+        async createSignerFromPrivateKey(privateKey: string): Promise<WalletSigner> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
             console.log('➕ Bridge: Creating signer from private key');
@@ -168,7 +196,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await Signer.fromPrivateKey(privateKey);
         },
 
-        async createV4R2WalletAdapter(signer, parameters) {
+        async createV4R2WalletAdapter(
+            signer: WalletSigner | SwiftWalletSigner,
+            parameters: { network: Network },
+        ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
             console.log('➕ Bridge: Creating V4R2 wallet using mnemonic');
@@ -186,7 +217,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             });
         },
 
-        async createV5R1WalletAdapter(signer, parameters) {
+        async createV5R1WalletAdapter(
+            signer: WalletSigner | SwiftWalletSigner,
+            parameters: { network: Network },
+        ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
             console.log('➕ Bridge: Creating V5R1 wallet using mnemonic');
@@ -204,16 +238,19 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             });
         },
 
-        jsSigner(signer): WalletSigner {
+        jsSigner(signer: WalletSigner | SwiftWalletSigner): WalletSigner {
             if (isSwiftObject(signer)) {
+                const swiftSigner = signer as SwiftWalletSigner;
+
                 return {
                     sign: async (bytes: Iterable<number>) => {
-                        return await signer.sign(bytes);
+                        return await swiftSigner.sign(bytes);
                     },
-                    publicKey: signer.publicKey(),
+                    publicKey: swiftSigner.publicKey(),
                 };
             }
-            return signer;
+
+            return signer as WalletSigner;
         },
 
         async processInjectedBridgeRequest(
@@ -226,7 +263,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         },
 
         // Wallet management
-        async addWallet(walletAdapter) {
+        async addWallet(walletAdapter: WalletAdapter): Promise<Wallet | undefined> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('➕ Bridge: Adding wallet:');
 
@@ -240,21 +277,21 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return wallet;
         },
 
-        jsWalletAdapter(walletAdapter): WalletAdapter {
+        jsWalletAdapter(walletAdapter: WalletAdapter): WalletAdapter {
             if (isSwiftObject(walletAdapter)) {
                 return new SwiftWalletAdapter(walletAdapter, walletKit.getApiClient(walletAdapter.getNetwork()));
             }
             return walletAdapter;
         },
 
-        getWallet(address) {
+        getWallet(address: string): Wallet | undefined {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
             console.log('🔍 Bridge: Getting wallet for address:', address);
             return walletKit.getWallet(address);
         },
 
-        async removeWallet(address) {
+        async removeWallet(address: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('➖ Bridge: Removing wallet:', address);
 
@@ -267,28 +304,27 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async clearWallets() {
+        async clearWallets(): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🗑️ Bridge: Clearing all wallets');
 
             try {
-                const result = await walletKit.clearWallets();
-                console.log('✅ All wallets cleared:', result);
-                return result;
+                await walletKit.clearWallets();
+                console.log('✅ All wallets cleared');
             } catch (error) {
                 console.error('❌ Failed to clear wallets:', error);
                 throw error;
             }
         },
 
-        getWallets() {
+        getWallets(): Wallet[] {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('📋 Bridge: Getting wallets');
 
             return walletKit.getWallets();
         },
 
-        async getSessions() {
+        async getSessions(): Promise<TONConnectSession[]> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('📋 Bridge: Getting sessions');
 
@@ -303,7 +339,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         },
 
         // Connection handling
-        async handleTonConnectUrl(url) {
+        async handleTonConnectUrl(url: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🔗 Bridge: Handling TON Connect URL:', url);
 
@@ -317,7 +353,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async approveConnectRequest(request) {
+        async approveConnectRequest(request: ConnectionRequestEvent): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('✅ Bridge: Approving connect request:', request, request.walletAddress);
 
@@ -331,7 +367,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async rejectConnectRequest(request, reason) {
+        async rejectConnectRequest(request: ConnectionRequestEvent, reason?: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('❌ Bridge: Rejecting connect request:', request.id, reason || 'User rejected');
 
@@ -346,7 +382,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         },
 
         // Transaction handling
-        async approveTransactionRequest(request) {
+        async approveTransactionRequest(request: TransactionRequestEvent): Promise<TransactionApprovalResponse> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('✅ Bridge: Approving transaction request:', request);
 
@@ -360,7 +396,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async rejectTransactionRequest(request, reason) {
+        async rejectTransactionRequest(request: TransactionRequestEvent, reason?: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('❌ Bridge: Rejecting transaction request:', request, reason);
 
@@ -375,7 +411,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         },
 
         // Sign data handling
-        async approveSignDataRequest(request) {
+        async approveSignDataRequest(request: SignDataRequestEvent): Promise<SignDataApprovalResponse> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('✅ Bridge: Approving sign data request:', request);
 
@@ -389,7 +425,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async rejectSignDataRequest(request, reason) {
+        async rejectSignDataRequest(request: SignDataRequestEvent, reason?: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('❌ Bridge: Rejecting sign data request:', request, reason);
 
@@ -404,7 +440,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         },
 
         // Session management
-        async disconnect(sessionId) {
+        async disconnect(sessionId: string): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🔌 Bridge: Disconnecting session:', sessionId);
 
@@ -418,7 +454,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             }
         },
 
-        async sendTransaction(wallet, transaction) {
+        async sendTransaction(wallet: Wallet, transaction: TransactionRequest): Promise<void> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('🪙 Bridge: Sending transaction:', transaction);
 
@@ -427,7 +463,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
     };
 };
 
-function parseSwiftConstructorPattern(str) {
+function parseSwiftConstructorPattern(str: string) {
     const match = str.match(/^\[object ([A-Za-z_$][A-Za-z0-9_$]*)\.([A-Za-z_$][A-Za-z0-9_$]*)Constructor\]$/);
 
     if (match) {
@@ -441,10 +477,11 @@ function parseSwiftConstructorPattern(str) {
     return null;
 }
 
-function isSwiftObject(obj) {
+function isSwiftObject(obj: any) {
     if (obj && obj.constructor) {
         const pattern = parseSwiftConstructorPattern(obj.constructor.toString());
         return pattern !== null;
     }
+
     return false;
 }
