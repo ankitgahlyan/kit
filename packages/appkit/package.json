@@ -27,12 +27,25 @@
         "types": "./dist/connectors/tonconnect/index.d.cts",
         "default": "./dist/connectors/tonconnect/index.cjs"
       }
+    },
+    "./watchers": {
+      "import": {
+        "types": "./dist/watchers/index.d.ts",
+        "default": "./dist/watchers/index.js"
+      },
+      "require": {
+        "types": "./dist/watchers/index.d.cts",
+        "default": "./dist/watchers/index.cjs"
+      }
     }
   },
   "typesVersions": {
     "*": {
       "tonconnect": [
         "./dist/connectors/tonconnect/index.d.ts"
+      ],
+      "watchers": [
+        "./dist/watchers/index.d.ts"
       ]
     }
   },

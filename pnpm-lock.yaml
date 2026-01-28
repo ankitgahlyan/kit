@@ -640,6 +640,9 @@ importers:
 
   packages/appkit-ui-react:
     dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.90.20
+        version: 5.90.20(react@19.2.3)
       '@ton/appkit':
         specifier: workspace:*
         version: link:../appkit
@@ -2973,6 +2976,14 @@ packages:
     resolution: {integrity: sha512-jVA+/UpKL1vRLg6Hkao5jldawNmRo7mQYrZtNHMIVpLfLhDml5nMRUo/8MwoX2vNXvnaXNNMedrMfMugAVX1nA==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
+
+  '@tanstack/query-core@5.90.20':
+    resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
+
+  '@tanstack/react-query@5.90.20':
+    resolution: {integrity: sha512-vXBxa+qeyveVO7OA0jX1z+DeyCA4JKnThKv411jd5SORpBKgkcVnYKCiBgECvADvniBX7tobwBmg01qq9JmMJw==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@ton-community/tlb-codegen@2.0.0-beta.3':
     resolution: {integrity: sha512-DG79NL09e9xiIMPh0Fgbsw/+rr36KNilDk3lhYdMsZb0to0/sibzLHyFbjJPfqdlhu6ujRBaOh+1FQ5l5BmnKw==}
@@ -11519,6 +11530,13 @@ snapshots:
       '@tailwindcss/oxide': 4.1.18
       tailwindcss: 4.1.18
       vite: 7.3.1(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
+
+  '@tanstack/query-core@5.90.20': {}
+
+  '@tanstack/react-query@5.90.20(react@19.2.3)':
+    dependencies:
+      '@tanstack/query-core': 5.90.20
+      react: 19.2.3
 
   '@ton-community/tlb-codegen@2.0.0-beta.3(@ton/crypto@3.3.0)':
     dependencies:

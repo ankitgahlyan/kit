@@ -6,9 +6,9 @@
  *
  */
 
-import type { Emitter } from '../../events';
+import type { Emitter } from '../../emitter';
 import type { CONNECTOR_EVENTS, WALLETS_EVENTS, PLUGIN_EVENTS } from '../constants/events';
-import type { WalletInterface } from '../../../features/wallets';
+import type { WalletInterface } from '../../../types/wallet';
 
 export interface WalletConnectedPayload {
     wallets: WalletInterface[];

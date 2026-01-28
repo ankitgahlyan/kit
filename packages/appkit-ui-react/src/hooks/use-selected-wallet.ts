@@ -7,7 +7,8 @@
  */
 
 import { useSyncExternalStore, useCallback } from 'react';
-import { watchSelectedWallet, getSelectedWallet, setSelectedWalletId as setSelectedWalletIdAction } from '@ton/appkit';
+import { getSelectedWallet, setSelectedWalletId as setSelectedWalletIdAction } from '@ton/appkit';
+import { watchSelectedWallet } from '@ton/appkit/watchers';
 
 import { useAppKit } from './use-app-kit';
 

@@ -13,7 +13,7 @@ import type { ITonConnect } from '@tonconnect/sdk';
 import { TonConnectWalletAdapter } from '../adapters/ton-connect-wallet-adapter';
 import { CONNECTOR_EVENTS } from '../../../core/app-kit';
 import type { Connector } from '../../../types/connector';
-import type { WalletInterface } from '../../../features/wallets';
+import type { WalletInterface } from '../../../types/wallet';
 import type { AppKitEmitter } from '../../../core/app-kit';
 
 export interface TonConnectConnectorConfig {

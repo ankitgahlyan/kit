@@ -8,7 +8,7 @@
 
 import type { NetworkManager } from '@ton/walletkit';
 
-import type { WalletInterface } from '../features/wallets';
+import type { WalletInterface } from './wallet';
 import type { AppKitEmitter } from '../core/app-kit';
 
 /**

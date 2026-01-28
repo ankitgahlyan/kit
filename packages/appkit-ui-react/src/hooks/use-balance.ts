@@ -6,18 +6,20 @@
  *
  */
 
-import type { WatcherOptions, WatchBalanceParameters } from '@ton/appkit';
-import type { TokenAmount } from '@ton/walletkit';
-import { watchBalance } from '@ton/appkit';
+import type { GetBalanceOptions } from '@ton/appkit';
+import { getBalanceQueryParams } from '@ton/appkit/watchers';
+import { useQuery } from '@tanstack/react-query';
 
-import { useWatcher } from './use-watcher';
-
-export type UseBalanceOptions = Partial<WatcherOptions<TokenAmount>>;
+import { useAppKit } from './use-app-kit';
 
 /**
  * Hook to get balance
  */
-export function useBalance(params: WatchBalanceParameters, options?: UseBalanceOptions): TokenAmount | undefined {
-    const { data } = useWatcher(watchBalance, params, options);
-    return data;
+export function useBalance(params: GetBalanceOptions, queryOptions?: Record<string, unknown>) {
+    const appKit = useAppKit();
+
+    return useQuery({
+        ...getBalanceQueryParams(appKit, params),
+        ...queryOptions,
+    });
 }

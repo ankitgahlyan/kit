@@ -11,12 +11,11 @@ import { Network, KitNetworkManager } from '@ton/walletkit';
 
 import type { AppKitConfig } from '../types/config';
 import type { Connector } from '../../../types/connector';
-import { Emitter } from '../../events';
-import { Cache } from '../../cache';
+import { Emitter } from '../../emitter';
 import { CONNECTOR_EVENTS, WALLETS_EVENTS } from '../constants/events';
 import type { AppKitEmitter, AppKitEvents } from '../types/events';
-import type { WalletInterface } from '../../../features/wallets';
-import { WalletsManager } from '../../../features/wallets';
+import type { WalletInterface } from '../../../types/wallet';
+import { WalletsManager } from '../../wallets-manager';
 
 /**
  * Central hub for wallet management.
@@ -29,13 +28,9 @@ export class AppKit {
 
     readonly networkManager: NetworkManager;
     readonly config: AppKitConfig;
-    public readonly cache: Cache;
 
     constructor(config: AppKitConfig) {
         this.config = config;
-        this.cache = new Cache({
-            storage: window.localStorage,
-        });
 
         // Use provided networks config or default to mainnet
         const networks = config.networks ?? {

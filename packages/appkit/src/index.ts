@@ -27,15 +27,15 @@
 
 // Core
 export * from './core/app-kit';
-export * from './core/events';
-export * from './core/cache';
+export * from './core/emitter';
 
-// Features
-export * from './features/wallets';
-export * from './features/balances';
+// Actions
+export * from './actions';
 
 // Types
 export * from './types/connector';
+export * from './types/balance';
+export * from './types/wallet';
 
 // Re-export from @ton/walletkit for convenience
 export type { TonWalletKit, TONTransferRequest, JettonsTransferRequest, TransactionRequest } from '@ton/walletkit';
