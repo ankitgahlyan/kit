@@ -59,19 +59,6 @@ export interface EventCallback<T = any> {
     (event: T): void | Promise<void>;
 }
 
-export type EventApprovalBase = {
-    id: string;
-    from: string;
-    sessionId: string;
-    walletId: WalletId;
-    walletAddress?: UserFriendlyAddress;
-
-    messageId?: string;
-
-    traceId?: string;
-    isJsBridge?: boolean;
-};
-
 // Bridge event types (raw from bridge)
 export interface RawBridgeEventGeneric extends BridgeEvent {
     id: string;

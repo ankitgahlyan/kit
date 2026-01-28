@@ -35,7 +35,6 @@ import { CreateTonProofMessage } from '../utils/tonProof';
 import { CallForSuccess } from '../utils/retry';
 import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
 import type { WalletManager } from './WalletManager';
-import type { EventTransactionApproval } from '../types/events';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { HexToBase64 } from '../utils/base64';
 import type {
@@ -305,10 +304,7 @@ export class RequestProcessor {
     /**
      * Send transaction analytics events
      */
-    private sendTransactionAnalytics(
-        event: SendTransactionRequestEvent | EventTransactionApproval,
-        signedBoc: string,
-    ): void {
+    private sendTransactionAnalytics(event: SendTransactionRequestEvent, signedBoc: string): void {
         if (!this.analytics) return;
 
         const wallet = this.getWalletFromEvent(event);
