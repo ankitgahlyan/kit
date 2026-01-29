@@ -73,20 +73,20 @@ export async function main() {
                 const wallet = kit.getWallet(selectedWalletId);
                 if (!wallet) {
                     console.error('Selected wallet not found');
-                    await kit.rejectConnectRequest({ event }, 'No wallet available');
+                    await kit.rejectConnectRequest(event, 'No wallet available');
                     return;
                 }
                 console.log(`Using wallet ID: ${wallet.getWalletId()}, address: ${wallet.getAddress()}`);
 
                 // Set walletId on the request before approving
                 event.walletId = wallet.getWalletId();
-                await kit.approveConnectRequest({ event });
+                await kit.approveConnectRequest(event);
             } else {
-                await kit.rejectConnectRequest({ event }, 'User rejected');
+                await kit.rejectConnectRequest(event, 'User rejected');
             }
         } catch (error) {
             console.error('Connect request failed:', error);
-            await kit.rejectConnectRequest({ event }, 'Error processing request');
+            await kit.rejectConnectRequest(event, 'Error processing request');
         }
     });
 
@@ -96,13 +96,13 @@ export async function main() {
             // Use tx.preview.moneyFlow.ourTransfers to show net asset changes
             // Each transfer shows positive amounts for incoming, negative for outgoing
             if (yourConfirmLogic('Do you confirm this transaction?')) {
-                await kit.approveTransactionRequest({ event });
+                await kit.approveTransactionRequest(event);
             } else {
-                await kit.rejectTransactionRequest({ event }, 'User rejected');
+                await kit.rejectTransactionRequest(event, 'User rejected');
             }
         } catch (error) {
             console.error('Transaction request failed:', error);
-            await kit.rejectTransactionRequest({ event }, 'Error processing request');
+            await kit.rejectTransactionRequest(event, 'Error processing request');
         }
     });
 
@@ -111,13 +111,13 @@ export async function main() {
         try {
             // Use event.preview.kind to determine how to display the data
             if (yourConfirmLogic('Sign this data?')) {
-                await kit.approveSignDataRequest({ event });
+                await kit.approveSignDataRequest(event);
             } else {
-                await kit.rejectSignDataRequest({ event }, 'User rejected');
+                await kit.rejectSignDataRequest(event, 'User rejected');
             }
         } catch (error) {
             console.error('Sign data request failed:', error);
-            await kit.rejectSignDataRequest({ event }, 'Error processing request');
+            await kit.rejectSignDataRequest(event, 'Error processing request');
         }
     });
 

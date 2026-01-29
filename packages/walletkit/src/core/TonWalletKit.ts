@@ -58,9 +58,7 @@ import type {
     SendTransactionApprovalResponse,
     SignDataApprovalResponse,
     TONConnectSession,
-    ConnectionRequest,
-    SendTransactionRequest,
-    SignDataRequest,
+    ConnectionApprovalResponse,
 } from '../api/models';
 import { asAddressFriendly } from '../utils';
 
@@ -617,41 +615,47 @@ export class TonWalletKit implements ITonWalletKit {
 
     // === Request Processing API (Delegated) ===
 
-    async approveConnectRequest(request: ConnectionRequest): Promise<void> {
+    async approveConnectRequest(event: ConnectionRequestEvent, response?: ConnectionApprovalResponse): Promise<void> {
         await this.ensureInitialized();
-        return this.requestProcessor.approveConnectRequest(request.event, request.response);
+        return this.requestProcessor.approveConnectRequest(event, response);
     }
 
     async rejectConnectRequest(
-        request: ConnectionRequest,
+        event: ConnectionRequestEvent,
         reason?: string,
         errorCode?: CONNECT_EVENT_ERROR_CODES,
     ): Promise<void> {
         await this.ensureInitialized();
-        return this.requestProcessor.rejectConnectRequest(request.event, reason, errorCode);
+        return this.requestProcessor.rejectConnectRequest(event, reason, errorCode);
     }
 
-    async approveTransactionRequest(request: SendTransactionRequest): Promise<SendTransactionApprovalResponse> {
+    async approveTransactionRequest(
+        event: SendTransactionRequestEvent,
+        response?: SendTransactionApprovalResponse,
+    ): Promise<SendTransactionApprovalResponse> {
         await this.ensureInitialized();
-        return this.requestProcessor.approveTransactionRequest(request.event, request.response);
+        return this.requestProcessor.approveTransactionRequest(event, response);
     }
 
     async rejectTransactionRequest(
-        request: SendTransactionRequest,
+        event: SendTransactionRequestEvent,
         reason?: string | SendTransactionRpcResponseError['error'],
     ): Promise<void> {
         await this.ensureInitialized();
-        return this.requestProcessor.rejectTransactionRequest(request.event, reason);
+        return this.requestProcessor.rejectTransactionRequest(event, reason);
     }
 
-    async approveSignDataRequest(request: SignDataRequest): Promise<SignDataApprovalResponse> {
+    async approveSignDataRequest(
+        event: SignDataRequestEvent,
+        response?: SignDataApprovalResponse,
+    ): Promise<SignDataApprovalResponse> {
         await this.ensureInitialized();
-        return this.requestProcessor.approveSignDataRequest(request.event, request.response);
+        return this.requestProcessor.approveSignDataRequest(event, response);
     }
 
-    async rejectSignDataRequest(request: SignDataRequest, reason?: string): Promise<void> {
+    async rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void> {
         await this.ensureInitialized();
-        return this.requestProcessor.rejectSignDataRequest(request.event, reason);
+        return this.requestProcessor.rejectSignDataRequest(event, reason);
     }
 
     // === TON Client Access ===

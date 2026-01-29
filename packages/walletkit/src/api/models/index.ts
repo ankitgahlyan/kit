@@ -32,7 +32,6 @@ export type {
     ConnectionRequestEventRequestedItem,
     ConnectionRequestEventPreviewPermission,
 } from './bridge/ConnectionRequestEvent';
-export type { ConnectionRequest } from './bridge/ConnectionRequest';
 export type {
     ConnectionApprovalResponse,
     ConnectionApprovalProof,
@@ -41,13 +40,11 @@ export type {
 export type { DisconnectionEvent } from './bridge/DisconnectionEvent';
 export type { SignDataApprovalResponse } from './bridge/SignDataApprovalResponse';
 export type { SignDataRequestEvent, SignDataRequestEventPreview, SignDataPreview } from './bridge/SignDataRequestEvent';
-export type { SignDataRequest } from './bridge/SignDataRequest';
 export type { SendTransactionApprovalResponse } from './bridge/SendTransactionApprovalResponse';
 export type {
     SendTransactionRequestEvent,
     SendTransactionRequestEventPreview,
 } from './bridge/SendTransactionRequestEvent';
-export type { SendTransactionRequest } from './bridge/SendTransactionRequest';
 export type { RequestErrorEvent } from './bridge/RequestErrorEvent';
 export type { TONConnectSession } from './bridge/TONConnectSession';
 

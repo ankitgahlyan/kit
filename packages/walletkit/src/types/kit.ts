@@ -24,10 +24,8 @@ import type {
     ConnectionRequestEvent,
     SignDataApprovalResponse,
     TONConnectSession,
-    ConnectionRequest,
-    SendTransactionRequest,
-    SignDataRequest,
     SendTransactionApprovalResponse,
+    ConnectionApprovalResponse,
 } from '../api/models';
 
 /**
@@ -87,28 +85,34 @@ export interface ITonWalletKit {
     // === Request Processing ===
 
     /** Approve a connect request */
-    approveConnectRequest(request: ConnectionRequest): Promise<void>;
+    approveConnectRequest(event: ConnectionRequestEvent, response?: ConnectionApprovalResponse): Promise<void>;
     /** Reject a connect request */
     rejectConnectRequest(
-        request: ConnectionRequest,
+        event: ConnectionRequestEvent,
         reason?: string,
         errorCode?: CONNECT_EVENT_ERROR_CODES,
     ): Promise<void>;
 
     /** Approve a transaction request */
-    approveTransactionRequest(request: SendTransactionRequest): Promise<SendTransactionApprovalResponse>;
+    approveTransactionRequest(
+        event: SendTransactionRequestEvent,
+        response?: SendTransactionApprovalResponse,
+    ): Promise<SendTransactionApprovalResponse>;
 
     /** Reject a transaction request */
     rejectTransactionRequest(
-        request: SendTransactionRequest,
+        event: SendTransactionRequestEvent,
         reason?: string | SendTransactionRpcResponseError['error'],
     ): Promise<void>;
 
     /** Approve a sign data request */
-    approveSignDataRequest(event: SignDataRequest): Promise<SignDataApprovalResponse>;
+    approveSignDataRequest(
+        event: SignDataRequestEvent,
+        response?: SignDataApprovalResponse,
+    ): Promise<SignDataApprovalResponse>;
 
     /** Reject a sign data request */
-    rejectSignDataRequest(event: SignDataRequest, reason?: string): Promise<void>;
+    rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void>;
 
     // === Event Handlers ===
 

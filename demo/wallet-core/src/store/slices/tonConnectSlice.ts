@@ -85,7 +85,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
                 walletId: selectedWallet.getWalletId(),
             };
 
-            await state.walletCore.walletKit.approveConnectRequest({ event });
+            await state.walletCore.walletKit.approveConnectRequest(event);
 
             set((state) => {
                 state.tonConnect.pendingConnectRequestEvent = undefined;
@@ -122,10 +122,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         }
 
         try {
-            await state.walletCore.walletKit.rejectConnectRequest(
-                { event: state.tonConnect.pendingConnectRequestEvent },
-                reason,
-            );
+            await state.walletCore.walletKit.rejectConnectRequest(state.tonConnect.pendingConnectRequestEvent, reason);
         } catch (error) {
             log.error('Failed to reject connect request:', error);
         }
@@ -159,9 +156,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
             throw new Error('WalletKit not initialized');
         }
 
-        await state.walletCore.walletKit.approveTransactionRequest({
-            event: state.tonConnect.pendingTransactionRequestEvent,
-        });
+        await state.walletCore.walletKit.approveTransactionRequest(state.tonConnect.pendingTransactionRequestEvent);
         setTimeout(() => {
             set((state) => {
                 state.tonConnect.pendingTransactionRequestEvent = undefined;
@@ -190,7 +185,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
 
         try {
             await state.walletCore.walletKit.rejectTransactionRequest(
-                { event: state.tonConnect.pendingTransactionRequestEvent },
+                state.tonConnect.pendingTransactionRequestEvent,
                 reason,
             );
         } catch (error) {
@@ -232,9 +227,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         }
 
         try {
-            await state.walletCore.walletKit.approveSignDataRequest({
-                event: state.tonConnect.pendingSignDataRequestEvent,
-            });
+            await state.walletCore.walletKit.approveSignDataRequest(state.tonConnect.pendingSignDataRequestEvent);
 
             setTimeout(() => {
                 set((state) => {
@@ -268,7 +261,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
 
         try {
             await state.walletCore.walletKit.rejectSignDataRequest(
-                { event: state.tonConnect.pendingSignDataRequestEvent },
+                state.tonConnect.pendingSignDataRequestEvent,
                 reason,
             );
         } catch (error) {
@@ -439,7 +432,7 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
                     event?.preview?.manifestFetchErrorCode,
                 );
                 walletKit.rejectConnectRequest(
-                    { event },
+                    event,
                     event?.preview?.manifestFetchErrorCode == 2
                         ? 'App manifest not found'
                         : event?.preview?.manifestFetchErrorCode == 3
@@ -465,13 +458,10 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
             const balance = await wallet.getBalance();
             const minNeededBalance = event.request.messages.reduce((acc, message) => acc + BigInt(message.amount), 0n);
             if (BigInt(balance) < minNeededBalance) {
-                await walletKit.rejectTransactionRequest(
-                    { event },
-                    {
-                        code: SEND_TRANSACTION_ERROR_CODES.BAD_REQUEST_ERROR,
-                        message: 'Insufficient balance',
-                    },
-                );
+                await walletKit.rejectTransactionRequest(event, {
+                    code: SEND_TRANSACTION_ERROR_CODES.BAD_REQUEST_ERROR,
+                    message: 'Insufficient balance',
+                });
                 return;
             }
 
