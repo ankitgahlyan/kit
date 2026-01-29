@@ -9,8 +9,10 @@
 /**
  * requests.ts – Request approval handlers
  *
- * Simplified bridge for connect, transaction, and sign-data request approvals/rejections.
- * All event manipulation and metadata restoration handled by Kotlin RequestEventProcessor.
+ * Bridge for connect, transaction, and sign-data request approvals/rejections.
+ *
+ * The Android SDK sends the full event object along with the response when approving requests.
+ * The event is stored in args.event and passed directly to TonWalletKit.
  */
 
 import type {
@@ -22,7 +24,7 @@ import type {
     RejectSignDataRequestArgs,
 } from '../types';
 import { callBridge } from '../utils/bridgeWrapper';
-import { log } from '../utils/logger';
+import { log, error } from '../utils/logger';
 
 /**
  * Approves a connect request.
@@ -31,11 +33,23 @@ export async function approveConnectRequest(args: ApproveConnectRequestArgs) {
     return callBridge('approveConnectRequest', async (kit) => {
         log('approveConnectRequest walletId:', args.walletId);
 
-        const wallet = kit.getWallet(args.walletId);
-        args.event.wallet = wallet;
-        args.event.walletId = args.walletId;
+        const event = args.event as { walletId?: string; id?: string };
+        if (!event) {
+            throw new Error('Event is required for connect request approval');
+        }
 
-        return await kit.approveConnectRequest(args.event);
+        // Set walletId on the event (wallet lookup not needed - wallet is managed by Kotlin)
+        event.walletId = args.walletId;
+
+        // Wrap event in ConnectionRequest object as expected by TonWalletKit
+        const request = {
+            event,
+            response: args.response,
+        };
+
+        const result = await kit.approveConnectRequest(request);
+
+        return result;
     });
 }
 
@@ -44,7 +58,13 @@ export async function approveConnectRequest(args: ApproveConnectRequestArgs) {
  */
 export async function rejectConnectRequest(args: RejectConnectRequestArgs) {
     return callBridge('rejectConnectRequest', async (kit) => {
-        const result = await kit.rejectConnectRequest(args.event, args.reason, args.errorCode);
+        const event = args.event as { id?: string };
+        if (!event) {
+            throw new Error('Event is required for connect request rejection');
+        }
+
+        const result = await kit.rejectConnectRequest({ event }, args.reason, args.errorCode);
+
         return result ?? { success: true };
     });
 }
@@ -54,12 +74,25 @@ export async function rejectConnectRequest(args: RejectConnectRequestArgs) {
  */
 export async function approveTransactionRequest(args: ApproveTransactionRequestArgs) {
     return callBridge('approveTransactionRequest', async (kit) => {
-        // Enrich event with walletId (same pattern as approveConnectRequest)
-        if (args.walletId) {
-            args.event.walletId = args.walletId;
+        const event = args.event as { walletId?: string; id?: string };
+        if (!event) {
+            throw new Error('Event is required for transaction request approval');
         }
 
-        return await kit.approveTransactionRequest(args.event);
+        // Set walletId on the event
+        if (args.walletId) {
+            event.walletId = args.walletId;
+        }
+
+        // Wrap event in SendTransactionRequest object as expected by TonWalletKit
+        const request = {
+            event,
+            response: args.response,
+        };
+
+        const result = await kit.approveTransactionRequest(request);
+
+        return result;
     });
 }
 
@@ -68,13 +101,19 @@ export async function approveTransactionRequest(args: ApproveTransactionRequestA
  */
 export async function rejectTransactionRequest(args: RejectTransactionRequestArgs) {
     return callBridge('rejectTransactionRequest', async (kit) => {
+        const event = args.event as { id?: string };
+        if (!event) {
+            throw new Error('Event is required for transaction request rejection');
+        }
+
         // If errorCode is provided, pass it as an error object; otherwise just pass the reason string
         const reason =
             args.errorCode !== undefined
                 ? { code: args.errorCode, message: args.reason || 'Transaction rejected' }
                 : args.reason;
 
-        const result = await kit.rejectTransactionRequest(args.event, reason);
+        const result = await kit.rejectTransactionRequest({ event }, reason);
+
         return result ?? { success: true };
     });
 }
@@ -84,12 +123,31 @@ export async function rejectTransactionRequest(args: RejectTransactionRequestArg
  */
 export async function approveSignDataRequest(args: ApproveSignDataRequestArgs) {
     return callBridge('approveSignDataRequest', async (kit) => {
-        // Enrich event with walletId (same pattern as approveConnectRequest)
-        if (args.walletId) {
-            args.event.walletId = args.walletId;
+        log('approveSignDataRequest args:', args);
+
+        const event = args.event as { walletId?: string; id?: string };
+        if (!event) {
+            throw new Error('Event is required for sign-data request approval');
         }
 
-        return await kit.approveSignDataRequest(args.event);
+        log('approveSignDataRequest event:', event);
+
+        // Set walletId on the event
+        if (args.walletId) {
+            event.walletId = args.walletId;
+        }
+
+        // Wrap event in SignDataRequest object as expected by TonWalletKit
+        const request = {
+            event,
+            response: args.response,
+        };
+
+        log('approveSignDataRequest calling kit.approveSignDataRequest with:', request);
+        const result = await kit.approveSignDataRequest(request);
+        log('approveSignDataRequest result:', result);
+
+        return result;
     });
 }
 
@@ -98,13 +156,19 @@ export async function approveSignDataRequest(args: ApproveSignDataRequestArgs) {
  */
 export async function rejectSignDataRequest(args: RejectSignDataRequestArgs) {
     return callBridge('rejectSignDataRequest', async (kit) => {
+        const event = args.event as { id?: string };
+        if (!event) {
+            throw new Error('Event is required for sign-data request rejection');
+        }
+
         // If errorCode is provided, pass it as an error object; otherwise just pass the reason string
         const reason =
             args.errorCode !== undefined
                 ? { code: args.errorCode, message: args.reason || 'Sign data rejected' }
                 : args.reason;
 
-        const result = await kit.rejectSignDataRequest(args.event, reason);
+        const result = await kit.rejectSignDataRequest({ event }, reason);
+
         return result ?? { success: true };
     });
 }

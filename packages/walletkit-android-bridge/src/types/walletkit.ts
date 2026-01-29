@@ -12,17 +12,23 @@ import type { WalletAdapter, WalletSigner, Network } from '@ton/walletkit';
  * Configuration and bridge-facing types for Ton WalletKit.
  */
 export interface WalletKitBridgeInitConfig {
-    network?: string;
-    apiUrl?: string;
-    apiBaseUrl?: string;
-    tonApiUrl?: string;
-    tonClientEndpoint?: string;
     bridgeUrl?: string;
     bridgeName?: string;
     allowMemoryStorage?: boolean;
     walletManifest?: unknown;
     deviceInfo?: unknown;
     disableNetworkSend?: boolean;
+    /**
+     * Network configurations matching native SDK format.
+     * Each entry has a network with chainId and optional apiClientConfiguration.
+     */
+    networkConfigurations?: Array<{
+        network: { chainId: string };
+        apiClientConfiguration?: {
+            url?: string;
+            key?: string;
+        };
+    }>;
 }
 
 export interface AndroidBridgeType {
