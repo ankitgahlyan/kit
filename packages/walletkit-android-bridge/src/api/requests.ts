@@ -24,7 +24,7 @@ import type {
     RejectSignDataRequestArgs,
 } from '../types';
 import { callBridge } from '../utils/bridgeWrapper';
-import { log, error } from '../utils/logger';
+import { log } from '../utils/logger';
 
 /**
  * Approves a connect request.

@@ -9,7 +9,7 @@
 /**
  * WalletKit initialization helpers used by the bridge entry point.
  */
-import { Network, TONCONNECT_BRIDGE_EVENT } from '@ton/walletkit';
+import { TONCONNECT_BRIDGE_EVENT } from '@ton/walletkit';
 import { TONCONNECT_BRIDGE_RESPONSE } from '@ton/walletkit/bridge';
 
 import type { WalletKitBridgeInitConfig, BridgePayload, WalletKitBridgeEvent, WalletKitInstance } from '../types';
