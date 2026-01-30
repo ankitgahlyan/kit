@@ -8,6 +8,7 @@
 
 import type { FC, ComponentProps } from 'react';
 import clsx from 'clsx';
+import { middleEllipsis } from '@ton/appkit';
 
 import styles from './connect-button.module.css';
 import { Button } from '../../../../components/button';
@@ -48,8 +49,8 @@ export const ConnectButton: FC<ConnectButtonProps> = ({ className, ...props }) =
 
     return (
         <Button className={clsx(styles.connectButton, className)} onClick={onClick} {...props}>
-            <TonIcon />
-            {selectedWallet ? selectedWallet.getAddress() : 'Connect'}
+            <TonIcon size={14} />
+            {selectedWallet ? middleEllipsis(selectedWallet.getAddress()) : 'Connect'}
         </Button>
     );
 };

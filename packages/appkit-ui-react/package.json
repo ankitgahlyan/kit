@@ -24,9 +24,10 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles/index.css"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "5.2.8",
     "@ton/appkit": "workspace:*",
     "@ton/walletkit": "workspace:*",
     "clsx": "^2.1.1"

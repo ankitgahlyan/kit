@@ -37,5 +37,8 @@ export * from './types/connector';
 export * from './types/balance';
 export * from './types/wallet';
 
+// Utils
+export * from './utils';
+
 // Re-export from @ton/walletkit for convenience
 export type { TonWalletKit, TONTransferRequest, JettonsTransferRequest, TransactionRequest } from '@ton/walletkit';
