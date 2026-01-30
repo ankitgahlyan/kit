@@ -10,7 +10,6 @@ import { formatUnits } from '@ton/appkit';
 import type { FC, ComponentProps } from 'react';
 import clsx from 'clsx';
 
-import { Block } from '../../../../components/block';
 import { CircleIcon } from '../../../../components/circle-icon';
 import styles from './currency-item.module.css';
 

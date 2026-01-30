@@ -7,7 +7,7 @@
  */
 
 // Balances
-export { getBalanceQueryOptions, type GetBalanceOptions } from './balances/get-balance-query-params';
+export { getBalanceQueryOptions, type GetBalanceOptions } from './balances/get-balance-query';
 
 // Wallets
 export { connectMutationOptions, type ConnectMutationOptions } from './wallets/connect';
