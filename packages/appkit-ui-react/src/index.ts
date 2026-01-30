@@ -8,6 +8,7 @@
 
 export { AppKitProvider } from './providers/app-kit-provider';
 export { useAppKit } from './hooks/use-app-kit';
+export { useAppKitTheme } from './hooks/use-app-kit-theme';
 
 export * from './components/ton-icon';
 

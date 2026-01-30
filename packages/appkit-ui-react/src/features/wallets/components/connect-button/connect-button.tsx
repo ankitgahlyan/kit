@@ -6,6 +6,7 @@
  *
  */
 
+import { useState } from 'react';
 import type { FC, ComponentProps } from 'react';
 import clsx from 'clsx';
 import { middleEllipsis } from '@ton/appkit';
@@ -17,11 +18,13 @@ import { useConnectors } from '../../hooks/use-connectors';
 import { useConnect } from '../../hooks/use-connect';
 import { useDisconnect } from '../../hooks/use-disconnect';
 import { TonIcon } from '../../../../components/ton-icon';
+import { ChooseConnectorModal } from '../choose-connector-modal';
 
 type ConnectButtonProps = Omit<ComponentProps<'button'>, 'onClick' | 'children'>;
 
 export const ConnectButton: FC<ConnectButtonProps> = ({ className, ...props }) => {
     const [selectedWallet] = useSelectedWallet();
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const connectors = useConnectors();
     const { connect } = useConnect();
     const { disconnect } = useDisconnect();
@@ -39,18 +42,22 @@ export const ConnectButton: FC<ConnectButtonProps> = ({ className, ...props }) =
             return;
         }
 
-        if (connectors.length === 1 && connectors[0]) {
-            connect({ connectorId: connectors[0].id });
-            return;
-        }
+        // if (connectors.length === 1 && connectors[0]) {
+        //     connect({ connectorId: connectors[0].id });
+        //     return;
+        // }
 
-        // TODO open provider selection
+        setIsModalOpen(true);
     };
 
     return (
-        <Button className={clsx(styles.connectButton, className)} onClick={onClick} {...props}>
-            <TonIcon size={14} />
-            {selectedWallet ? middleEllipsis(selectedWallet.getAddress()) : 'Connect'}
-        </Button>
+        <>
+            <Button className={clsx(styles.connectButton, className)} onClick={onClick} {...props}>
+                <TonIcon size={14} />
+                {selectedWallet ? middleEllipsis(selectedWallet.getAddress()) : 'Connect'}
+            </Button>
+
+            <ChooseConnectorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        </>
     );
 };

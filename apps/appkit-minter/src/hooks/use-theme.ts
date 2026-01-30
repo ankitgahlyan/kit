@@ -6,14 +6,20 @@
  *
  */
 
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
+import { useAppKitTheme } from '@ton/appkit-ui-react';
 
 import { ThemeProviderContext } from '@/components/layout/theme-provider';
 
 export const useTheme = () => {
     const context = useContext(ThemeProviderContext);
+    const [, setTheme] = useAppKitTheme();
 
     if (context === undefined) throw new Error('useTheme must be used within a ThemeProvider');
+
+    useEffect(() => {
+        setTheme(context.theme);
+    }, [context.theme]);
 
     return context;
 };

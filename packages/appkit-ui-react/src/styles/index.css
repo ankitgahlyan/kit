@@ -75,7 +75,7 @@
   --ta-border-width-m: 2px;
 }
 
-[data-theme='dark'] {
+[data-ta-theme='dark'] {
   --ta-color-primary: #0a84ff;
   --ta-color-text: #ffffff;
   --ta-color-text-secondary: #8e8e93;
