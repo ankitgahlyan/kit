@@ -6,6 +6,12 @@ settings:
 
 catalogs:
   default:
+    '@tanstack/query-core':
+      specifier: 5.90.20
+      version: 5.90.20
+    '@tanstack/react-query':
+      specifier: 5.90.20
+      version: 5.90.20
     '@ton/core':
       specifier: ^0.63.0
       version: 0.63.0
@@ -597,6 +603,9 @@ importers:
         specifier: workspace:*
         version: link:../walletkit
     devDependencies:
+      '@tanstack/query-core':
+        specifier: 'catalog:'
+        version: 5.90.20
       '@ton/core':
         specifier: 'catalog:'
         version: 0.63.0(@ton/crypto@3.3.0)
@@ -621,9 +630,6 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.2.8
         version: 5.2.8
-      '@tanstack/react-query':
-        specifier: '>=5.0.0'
-        version: 5.90.20(react@19.2.3)
       '@ton/appkit':
         specifier: workspace:*
         version: link:../appkit
@@ -646,6 +652,9 @@ importers:
         specifier: 1.1.0
         version: 1.1.0
     devDependencies:
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.20(react@19.2.3)
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.8

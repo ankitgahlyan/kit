@@ -7,7 +7,18 @@
  */
 
 // Balances
-export { getBalanceQueryOptions, type GetBalanceOptions } from './balances/get-balance-query';
+export {
+    getBalanceQueryOptions,
+    type GetBalanceOptions,
+    type GetBalanceData,
+    type GetBalanceErrorType,
+} from './balances/get-balance-query';
+export {
+    getJettonsQueryOptions,
+    type GetJettonsOptions,
+    type GetJettonsData,
+    type GetJettonsErrorType,
+} from './balances/get-jettons-query';
 
 // Wallets
 export { connectMutationOptions, type ConnectMutationOptions } from './wallets/connect';

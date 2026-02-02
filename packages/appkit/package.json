@@ -60,6 +60,7 @@
     "@ton/walletkit": "workspace:*"
   },
   "peerDependencies": {
+    "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@tonconnect/protocol": "catalog:",
     "@tonconnect/ui": "catalog:"
@@ -77,6 +78,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
+    "@tanstack/query-core": "catalog:",
     "@ton/core": "catalog:",
     "@tonconnect/protocol": "catalog:",
     "@tonconnect/ui": "catalog:",

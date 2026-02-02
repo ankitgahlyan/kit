@@ -6,20 +6,25 @@
  *
  */
 
-import type { GetBalanceOptions } from '@ton/appkit/queries';
 import { getBalanceQueryOptions } from '@ton/appkit/queries';
-import { useQuery } from '@tanstack/react-query';
+import type { GetBalanceData, GetBalanceErrorType, GetBalanceOptions } from '@ton/appkit/queries';
 
 import { useAppKit } from '../../../hooks/use-app-kit';
+import { useQuery } from '../../../libs/query';
+import type { UseQueryReturnType } from '../../../libs/query';
+
+export type UseBalanceParameters<selectData = GetBalanceData> = GetBalanceOptions<selectData>;
+
+export type UseBalanceReturnType<selectData = GetBalanceData> = UseQueryReturnType<selectData, GetBalanceErrorType>;
 
 /**
  * Hook to get balance
  */
-export function useBalance(params: GetBalanceOptions, queryOptions?: Record<string, unknown>) {
+export function useBalance<selectData = GetBalanceData>(
+    parameters: UseBalanceParameters<selectData> = {},
+): UseBalanceReturnType<selectData> {
     const appKit = useAppKit();
+    const options = getBalanceQueryOptions(appKit, parameters);
 
-    return useQuery({
-        ...getBalanceQueryOptions(appKit, params),
-        ...queryOptions,
-    });
+    return useQuery(options);
 }

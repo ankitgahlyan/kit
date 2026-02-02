@@ -12,6 +12,11 @@ export {
     getBalanceOfSelectedWallet,
     type GetBalanceOfSelectedWalletOptions,
 } from './balances/get-balance-of-selected-wallet';
+export { getJettons, type GetJettonsOptions } from './balances/get-jettons';
+export {
+    getJettonsOfSelectedWallet,
+    type GetJettonsOfSelectedWalletOptions,
+} from './balances/get-jettons-of-selected-wallet';
 
 // Wallets
 export { connect, type ConnectParameters, type ConnectReturnType } from './wallets/connect';

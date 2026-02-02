@@ -7,7 +7,9 @@
  */
 
 export * from './components/currency-item';
-export * from './components/ton-balance-badge';
+export * from './components/balance-badge';
 
 export * from './hooks/use-balance';
 export * from './hooks/use-selected-wallet-balance';
+export * from './hooks/use-jettons';
+export * from './hooks/use-selected-wallet-jettons';

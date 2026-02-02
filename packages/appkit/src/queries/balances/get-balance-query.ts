@@ -6,37 +6,38 @@
  *
  */
 
-import { Network } from '@ton/walletkit';
 import type { TokenAmount } from '@ton/walletkit';
 
 import type { AppKit } from '../../core/app-kit';
 import { getBalance } from '../../actions/balances/get-balance';
-import type { GetBalanceOptions as GetBalanceActionOptions } from '../../actions/balances/get-balance';
-import type { QueryOptions } from '../../types/query';
+import type { GetBalanceOptions as GetBalanceParameters } from '../../actions/balances/get-balance';
+import type { QueryOptions, QueryParameter } from '../../types/query';
+import type { Compute, ExactPartial } from '../../types/utils';
 
-export interface GetBalanceOptions extends Partial<GetBalanceActionOptions> {
-    query?: {
-        enabled?: boolean;
-    };
+export function filterQueryOptions<type extends object>(options: type): Compute<Omit<type, 'query'>> {
+    const { query, ...rest } = options as unknown as { query: unknown };
+    return rest as Compute<Omit<type, 'query'>>;
 }
 
-export function getBalanceQueryOptions(
+export type GetBalanceErrorType = Error;
+
+export type GetBalanceOptions<selectData = GetBalanceData> = Compute<ExactPartial<GetBalanceParameters>> &
+    QueryParameter<GetBalanceQueryFnData, GetBalanceErrorType, selectData, GetBalanceQueryKey>;
+
+export function getBalanceQueryOptions<selectData = GetBalanceData>(
     appKit: AppKit,
-    options: GetBalanceOptions = {},
-): QueryOptions<TokenAmount | null> {
+    options: GetBalanceOptions<selectData> = {},
+): GetBalanceQueryOptions<selectData> {
     return {
         ...options.query,
         enabled: Boolean(options.address && (options.query?.enabled ?? true)),
-        queryFn: async () => {
-            const { address } = options;
-
-            if (!address) throw new Error('address is required');
-
-            const network = options.network ?? Network.mainnet();
-
+        queryFn: async (context) => {
+            const [, parameters] = context.queryKey as [string, GetBalanceParameters];
+            if (!parameters.address) throw new Error('address is required');
             const balance = await getBalance(appKit, {
-                address,
-                network,
+                ...(parameters as GetBalanceParameters),
+                address: parameters.address,
+                network: parameters.network,
             });
             return balance ?? null;
         },
@@ -44,8 +45,19 @@ export function getBalanceQueryOptions(
     };
 }
 
-export function getBalanceQueryKey(options: GetBalanceOptions = {}) {
-    const { address } = options;
-    const network = options.network ?? Network.mainnet();
-    return ['balance', address, network.chainId] as const;
+export type GetBalanceQueryFnData = Compute<TokenAmount | null>;
+
+export type GetBalanceData = GetBalanceQueryFnData;
+
+export function getBalanceQueryKey(options: Compute<ExactPartial<GetBalanceParameters>> = {}) {
+    return ['balance', filterQueryOptions(options)] as const;
 }
+
+export type GetBalanceQueryKey = ReturnType<typeof getBalanceQueryKey>;
+
+export type GetBalanceQueryOptions<selectData = GetBalanceData> = QueryOptions<
+    GetBalanceQueryFnData,
+    GetBalanceErrorType,
+    selectData,
+    GetBalanceQueryKey
+>;

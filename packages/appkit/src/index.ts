@@ -36,6 +36,8 @@ export * from './actions';
 export * from './types/connector';
 export * from './types/balance';
 export * from './types/wallet';
+export * from './types/query';
+export * from './types/utils';
 
 // Utils
 export * from './utils';

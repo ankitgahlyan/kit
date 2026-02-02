@@ -14,7 +14,9 @@ export { useI18n } from './hooks/use-i18n';
 
 export * from './components/block';
 export * from './components/button';
+export * from './components/circle-icon';
 export * from './components/ton-icon';
+export * from './components/modal';
 
 export * from './features/balances';
 export * from './features/wallets';
