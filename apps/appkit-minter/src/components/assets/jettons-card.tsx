@@ -18,7 +18,7 @@ import { Card, Button } from '@/components/common';
 interface JettonsCardProps {
     jettons: Jetton[];
     isLoading: boolean;
-    error: string | null;
+    isError: boolean;
     onRefresh: () => void;
     onTransfer?: (jetton: Jetton, recipientAddress: string, amount: string, comment?: string) => Promise<void>;
     isTransferring?: boolean;
@@ -27,14 +27,14 @@ interface JettonsCardProps {
 export const JettonsCard: React.FC<JettonsCardProps> = ({
     jettons,
     isLoading,
-    error,
+    isError,
     onRefresh,
     onTransfer,
     isTransferring = false,
 }) => {
     const [selectedJetton, setSelectedJetton] = useState<Jetton | null>(null);
 
-    if (error) {
+    if (isError) {
         return (
             <Card title="Jettons">
                 <div className="text-center py-4">

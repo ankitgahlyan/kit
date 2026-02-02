@@ -6,21 +6,25 @@
  *
  */
 
-import type { QueryParameter } from '@ton/appkit';
-import type { GetJettonsOptions } from '@ton/appkit/queries';
-import { getJettonsQueryOptions } from '@ton/appkit/queries';
-import { useQuery } from '@tanstack/react-query';
+import { useSelectedWallet } from '../../wallets/hooks/use-selected-wallet';
+import type { UseJettonsParameters } from './use-jettons';
+import { useJettons } from './use-jettons';
 
-import { useAppKit } from '../../../hooks/use-app-kit';
+export type UseSelectedWalletJettonsParameters = UseJettonsParameters['query'];
 
 /**
  * Hook to get jettons
  */
-export function useSelectedWalletJettons(params: GetJettonsOptions, queryOptions?: QueryParameter) {
-    const appKit = useAppKit();
+export function useSelectedWalletJettons(queryOptions?: UseSelectedWalletJettonsParameters) {
+    const [selectedWallet] = useSelectedWallet();
+    const address = selectedWallet?.getAddress();
 
-    return useQuery({
-        ...getJettonsQueryOptions(appKit, params),
-        ...queryOptions,
+    return useJettons({
+        address: address as string,
+        network: selectedWallet?.getNetwork(),
+        query: {
+            ...queryOptions,
+            enabled: !!address,
+        },
     });
 }

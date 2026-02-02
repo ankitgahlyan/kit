@@ -15,16 +15,15 @@ export type UseSelectedWalletBalanceParameters = Omit<UseBalanceParameters, 'add
 /**
  * Hook to get balance of the selected wallet
  */
-export function useSelectedWalletBalance(queryOptions?: UseSelectedWalletBalanceParameters) {
+export function useSelectedWalletBalance(queryOptions?: UseBalanceParameters['query']) {
     const [selectedWallet] = useSelectedWallet();
     const address = selectedWallet?.getAddress();
 
     return useBalance({
         address: address as string,
         network: selectedWallet?.getNetwork(),
-        ...queryOptions,
         query: {
-            ...queryOptions?.query,
+            ...queryOptions,
             enabled: !!address,
         },
     });

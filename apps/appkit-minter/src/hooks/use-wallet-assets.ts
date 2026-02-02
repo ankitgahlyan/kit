@@ -12,11 +12,8 @@ import { isValidAddress } from '@ton/walletkit';
 import { useSelectedWallet } from '@ton/appkit-ui-react';
 
 interface WalletAssetsState {
-    jettons: Jetton[];
     nfts: NFT[];
-    isLoadingJettons: boolean;
     isLoadingNfts: boolean;
-    jettonsError: string | null;
     nftsError: string | null;
 }
 
@@ -29,11 +26,8 @@ export function useWalletAssets() {
     const [wallet] = useSelectedWallet();
 
     const [state, setState] = useState<WalletAssetsState>({
-        jettons: [],
         nfts: [],
-        isLoadingJettons: false,
         isLoadingNfts: false,
-        jettonsError: null,
         nftsError: null,
     });
 
@@ -41,29 +35,6 @@ export function useWalletAssets() {
         isTransferring: false,
         transferError: null,
     });
-
-    const loadJettons = useCallback(async () => {
-        if (!wallet) return;
-
-        setState((prev) => ({ ...prev, isLoadingJettons: true, jettonsError: null }));
-
-        try {
-            const response = await wallet.getJettons({
-                pagination: { offset: 0, limit: 50 },
-            });
-            setState((prev) => ({
-                ...prev,
-                jettons: response.jettons,
-                isLoadingJettons: false,
-            }));
-        } catch (error) {
-            setState((prev) => ({
-                ...prev,
-                isLoadingJettons: false,
-                jettonsError: error instanceof Error ? error.message : 'Failed to load jettons',
-            }));
-        }
-    }, [wallet]);
 
     const loadNfts = useCallback(async () => {
         if (!wallet) return;
@@ -89,8 +60,8 @@ export function useWalletAssets() {
     }, [wallet]);
 
     const refresh = useCallback(async () => {
-        await Promise.all([loadJettons(), loadNfts()]);
-    }, [loadJettons, loadNfts]);
+        await Promise.all([loadNfts()]);
+    }, [loadNfts]);
 
     const transferJetton = useCallback(
         async (jetton: Jetton, recipientAddress: string, amount: string, comment?: string) => {
@@ -124,14 +95,14 @@ export function useWalletAssets() {
                 setTransferState({ isTransferring: false, transferError: null });
 
                 // Refresh jettons after transfer
-                await loadJettons();
+                // await loadJettons();
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Failed to transfer jetton';
                 setTransferState({ isTransferring: false, transferError: errorMessage });
                 throw error;
             }
         },
-        [wallet, loadJettons],
+        [wallet],
     );
 
     const transferNft = useCallback(
@@ -170,25 +141,20 @@ export function useWalletAssets() {
     // Autoload assets when wallet connects
     useEffect(() => {
         if (wallet) {
-            void loadJettons();
             void loadNfts();
         } else {
             // Clear assets when wallet disconnects
             setState({
-                jettons: [],
                 nfts: [],
-                isLoadingJettons: false,
                 isLoadingNfts: false,
-                jettonsError: null,
                 nftsError: null,
             });
         }
-    }, [wallet, loadJettons, loadNfts]);
+    }, [wallet, loadNfts]);
 
     return {
         ...state,
         ...transferState,
-        loadJettons,
         loadNfts,
         refresh,
         transferJetton,
