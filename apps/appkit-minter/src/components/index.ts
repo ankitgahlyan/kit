@@ -16,7 +16,7 @@ export { Layout, AppRouter, ThemeProvider } from './layout';
 export { CardPreview, CardGenerator, RarityBadge } from './card';
 
 // Wallet components
-export { WalletConnect, MintButton } from './wallet';
+export { WalletConnect } from './wallet';
 
 // Asset components
 export { NftsCard, TokensCard } from './assets';

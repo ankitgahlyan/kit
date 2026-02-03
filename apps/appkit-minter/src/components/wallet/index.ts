@@ -7,4 +7,3 @@
  */
 
 export { WalletConnect } from './wallet-connect';
-export { MintButton } from './mint-button';

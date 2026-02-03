@@ -6,15 +6,19 @@
  *
  */
 
+import { useState } from 'react';
 import type React from 'react';
 import { Sparkles, Coins, AlertCircle } from 'lucide-react';
-import { useSelectedWallet } from '@ton/appkit-ui-react';
+import { useSelectedWallet, Transaction } from '@ton/appkit-ui-react';
+import { getErrorMessage } from '@ton/appkit';
+import { toast } from 'sonner';
 
 import { CardPreview } from './card-preview';
 
 import { Button } from '@/components/common';
 import { Card } from '@/components/common';
-import { useCardGenerator, useMint } from '@/hooks';
+import { useCardGenerator, useMintTransaction } from '@/hooks';
+import { useMinterStore } from '@/store';
 
 interface CardGeneratorProps {
     className?: string;
@@ -22,8 +26,10 @@ interface CardGeneratorProps {
 
 export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
     const { currentCard, isGenerating, generate } = useCardGenerator();
-    const { mint, isMinting, mintError, canMint } = useMint();
+    const { createMintTransaction, canMint } = useMintTransaction();
+    const { mintCard } = useMinterStore();
     const [wallet] = useSelectedWallet();
+    const [mintError, setMintError] = useState<string | null>(null);
     const isConnected = !!wallet;
 
     return (
@@ -86,16 +92,31 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
                     </Button>
 
                     {isConnected && (
-                        <Button
-                            onClick={mint}
+                        <Transaction
+                            getTransactionRequest={createMintTransaction}
+                            onSuccess={() => {
+                                mintCard();
+                                setMintError(null);
+                                toast.success('NFT minted successfully!');
+                            }}
+                            onError={(error) => {
+                                setMintError(getErrorMessage(error));
+                            }}
                             disabled={!canMint}
-                            isLoading={isMinting}
-                            variant="secondary"
-                            className="flex-1"
                         >
-                            <Coins className="w-4 h-4 mr-2" />
-                            Mint
-                        </Button>
+                            {({ isLoading, onSubmit, disabled }) => (
+                                <Button
+                                    onClick={onSubmit}
+                                    disabled={disabled}
+                                    isLoading={isLoading}
+                                    variant="secondary"
+                                    className="flex-1"
+                                >
+                                    <Coins className="w-4 h-4 mr-2" />
+                                    Mint
+                                </Button>
+                            )}
+                        </Transaction>
                     )}
                 </div>
             </div>

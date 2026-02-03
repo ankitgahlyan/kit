@@ -7,6 +7,6 @@
  */
 
 export { useCardGenerator } from './use-card-generator';
-export { useMint } from './use-mint';
+export { useMintTransaction } from './use-mint';
 export { useWalletAssets } from './use-wallet-assets';
 export { useTheme } from './use-theme';
