@@ -8,10 +8,13 @@
 
 import { useSyncExternalStore, useCallback } from 'react';
 import { getConnectors, watchConnectors } from '@ton/appkit';
+import type { GetConnectorsReturnType } from '@ton/appkit';
 
 import { useAppKit } from '../../../hooks/use-app-kit';
 
-export const useConnectors = () => {
+export type UseConnectorsReturnType = GetConnectorsReturnType;
+
+export const useConnectors = (): UseConnectorsReturnType => {
     const appKit = useAppKit();
 
     const subscribe = useCallback(

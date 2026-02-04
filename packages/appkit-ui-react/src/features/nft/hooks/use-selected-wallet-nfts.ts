@@ -7,15 +7,19 @@
  */
 
 import { useSelectedWallet } from '../../wallets/hooks/use-selected-wallet';
-import type { UseNFTsParameters } from './use-nfts';
+import type { UseNFTsParameters, UseNFTsReturnType } from './use-nfts';
 import { useNFTs } from './use-nfts';
 
 export type UseSelectedWalletNFTsParameters = UseNFTsParameters['query'];
 
+export type UseSelectedWalletNFTsReturnType = UseNFTsReturnType;
+
 /**
  * Hook to get NFTs for selected wallet
  */
-export function useSelectedWalletNFTs(queryOptions?: UseSelectedWalletNFTsParameters) {
+export const useSelectedWalletNFTs = (
+    queryOptions?: UseSelectedWalletNFTsParameters,
+): UseSelectedWalletNFTsReturnType => {
     const [selectedWallet] = useSelectedWallet();
     const address = selectedWallet?.getAddress();
 
@@ -27,4 +31,4 @@ export function useSelectedWalletNFTs(queryOptions?: UseSelectedWalletNFTsParame
             enabled: !!address,
         },
     });
-}
+};

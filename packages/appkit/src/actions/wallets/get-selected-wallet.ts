@@ -14,6 +14,6 @@ export type GetSelectedWalletReturnType = WalletInterface | null;
 /**
  * Get selected wallet
  */
-export function getSelectedWallet(appKit: AppKit): GetSelectedWalletReturnType {
+export const getSelectedWallet = (appKit: AppKit): GetSelectedWalletReturnType => {
     return appKit.walletsManager.selectedWallet;
-}
+};

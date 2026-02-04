@@ -19,7 +19,9 @@ export interface GetNftsOptions {
     offset?: number;
 }
 
-export async function getNfts(appKit: AppKit, options: GetNftsOptions): Promise<NFTsResponse> {
+export type GetNftsReturnType = NFTsResponse;
+
+export const getNfts = async (appKit: AppKit, options: GetNftsOptions): Promise<GetNftsReturnType> => {
     const { address, network, limit, offset } = options;
     const addressString = Address.isAddress(address) ? address.toString() : Address.parse(address).toString();
 
@@ -31,4 +33,4 @@ export async function getNfts(appKit: AppKit, options: GetNftsOptions): Promise<
             offset,
         },
     });
-}
+};

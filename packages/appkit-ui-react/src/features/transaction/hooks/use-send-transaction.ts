@@ -35,13 +35,13 @@ export type UseSendTransactionReturnType<context = unknown> = UseMutationReturnT
     MutateFunction<SendTransactionReturnType, Error, SendTransactionParameters, context>
 >;
 
-export function useSendTransaction<context = unknown>(
+export const useSendTransaction = <context = unknown>(
     parameters?: UseSendTransactionParameters<context>,
-): UseSendTransactionReturnType<context> {
+): UseSendTransactionReturnType<context> => {
     const appKit = useAppKit();
 
     return useMutation({
         mutationFn: (variables) => sendTransaction(appKit, variables),
         ...parameters,
     });
-}
+};

@@ -27,10 +27,10 @@ export type TransferTonOptions<context = unknown> = MutationParameter<
     context
 >;
 
-export function transferTonMutationOptions<context = unknown>(
+export const transferTonMutationOptions = <context = unknown>(
     appKit: AppKit,
     options: TransferTonOptions<context> = {},
-): TransferTonMutationOptions<context> {
+): TransferTonMutationOptions<context> => {
     return {
         ...options.mutation,
         mutationFn(variables) {
@@ -38,7 +38,7 @@ export function transferTonMutationOptions<context = unknown>(
         },
         mutationKey: ['transferTon'],
     };
-}
+};
 
 export type TransferTonMutationOptions<context = unknown> = MutationOptions<
     TransferTonData,

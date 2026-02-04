@@ -25,7 +25,10 @@ export type TransferTonErrorType = Error;
 /**
  * Transfer TON
  */
-export async function transferTon(appKit: AppKit, parameters: TransferTonParameters): Promise<TransferTonReturnType> {
+export const transferTon = async (
+    appKit: AppKit,
+    parameters: TransferTonParameters,
+): Promise<TransferTonReturnType> => {
     const wallet = getSelectedWallet(appKit);
 
     if (!wallet) {
@@ -35,4 +38,4 @@ export async function transferTon(appKit: AppKit, parameters: TransferTonParamet
     const transaction = await wallet.createTransferTonTransaction(parameters);
 
     return wallet.sendTransaction(transaction);
-}
+};

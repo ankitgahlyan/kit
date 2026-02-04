@@ -6,11 +6,11 @@
  *
  */
 
-import { useMutation } from '@tanstack/react-query';
 import type { UseMutationResult, UseMutationOptions } from '@tanstack/react-query';
 import { connectMutationOptions } from '@ton/appkit/queries';
 import type { ConnectParameters, ConnectReturnType } from '@ton/appkit/queries';
 
+import { useMutation } from '../../../libs/query';
 import { useAppKit } from '../../../hooks/use-app-kit';
 
 export type UseConnectParameters = Omit<
@@ -23,7 +23,7 @@ export type UseConnectReturnType = UseMutationResult<ConnectReturnType, Error, C
     connectAsync: UseMutationResult<ConnectReturnType, Error, ConnectParameters>['mutateAsync'];
 };
 
-export function useConnect(parameters: UseConnectParameters = {}): UseConnectReturnType {
+export const useConnect = (parameters: UseConnectParameters = {}): UseConnectReturnType => {
     const appKit = useAppKit();
     const mutationOptions = connectMutationOptions(appKit);
     const mutation = useMutation({
@@ -36,4 +36,4 @@ export function useConnect(parameters: UseConnectParameters = {}): UseConnectRet
         connect: mutation.mutate,
         connectAsync: mutation.mutateAsync,
     };
-}
+};

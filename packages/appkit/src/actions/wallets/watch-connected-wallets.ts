@@ -19,10 +19,10 @@ export type WatchConnectedWalletsReturnType = () => void;
 /**
  * Watch connected wallets
  */
-export function watchConnectedWallets(
+export const watchConnectedWallets = (
     appKit: AppKit,
     parameters: WatchConnectedWalletsParameters,
-): WatchConnectedWalletsReturnType {
+): WatchConnectedWalletsReturnType => {
     const { onChange } = parameters;
 
     const unsubscribe = appKit.emitter.on(WALLETS_EVENTS.UPDATED, (data) => {
@@ -30,4 +30,4 @@ export function watchConnectedWallets(
     });
 
     return unsubscribe;
-}
+};

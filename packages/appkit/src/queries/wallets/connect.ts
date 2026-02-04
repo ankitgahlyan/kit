@@ -10,16 +10,18 @@ import type { AppKit } from '../../core/app-kit';
 import { connect } from '../../actions/wallets/connect';
 import type { ConnectParameters, ConnectReturnType } from '../../actions/wallets/connect';
 
+export type { ConnectParameters, ConnectReturnType };
+
 export type ConnectMutationOptions = {
     mutationFn: (variables: ConnectParameters) => Promise<ConnectReturnType>;
     mutationKey: readonly unknown[];
 };
 
-export function connectMutationOptions(appKit: AppKit): ConnectMutationOptions {
+export const connectMutationOptions = (appKit: AppKit): ConnectMutationOptions => {
     return {
         mutationFn: async (variables) => {
             return connect(appKit, variables);
         },
         mutationKey: ['connect'],
     };
-}
+};

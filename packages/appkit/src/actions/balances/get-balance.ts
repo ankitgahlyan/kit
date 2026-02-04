@@ -17,7 +17,9 @@ export interface GetBalanceOptions {
     network?: Network;
 }
 
-export async function getBalance(appKit: AppKit, options: GetBalanceOptions): Promise<TokenAmount> {
+export type GetBalanceReturnType = TokenAmount;
+
+export const getBalance = async (appKit: AppKit, options: GetBalanceOptions): Promise<GetBalanceReturnType> => {
     const { address, network } = options;
     const addressString = Address.isAddress(address) ? address.toString() : Address.parse(address).toString();
 
@@ -25,4 +27,4 @@ export async function getBalance(appKit: AppKit, options: GetBalanceOptions): Pr
     const balance = await client.getBalance(addressString);
 
     return balance;
-}
+};

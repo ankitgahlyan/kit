@@ -7,11 +7,21 @@
  */
 
 import { useSyncExternalStore, useCallback } from 'react';
-import { getSelectedWallet, setSelectedWalletId as setSelectedWalletIdAction, watchSelectedWallet } from '@ton/appkit';
+import {
+    getSelectedWallet,
+    setSelectedWalletId as setSelectedWalletIdAction,
+    watchSelectedWallet,
+} from '@ton/appkit';
+import type { GetSelectedWalletReturnType } from '@ton/appkit';
 
 import { useAppKit } from '../../../hooks/use-app-kit';
 
-export const useSelectedWallet = () => {
+export type UseSelectedWalletReturnType = readonly [
+    GetSelectedWalletReturnType,
+    (walletId: string | null) => void,
+];
+
+export const useSelectedWallet = (): UseSelectedWalletReturnType => {
     const appKit = useAppKit();
 
     const subscribe = useCallback(

@@ -20,10 +20,10 @@ export type GetBalanceErrorType = Error;
 export type GetBalanceOptions<selectData = GetBalanceData> = Compute<ExactPartial<GetBalanceParameters>> &
     QueryParameter<GetBalanceQueryFnData, GetBalanceErrorType, selectData, GetBalanceQueryKey>;
 
-export function getBalanceQueryOptions<selectData = GetBalanceData>(
+export const getBalanceQueryOptions = <selectData = GetBalanceData>(
     appKit: AppKit,
     options: GetBalanceOptions<selectData> = {},
-): GetBalanceQueryOptions<selectData> {
+): GetBalanceQueryOptions<selectData> => {
     return {
         ...options.query,
         enabled: Boolean(options.address && (options.query?.enabled ?? true)),
@@ -39,17 +39,17 @@ export function getBalanceQueryOptions<selectData = GetBalanceData>(
         },
         queryKey: getBalanceQueryKey(options),
     };
-}
+};
 
 export type GetBalanceQueryFnData = Compute<TokenAmount | null>;
 
 export type GetBalanceData = GetBalanceQueryFnData;
 
-export function getBalanceQueryKey(options: Compute<ExactPartial<GetBalanceParameters>> = {}) {
+export const getBalanceQueryKey = (options: Compute<ExactPartial<GetBalanceParameters>> = {}): GetBalanceQueryKey => {
     return ['balance', filterQueryOptions(options)] as const;
-}
+};
 
-export type GetBalanceQueryKey = ReturnType<typeof getBalanceQueryKey>;
+export type GetBalanceQueryKey = readonly ['balance', Compute<ExactPartial<GetBalanceParameters>>];
 
 export type GetBalanceQueryOptions<selectData = GetBalanceData> = QueryOptions<
     GetBalanceQueryFnData,

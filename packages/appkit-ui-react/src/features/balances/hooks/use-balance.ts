@@ -20,11 +20,11 @@ export type UseBalanceReturnType<selectData = GetBalanceData> = UseQueryReturnTy
 /**
  * Hook to get balance
  */
-export function useBalance<selectData = GetBalanceData>(
+export const useBalance = <selectData = GetBalanceData>(
     parameters: UseBalanceParameters<selectData> = {},
-): UseBalanceReturnType<selectData> {
+): UseBalanceReturnType<selectData> => {
     const appKit = useAppKit();
     const options = getBalanceQueryOptions(appKit, parameters);
 
     return useQuery(options);
-}
+};

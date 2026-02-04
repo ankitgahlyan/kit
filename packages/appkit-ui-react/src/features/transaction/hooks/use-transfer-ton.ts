@@ -35,13 +35,13 @@ export type UseTransferTonReturnType<context = unknown> = UseMutationReturnType<
     MutateFunction<TransferTonReturnType, Error, TransferTonParameters, context>
 >;
 
-export function useTransferTon<context = unknown>(
+export const useTransferTon = <context = unknown>(
     parameters?: UseTransferTonParameters<context>,
-): UseTransferTonReturnType<context> {
+): UseTransferTonReturnType<context> => {
     const appKit = useAppKit();
 
     return useMutation({
         mutationFn: (variables) => transferTon(appKit, variables),
         ...parameters,
     });
-}
+};

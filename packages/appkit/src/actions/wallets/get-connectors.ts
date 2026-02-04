@@ -14,6 +14,6 @@ export type GetConnectorsReturnType = readonly Connector[];
 /**
  * Get connected wallets
  */
-export function getConnectors(appKit: AppKit): GetConnectorsReturnType {
+export const getConnectors = (appKit: AppKit): GetConnectorsReturnType => {
     return appKit.connectors;
-}
+};

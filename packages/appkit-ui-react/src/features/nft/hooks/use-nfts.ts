@@ -20,11 +20,11 @@ export type UseNFTsReturnType<selectData = GetNFTsData> = UseQueryReturnType<sel
 /**
  * Hook to get NFTs
  */
-export function useNFTs<selectData = GetNFTsData>(
+export const useNFTs = <selectData = GetNFTsData>(
     parameters: UseNFTsParameters<selectData> = {},
-): UseNFTsReturnType<selectData> {
+): UseNFTsReturnType<selectData> => {
     const appKit = useAppKit();
     const options = getNFTsQueryOptions(appKit, parameters);
 
     return useQuery(options);
-}
+};

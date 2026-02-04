@@ -7,15 +7,19 @@
  */
 
 import { useSelectedWallet } from '../../wallets/hooks/use-selected-wallet';
-import type { UseBalanceParameters } from './use-balance';
+import type { UseBalanceParameters, UseBalanceReturnType } from './use-balance';
 import { useBalance } from './use-balance';
 
-export type UseSelectedWalletBalanceParameters = Omit<UseBalanceParameters, 'address' | 'network'>;
+export type UseSelectedWalletBalanceParameters = UseBalanceParameters['query'];
+
+export type UseSelectedWalletBalanceReturnType = UseBalanceReturnType;
 
 /**
  * Hook to get balance of the selected wallet
  */
-export function useSelectedWalletBalance(queryOptions?: UseBalanceParameters['query']) {
+export const useSelectedWalletBalance = (
+    queryOptions?: UseSelectedWalletBalanceParameters,
+): UseSelectedWalletBalanceReturnType => {
     const [selectedWallet] = useSelectedWallet();
     const address = selectedWallet?.getAddress();
 
@@ -27,4 +31,4 @@ export function useSelectedWalletBalance(queryOptions?: UseBalanceParameters['qu
             enabled: !!address,
         },
     });
-}
+};

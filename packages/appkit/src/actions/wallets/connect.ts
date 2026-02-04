@@ -17,7 +17,7 @@ export type ConnectReturnType = void;
 /**
  * Connect wallet using specific connector
  */
-export async function connect(appKit: AppKit, parameters: ConnectParameters): Promise<ConnectReturnType> {
+export const connect = async (appKit: AppKit, parameters: ConnectParameters): Promise<ConnectReturnType> => {
     const { connectorId } = parameters;
     const connector = appKit.connectors.find((c) => c.id === connectorId);
 
@@ -26,4 +26,4 @@ export async function connect(appKit: AppKit, parameters: ConnectParameters): Pr
     }
 
     await connector.connectWallet();
-}
+};

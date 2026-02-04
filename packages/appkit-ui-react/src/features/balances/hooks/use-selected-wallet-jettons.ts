@@ -7,15 +7,19 @@
  */
 
 import { useSelectedWallet } from '../../wallets/hooks/use-selected-wallet';
-import type { UseJettonsParameters } from './use-jettons';
+import type { UseJettonsParameters, UseJettonsReturnType } from './use-jettons';
 import { useJettons } from './use-jettons';
 
 export type UseSelectedWalletJettonsParameters = UseJettonsParameters['query'];
 
+export type UseSelectedWalletJettonsReturnType = UseJettonsReturnType;
+
 /**
  * Hook to get jettons
  */
-export function useSelectedWalletJettons(queryOptions?: UseSelectedWalletJettonsParameters) {
+export const useSelectedWalletJettons = (
+    queryOptions?: UseSelectedWalletJettonsParameters,
+): UseSelectedWalletJettonsReturnType => {
     const [selectedWallet] = useSelectedWallet();
     const address = selectedWallet?.getAddress();
 
@@ -27,4 +31,4 @@ export function useSelectedWalletJettons(queryOptions?: UseSelectedWalletJettons
             enabled: !!address,
         },
     });
-}
+};

@@ -8,11 +8,11 @@
 
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
 import type { UseMutationResult, UseMutationOptions } from '@tanstack/react-query';
 import { disconnectMutationOptions } from '@ton/appkit/queries';
 import type { DisconnectParameters, DisconnectReturnType } from '@ton/appkit/queries';
 
+import { useMutation } from '../../../libs/query';
 import { useAppKit } from '../../../hooks/use-app-kit';
 
 export type UseDisconnectParameters = Omit<
@@ -25,7 +25,7 @@ export type UseDisconnectReturnType = UseMutationResult<DisconnectReturnType, Er
     disconnectAsync: UseMutationResult<DisconnectReturnType, Error, DisconnectParameters>['mutateAsync'];
 };
 
-export function useDisconnect(parameters: UseDisconnectParameters = {}): UseDisconnectReturnType {
+export const useDisconnect = (parameters: UseDisconnectParameters = {}): UseDisconnectReturnType => {
     const appKit = useAppKit();
     const mutationOptions = disconnectMutationOptions(appKit);
     const mutation = useMutation({
@@ -38,4 +38,4 @@ export function useDisconnect(parameters: UseDisconnectParameters = {}): UseDisc
         disconnect: mutation.mutate,
         disconnectAsync: mutation.mutateAsync,
     };
-}
+};

@@ -17,7 +17,7 @@ export type DisconnectReturnType = void;
 /**
  * Disconnect wallet using specific connector
  */
-export async function disconnect(appKit: AppKit, parameters: DisconnectParameters): Promise<DisconnectReturnType> {
+export const disconnect = async (appKit: AppKit, parameters: DisconnectParameters): Promise<DisconnectReturnType> => {
     const { connectorId } = parameters;
     const connector = appKit.connectors.find((c) => c.id === connectorId);
 
@@ -26,4 +26,4 @@ export async function disconnect(appKit: AppKit, parameters: DisconnectParameter
     }
 
     await connector.disconnectWallet();
-}
+};

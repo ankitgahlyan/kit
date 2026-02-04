@@ -20,10 +20,10 @@ export type GetNFTsErrorType = Error;
 export type GetNFTsOptions<selectData = GetNFTsData> = Compute<ExactPartial<GetNFTsParameters>> &
     QueryParameter<GetNFTsQueryFnData, GetNFTsErrorType, selectData, GetNFTsQueryKey>;
 
-export function getNFTsQueryOptions<selectData = GetNFTsData>(
+export const getNFTsQueryOptions = <selectData = GetNFTsData>(
     appKit: AppKit,
     options: GetNFTsOptions<selectData> = {},
-): GetNFTsQueryOptions<selectData> {
+): GetNFTsQueryOptions<selectData> => {
     return {
         ...options.query,
         enabled: Boolean(options.address && (options.query?.enabled ?? true)),
@@ -42,17 +42,17 @@ export function getNFTsQueryOptions<selectData = GetNFTsData>(
         },
         queryKey: getNFTsQueryKey(options),
     };
-}
+};
 
 export type GetNFTsQueryFnData = Compute<NFTsResponse>;
 
 export type GetNFTsData = GetNFTsQueryFnData;
 
-export function getNFTsQueryKey(options: Compute<ExactPartial<GetNFTsParameters>> = {}) {
+export const getNFTsQueryKey = (options: Compute<ExactPartial<GetNFTsParameters>> = {}): GetNFTsQueryKey => {
     return ['nfts', filterQueryOptions(options)] as const;
-}
+};
 
-export type GetNFTsQueryKey = ReturnType<typeof getNFTsQueryKey>;
+export type GetNFTsQueryKey = readonly ['nfts', Compute<ExactPartial<GetNFTsParameters>>];
 
 export type GetNFTsQueryOptions<selectData = GetNFTsData> = QueryOptions<
     GetNFTsQueryFnData,

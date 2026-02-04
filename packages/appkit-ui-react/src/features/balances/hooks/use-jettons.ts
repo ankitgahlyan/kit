@@ -20,11 +20,11 @@ export type UseJettonsReturnType<selectData = GetJettonsData> = UseQueryReturnTy
 /**
  * Hook to get jettons
  */
-export function useJettons<selectData = GetJettonsData>(
+export const useJettons = <selectData = GetJettonsData>(
     parameters: UseJettonsParameters<selectData> = {},
-): UseJettonsReturnType<selectData> {
+): UseJettonsReturnType<selectData> => {
     const appKit = useAppKit();
     const options = getJettonsQueryOptions(appKit, parameters);
 
     return useQuery(options);
-}
+};

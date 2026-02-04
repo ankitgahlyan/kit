@@ -20,10 +20,10 @@ export type GetJettonsErrorType = Error;
 export type GetJettonsOptions<selectData = GetJettonsData> = Compute<ExactPartial<GetJettonsParameters>> &
     QueryParameter<GetJettonsQueryFnData, GetJettonsErrorType, selectData, GetJettonsQueryKey>;
 
-export function getJettonsQueryOptions<selectData = GetJettonsData>(
+export const getJettonsQueryOptions = <selectData = GetJettonsData>(
     appKit: AppKit,
     options: GetJettonsOptions<selectData> = {},
-): GetJettonsQueryOptions<selectData> {
+): GetJettonsQueryOptions<selectData> => {
     return {
         ...options.query,
         enabled: Boolean(options.address && (options.query?.enabled ?? true)),
@@ -42,17 +42,17 @@ export function getJettonsQueryOptions<selectData = GetJettonsData>(
         },
         queryKey: getJettonsQueryKey(options),
     };
-}
+};
 
 export type GetJettonsQueryFnData = Compute<JettonsResponse>;
 
 export type GetJettonsData = GetJettonsQueryFnData;
 
-export function getJettonsQueryKey(options: Compute<ExactPartial<GetJettonsParameters>> = {}) {
+export const getJettonsQueryKey = (options: Compute<ExactPartial<GetJettonsParameters>> = {}): GetJettonsQueryKey => {
     return ['jettons', filterQueryOptions(options)] as const;
-}
+};
 
-export type GetJettonsQueryKey = ReturnType<typeof getJettonsQueryKey>;
+export type GetJettonsQueryKey = readonly ['jettons', Compute<ExactPartial<GetJettonsParameters>>];
 
 export type GetJettonsQueryOptions<selectData = GetJettonsData> = QueryOptions<
     GetJettonsQueryFnData,

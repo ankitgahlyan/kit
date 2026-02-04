@@ -25,10 +25,10 @@ export type SendTransactionOptions<context = unknown> = MutationParameter<
     context
 >;
 
-export function sendTransactionMutationOptions<context = unknown>(
+export const sendTransactionMutationOptions = <context = unknown>(
     appKit: AppKit,
     options: SendTransactionOptions<context> = {},
-): SendTransactionMutationOptions<context> {
+): SendTransactionMutationOptions<context> => {
     return {
         ...options.mutation,
         mutationFn(variables) {
@@ -36,7 +36,7 @@ export function sendTransactionMutationOptions<context = unknown>(
         },
         mutationKey: ['sendTransaction'],
     };
-}
+};
 
 export type SendTransactionMutationOptions<context = unknown> = MutationOptions<
     SendTransactionData,

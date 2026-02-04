@@ -19,7 +19,9 @@ export interface GetJettonsOptions {
     offset?: number;
 }
 
-export async function getJettons(appKit: AppKit, options: GetJettonsOptions): Promise<JettonsResponse> {
+export type GetJettonsReturnType = JettonsResponse;
+
+export const getJettons = async (appKit: AppKit, options: GetJettonsOptions): Promise<GetJettonsReturnType> => {
     const { address, network, limit, offset } = options;
     const addressString = Address.isAddress(address) ? address.toString() : Address.parse(address).toString();
 
@@ -31,4 +33,4 @@ export async function getJettons(appKit: AppKit, options: GetJettonsOptions): Pr
             offset,
         },
     });
-}
+};

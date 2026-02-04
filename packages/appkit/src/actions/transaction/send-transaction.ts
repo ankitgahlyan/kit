@@ -20,10 +20,10 @@ export type SendTransactionErrorType = Error;
 /**
  * Send transaction
  */
-export async function sendTransaction(
+export const sendTransaction = async (
     appKit: AppKit,
     parameters: SendTransactionParameters,
-): Promise<SendTransactionReturnType> {
+): Promise<SendTransactionReturnType> => {
     const wallet = getSelectedWallet(appKit);
 
     if (!wallet) {
@@ -31,4 +31,4 @@ export async function sendTransaction(
     }
 
     return wallet.sendTransaction(parameters);
-}
+};

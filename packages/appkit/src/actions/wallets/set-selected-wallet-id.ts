@@ -17,9 +17,9 @@ export type SetSelectedWalletIdReturnType = void;
 /**
  * Set selected wallet
  */
-export function setSelectedWalletId(
+export const setSelectedWalletId = (
     appKit: AppKit,
     parameters: SetSelectedWalletIdParameters,
-): SetSelectedWalletIdReturnType {
+): SetSelectedWalletIdReturnType => {
     appKit.walletsManager.setSelectedWalletId(parameters.walletId);
-}
+};

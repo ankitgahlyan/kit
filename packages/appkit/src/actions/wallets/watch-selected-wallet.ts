@@ -20,10 +20,10 @@ export type WatchSelectedWalletReturnType = () => void;
 /**
  * Watch selected wallet
  */
-export function watchSelectedWallet(
+export const watchSelectedWallet = (
     appKit: AppKit,
     parameters: WatchSelectedWalletParameters,
-): WatchSelectedWalletReturnType {
+): WatchSelectedWalletReturnType => {
     const { onChange } = parameters;
 
     const unsubscribe = appKit.emitter.on(WALLETS_EVENTS.SELECTION_CHANGED, () => {
@@ -32,4 +32,4 @@ export function watchSelectedWallet(
     });
 
     return unsubscribe;
-}
+};
