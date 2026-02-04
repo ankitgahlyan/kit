@@ -10,6 +10,7 @@ export default {
     // Wallet connection
     wallet: {
         connect: 'Connect',
+        disconnect: 'Disconnect',
         connectWallet: 'Connect Wallet',
         noWalletsFound: 'No wallets found',
     },
