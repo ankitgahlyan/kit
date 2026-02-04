@@ -142,10 +142,6 @@ export const SendTransaction: React.FC = () => {
                 const jettonAmount = Math.floor(inputAmount * Math.pow(10, decimals)).toString();
 
                 // Create jetton transfer transaction
-                /**
-                 *
-                 *
-                 */
                 const jettonTransaction = await currentWallet.createTransferJettonTransaction({
                     recipientAddress: recipient,
                     jettonAddress: selectedToken.data.address,

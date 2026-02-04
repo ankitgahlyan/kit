@@ -698,9 +698,6 @@ importers:
       '@tonconnect/sdk':
         specifier: 'catalog:'
         version: 3.3.1
-      bip39:
-        specifier: ^3.1.0
-        version: 3.1.0
       lru-cache:
         specifier: ^11.2.4
         version: 11.2.4

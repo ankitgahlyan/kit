@@ -139,7 +139,7 @@ export const JettonsList: React.FC<JettonsListProps> = ({
                                                     target.style.display = 'none';
                                                     const parent = target.parentElement;
                                                     if (parent) {
-                                                        parent.innerHTML = '';
+                                                        parent.innerHTML = jettonInfo.symbol?.slice(0, 2) || '';
                                                         parent.className += ' text-xs font-bold text-gray-600';
                                                     }
                                                 }}
