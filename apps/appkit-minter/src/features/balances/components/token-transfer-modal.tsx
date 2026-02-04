@@ -6,11 +6,11 @@
  *
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Jetton } from '@ton/walletkit';
-import { getFormattedJettonInfo, getErrorMessage, parseUnits, formatUnits } from '@ton/appkit';
-import { useSelectedWallet, Transaction } from '@ton/appkit-ui-react';
-import { toast } from 'sonner';
+import { getFormattedJettonInfo, formatUnits } from '@ton/appkit';
+
+import { TokenTransferButton } from './token-transfer-button';
 
 import { Button } from '@/core/components';
 
@@ -33,8 +33,6 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
     const [amount, setAmount] = useState('');
     const [comment, setComment] = useState('');
     const [transferError, setTransferError] = useState<string | null>(null);
-
-    const [wallet] = useSelectedWallet();
 
     const tokenInfo = useMemo(() => {
         if (tokenType === 'TON') {
@@ -63,43 +61,6 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
             address: jettonInfo.address,
         };
     }, [tokenType, tonBalance, jetton]);
-
-    const createTransferTransaction = useCallback(async () => {
-        if (!wallet) return null;
-
-        const amountNum = parseFloat(amount);
-
-        if (isNaN(amountNum) || amountNum <= 0) {
-            throw new Error('Invalid amount');
-        }
-
-        if (!tokenInfo.decimals) {
-            throw new Error('Invalid token decimals');
-        }
-
-        const transferAmount = parseUnits(amount, tokenInfo.decimals).toString();
-
-        if (tokenType === 'TON') {
-            const transaction = await wallet.createTransferTonTransaction({
-                recipientAddress,
-                transferAmount,
-                comment,
-            });
-            return transaction;
-        } else {
-            if (!tokenInfo.address) {
-                throw new Error('Jetton address not found');
-            }
-
-            const transaction = await wallet.createTransferJettonTransaction({
-                jettonAddress: tokenInfo.address,
-                recipientAddress,
-                transferAmount,
-                comment,
-            });
-            return transaction;
-        }
-    }, [wallet, tokenType, tokenInfo, recipientAddress, amount, comment]);
 
     const handleClose = () => {
         setRecipientAddress('');
@@ -201,23 +162,15 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
                     </div>
 
                     <div className="flex mt-6 gap-3">
-                        <Transaction
-                            getTransactionRequest={createTransferTransaction}
-                            onSuccess={() => {
-                                handleClose();
-                                toast.success(`${tokenInfo.symbol} transferred successfully`);
-                            }}
-                            onError={(error) => {
-                                setTransferError(getErrorMessage(error));
-                            }}
-                            disabled={!recipientAddress || !amount}
-                        >
-                            {({ isLoading, onSubmit, disabled, text }) => (
-                                <Button isLoading={isLoading} onClick={onSubmit} disabled={disabled} className="flex-1">
-                                    {text}
-                                </Button>
-                            )}
-                        </Transaction>
+                        <TokenTransferButton
+                            tokenType={tokenType}
+                            jetton={jetton}
+                            recipientAddress={recipientAddress}
+                            amount={amount}
+                            comment={comment}
+                            onError={setTransferError}
+                            onSuccess={handleClose}
+                        />
 
                         <Button variant="secondary" onClick={handleClose} className="flex-1">
                             Cancel
