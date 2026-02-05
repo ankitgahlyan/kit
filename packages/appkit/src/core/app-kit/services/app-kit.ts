@@ -7,7 +7,7 @@
  */
 
 import type { NetworkManager } from '@ton/walletkit';
-import { Network } from '@ton/walletkit';
+import { Network, SwapManager } from '@ton/walletkit';
 
 import type { AppKitConfig } from '../types/config';
 import type { Connector } from '../../../types/connector';
@@ -26,6 +26,7 @@ export class AppKit {
     readonly emitter: AppKitEmitter;
     readonly connectors: Connector[] = [];
     readonly walletsManager: WalletsManager;
+    readonly swapManager: SwapManager;
 
     readonly networkManager: NetworkManager;
     readonly config: AppKitConfig;
@@ -44,6 +45,7 @@ export class AppKit {
 
         this.networkManager = new AppKitNetworkManager({ networks }, this.emitter);
         this.walletsManager = new WalletsManager(this.emitter);
+        this.swapManager = new SwapManager();
     }
 
     /**

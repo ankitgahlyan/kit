@@ -40,7 +40,7 @@ interface TransactionContentProps extends Omit<ComponentProps<'button'>, 'childr
 }
 
 const TransactionContent: FC<TransactionContentProps> = ({ text, children, ...props }) => {
-    const { isLoading, onSubmit, receipt, error, disabled } = useTransactionContext();
+    const { isLoading, onSubmit, receipt, disabled } = useTransactionContext();
     const { t } = useI18n();
 
     const isDisabled = disabled || isLoading;

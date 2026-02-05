@@ -60,3 +60,13 @@ export {
     type GetSelectedWalletNetworkReturnType,
 } from './network/get-selected-wallet-network';
 export { watchNetworks, type WatchNetworksParameters, type WatchNetworksReturnType } from './network/watch-networks';
+
+// Swap
+export { getSwapManager, type GetSwapManagerReturnType } from './swap/get-swap-manager';
+export { getSwapQuote, type GetSwapQuoteOptions, type GetSwapQuoteReturnType } from './swap/get-swap-quote';
+export {
+    buildSwapTransaction,
+    type BuildSwapTransactionOptions,
+    type BuildSwapTransactionReturnType,
+} from './swap/build-swap-transaction';
+export { registerSwapProvider, type RegisterSwapProviderOptions } from './swap/register-swap-provider';

@@ -9,7 +9,6 @@
 import { useState } from 'react';
 import type { FC, ComponentProps } from 'react';
 import clsx from 'clsx';
-import { middleEllipsis } from '@ton/appkit';
 
 import styles from './connect-button.module.css';
 import { Button } from '../../../../components/button';

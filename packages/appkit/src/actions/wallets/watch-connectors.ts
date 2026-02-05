@@ -20,10 +20,7 @@ export type WatchConnectorsReturnType = () => void;
 /**
  * Watch connectors
  */
-export const watchConnectors = (
-    appKit: AppKit,
-    parameters: WatchConnectorsParameters,
-): WatchConnectorsReturnType => {
+export const watchConnectors = (appKit: AppKit, parameters: WatchConnectorsParameters): WatchConnectorsReturnType => {
     const { onChange } = parameters;
 
     const unsubscribe = appKit.emitter.on(CONNECTOR_EVENTS.CONNECTED, () => {
