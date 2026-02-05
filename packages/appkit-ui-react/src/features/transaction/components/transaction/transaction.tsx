@@ -40,7 +40,7 @@ interface TransactionContentProps extends Omit<ComponentProps<'button'>, 'childr
 }
 
 const TransactionContent: FC<TransactionContentProps> = ({ text, children, ...props }) => {
-    const { isLoading, onSubmit, receipt, disabled } = useTransactionContext();
+    const { isLoading, onSubmit, disabled } = useTransactionContext();
     const { t } = useI18n();
 
     const isDisabled = disabled || isLoading;
@@ -56,12 +56,8 @@ const TransactionContent: FC<TransactionContentProps> = ({ text, children, ...pr
             return t('transaction.processing');
         }
 
-        if (receipt) {
-            return t('transaction.success');
-        }
-
         return text ?? t('transaction.sendTransaction');
-    }, [isLoading, receipt, text, t]);
+    }, [isLoading, text, t]);
 
     if (children) {
         return (
@@ -100,7 +96,7 @@ export const Transaction: FC<TransactionProps> = ({
             onSuccess={onSuccess}
             disabled={disabled}
         >
-            <TransactionContent className={className} text={text} disabled={disabled} {...props}>
+            <TransactionContent className={className} text={text} {...props}>
                 {children}
             </TransactionContent>
         </TransactionProvider>

@@ -19,7 +19,6 @@ export default {
     transaction: {
         sendTransaction: 'Send Transaction',
         processing: 'Processing...',
-        success: 'Success',
     },
 
     // Balances

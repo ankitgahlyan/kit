@@ -26,3 +26,13 @@
 .button:active {
   transform: scale(0.98);
 }
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover,
+.button:disabled:active {
+  transform: none;
+}
