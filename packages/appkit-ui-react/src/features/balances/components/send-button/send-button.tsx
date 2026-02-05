@@ -9,7 +9,8 @@
 import { useCallback } from 'react';
 import type { FC } from 'react';
 
-import { useSelectedWallet } from '../../../wallets';
+import { useCreateSendTonTransaction } from '../../hooks/use-create-send-ton-transaction';
+import { useCreateSendJettonTransaction } from '../../hooks/use-create-send-jetton-transaction';
 import { Transaction } from '../../../transaction';
 import type { TransactionProps } from '../../../transaction';
 
@@ -29,40 +30,25 @@ export const SendButton: FC<SendButtonProps> = ({
     comment,
     ...props
 }) => {
-    const [wallet] = useSelectedWallet();
+    const createTonTransaction = useCreateSendTonTransaction();
+    const createJettonTransaction = useCreateSendJettonTransaction();
 
     const createTransferTransaction = useCallback(async () => {
-        if (!wallet) return null;
-
-        const amountNum = parseFloat(amount);
-
-        if (isNaN(amountNum) || amountNum <= 0) {
-            throw new Error('Invalid amount');
-        }
-
         if (tokenType === 'TON') {
-            const transaction = await wallet.createTransferTonTransaction({
+            return createTonTransaction({
                 recipientAddress,
-                transferAmount: amount,
+                amount,
                 comment,
             });
-
-            return transaction;
-        } else {
-            if (!jettonAddress) {
-                throw new Error('Jetton address not found');
-            }
-
-            const transaction = await wallet.createTransferJettonTransaction({
-                jettonAddress,
-                recipientAddress,
-                transferAmount: amount,
-                comment,
-            });
-
-            return transaction;
         }
-    }, [wallet, tokenType, recipientAddress, amount, comment]);
+
+        return createJettonTransaction({
+            jettonAddress,
+            recipientAddress,
+            amount,
+            comment,
+        });
+    }, [tokenType, createTonTransaction, createJettonTransaction, recipientAddress, amount, comment, jettonAddress]);
 
     return (
         <Transaction
