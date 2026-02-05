@@ -12,7 +12,7 @@ import { Address } from '@ton/core';
 
 import type { OmnistonQuoteMetadata, OmnistonSwapProviderConfig, OmnistonProviderOptions } from './types';
 import { SwapProvider } from '../SwapProvider';
-import type { SwapQuoteParams, SwapQuote, SwapParams, SwapFee } from '../types';
+import type { SwapQuoteParams, SwapQuote, SwapParams, SwapFee } from '../../../api/models';
 import { SwapError } from '../errors';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, addressToToken, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';

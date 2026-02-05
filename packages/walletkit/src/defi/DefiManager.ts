@@ -6,7 +6,7 @@
  *
  */
 
-import type { DefiManagerAPI } from './types';
+import type { DefiManagerAPI } from '../api/interfaces';
 import { DefiManagerError } from './errors';
 
 export abstract class DefiManager<T> implements DefiManagerAPI<T> {

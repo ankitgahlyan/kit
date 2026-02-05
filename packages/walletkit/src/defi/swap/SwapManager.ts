@@ -7,7 +7,8 @@
  */
 
 import type { TransactionRequest } from '../../api/models';
-import type { SwapAPI, SwapQuoteParams, SwapQuote, SwapParams, SwapProviderInterface } from './types';
+import type { SwapAPI, SwapProviderInterface } from '../../api/interfaces';
+import type { SwapQuoteParams, SwapQuote, SwapParams } from '../../api/models';
 import { SwapError } from './errors';
 import { globalLogger } from '../../core/Logger';
 import { DefiManager } from '../DefiManager';

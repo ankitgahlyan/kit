@@ -6,8 +6,8 @@
  *
  */
 
-import type { TransactionRequest } from '../../api/models';
-import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderInterface } from './types';
+import type { TransactionRequest, SwapQuoteParams, SwapQuote, SwapParams } from '../../api/models';
+import type { SwapProviderInterface } from '../../api/interfaces';
 
 /**
  * Abstract base class for swap providers

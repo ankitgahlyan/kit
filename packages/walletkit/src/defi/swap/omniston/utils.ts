@@ -11,7 +11,7 @@ import type { Address as OmnistonAddress } from '@ston-fi/omniston-sdk';
 
 import { Network } from '../../../api/models';
 import type { OmnistonQuoteMetadata } from './types';
-import type { SwapToken } from '../types';
+import type { SwapToken } from '../../../api/models';
 
 export const tokenToAddress = (token: SwapToken): string => {
     if (token.type === 'ton') {
