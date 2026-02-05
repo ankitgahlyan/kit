@@ -19,6 +19,8 @@ export { EventRouter } from './core/EventRouter';
 export { RequestProcessor } from './core/RequestProcessor';
 export { Initializer } from './core/Initializer';
 export { JettonsManager } from './core/JettonsManager';
+export { SwapManager, SwapProvider, SwapError } from './defi/swap';
+export type * from './defi/swap/types';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener } from './core/EventEmitter';
 export { ApiClientToncenter } from './core/ApiClientToncenter';
@@ -96,7 +98,7 @@ export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts'
 
 export { isValidAddress } from './utils/address';
 export { validateTransactionMessage } from './validation';
-export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
 export { Signer } from './utils/Signer';
 export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';
