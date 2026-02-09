@@ -9,6 +9,7 @@
 import { Address } from '@ton/core';
 import type { Wallet as TonConnectWallet } from '@tonconnect/sdk';
 import { CHAIN } from '@tonconnect/sdk';
+import type { SignDataPayload as TonConnectSignDataPayload } from '@tonconnect/sdk';
 import type {
     SendTransactionResponse,
     TransactionRequest,
@@ -98,65 +99,15 @@ export class TonConnectWalletAdapter implements WalletInterface {
     }
 
     async signData(payload: SignDataRequest): Promise<SignDataResponse> {
-        const chainId = payload.network
-            ? this.mapNetworkToChain(payload.network)
-            : (this.getNetwork().chainId as CHAIN);
+        const result = await this.tonConnect.signData(this.mapSignDataRequest(payload));
 
-        const { data } = payload;
-
-        if (data.type === 'text') {
-            const result = await this.tonConnect.signData({
-                type: 'text',
-                text: data.value.content,
-                network: chainId,
-                from: payload.from,
-            });
-
-            return {
-                payload,
-                address: result.address,
-                timestamp: result.timestamp,
-                domain: result.domain,
-                signature: result.signature,
-            };
-        }
-
-        if (data.type === 'binary') {
-            const result = await this.tonConnect.signData({
-                type: 'binary',
-                bytes: data.value.content,
-                network: chainId,
-                from: payload.from,
-            });
-
-            return {
-                payload,
-                address: result.address,
-                timestamp: result.timestamp,
-                domain: result.domain,
-                signature: result.signature,
-            };
-        }
-
-        if (data.type === 'cell') {
-            const result = await this.tonConnect.signData({
-                type: 'cell',
-                cell: data.value.content,
-                schema: data.value.schema,
-                network: chainId,
-                from: payload.from,
-            });
-
-            return {
-                payload,
-                address: result.address,
-                timestamp: result.timestamp,
-                domain: result.domain,
-                signature: result.signature,
-            };
-        }
-
-        throw new Error('Unsupported payload type');
+        return {
+            payload,
+            address: result.address,
+            timestamp: result.timestamp,
+            domain: result.domain,
+            signature: result.signature,
+        };
     }
 
     // ==========================================
@@ -172,5 +123,43 @@ export class TonConnectWalletAdapter implements WalletInterface {
             default:
                 return network.chainId as CHAIN;
         }
+    }
+
+    private mapSignDataRequest(request: SignDataRequest): TonConnectSignDataPayload {
+        const chainId = request.network
+            ? this.mapNetworkToChain(request.network)
+            : (this.getNetwork().chainId as CHAIN);
+
+        const { data } = request;
+
+        if (data.type === 'text') {
+            return {
+                type: 'text',
+                text: data.value.content,
+                network: chainId,
+                from: request.from,
+            };
+        }
+
+        if (data.type === 'binary') {
+            return {
+                type: 'binary',
+                bytes: data.value.content,
+                network: chainId,
+                from: request.from,
+            };
+        }
+
+        if (data.type === 'cell') {
+            return {
+                type: 'cell',
+                cell: data.value.content,
+                schema: data.value.schema,
+                network: chainId,
+                from: request.from,
+            };
+        }
+
+        throw new Error('Unsupported payload type');
     }
 }
