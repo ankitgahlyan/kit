@@ -1,6 +1,6 @@
-# AppKit UI React Hooks & Components
+# AppKit UI React Hooks
 
-`@ton/appkit-ui-react` provides a React-friendly interface to AppKit, leveraging TanStack Query for data fetching and providing beautiful, themed UI components.
+`@ton/appkit-ui-react` provides a React-friendly interface to AppKit, leveraging TanStack Query for data fetching.
 
 ## Core Hooks
 
@@ -11,7 +11,7 @@ Returns the global AppKit instance. Useful when you need to call standalone acti
 Returns the current theme (`'light'` or `'dark'`) and a function to switch it.
 
 ### `useI18n`
-Provides access to the internationalization context, allowing you to change language or access translated strings.
+Provides access to the internationalization context.
 
 ## Wallet & Connection
 
@@ -19,7 +19,7 @@ Provides access to the internationalization context, allowing you to change lang
 Hooks to programmatically trigger the connection or disconnection flows.
 
 ### `useConnectors`
-Returns a list of all available wallet connection providers (e.g., TonConnect, Ledger).
+Returns a list of all available wallet connection providers (e.g., TonConnect).
 
 ### `useConnectedWallets`
 A reactive hook that returns an array of all currently connected wallets.
@@ -53,32 +53,20 @@ The general-purpose hook for sending any transaction request.
 ### `useTransferTon` / `useTransferJetton` / `useTransferNft`
 Convenience hooks for specific asset transfers.
 
+## DeFi Hooks
+
 ### `useSwapQuote` / `useBuildSwapTransaction`
 Hooks for integrating DEX swap functionality into your UI.
+
+## Network Hooks
+
+### `useNetworks`
+Returns the list of configured networks (mainnet, testnet, custom).
+
+### `useSelectedWalletNetwork`
+Returns the network associated with the currently selected wallet.
 
 ## Signing Hooks
 
 ### `useSignText` / `useSignBinary` / `useSignCell`
 Hooks for requesting digital signatures from the connected wallet.
-
----
-
-## UI Components
-
-### `ConnectButton`
-The standard, themed button for wallet connection. It shows the wallet's address or name when connected.
-
-### `ChooseConnectorModal` / `ConnectorsList`
-Low-level components to build a custom wallet selection interface.
-
-### `BalanceBadge`
-A compact UI element displaying the TON balance with a currency icon.
-
-### `Transaction`
-A drop-in component that handles the entire transaction flow: building the request, showing the confirmation, and displaying success/error states.
-
-### `SendButton`
-A context-aware button that can be configured for different types of transfers.
-
-### `Button` / `Block` / `Modal`
-The base building blocks of the AppKit design system. Use these to ensure your custom UI matches the AppKit aesthetic.

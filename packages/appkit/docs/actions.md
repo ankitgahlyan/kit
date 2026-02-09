@@ -150,6 +150,13 @@ Converts a quote into a sendable transaction object.
 import { buildSwapTransaction } from '@ton/appkit';
 ```
 
+### `registerSwapProvider`
+Registers a custom swap provider (e.g., a new DEX) with the AppKit instance.
+```typescript
+import { registerSwapProvider } from '@ton/appkit';
+registerSwapProvider(appKit, { provider: myCustomDexProvider });
+```
+
 ## Signing
 
 Actions for requesting a digital signature from the wallet, without sending a transaction to the blockchain.
