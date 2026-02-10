@@ -29,11 +29,7 @@ export const getSeqnoQueryOptions = <selectData = GetSeqnoData>(
             const [, parameters] = context.queryKey as [string, GetSeqnoParameters];
             if (!parameters.address) throw new Error('address is required');
 
-            const seqno = await getSeqno(appKit, {
-                ...(parameters as GetSeqnoParameters),
-                address: parameters.address,
-                network: parameters.network,
-            });
+            const seqno = await getSeqno(appKit, parameters);
             return seqno;
         },
         queryKey: getSeqnoQueryKey(options),

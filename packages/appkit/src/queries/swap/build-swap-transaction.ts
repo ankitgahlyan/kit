@@ -27,11 +27,22 @@ export type BuildSwapTransactionMutationOptions<context = unknown> = MutationPar
 export const buildSwapTransactionMutationOptions = <context = unknown>(
     appKit: AppKit,
     options: BuildSwapTransactionMutationOptions<context> = {},
+    variables?: Partial<BuildSwapTransactionVariables>,
 ): BuildSwapTransactionMutationConfig<context> => {
     return {
         ...options.mutation,
-        mutationFn(variables) {
-            return buildSwapTransaction(appKit, variables);
+        mutationFn(newVariables) {
+            const mergedVariables = {
+                ...variables,
+                ...newVariables,
+            };
+
+            const { quote, userAddress } = mergedVariables;
+            if (!quote || !userAddress) {
+                throw new Error('Required parameters "quote" and "userAddress" are missing');
+            }
+
+            return buildSwapTransaction(appKit, mergedVariables);
         },
         mutationKey: ['buildSwapTransaction'],
     };

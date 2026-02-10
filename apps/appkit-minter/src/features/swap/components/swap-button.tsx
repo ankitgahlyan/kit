@@ -6,24 +6,22 @@
  *
  */
 
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { FC } from 'react';
 import { formatUnits, parseUnits } from '@ton/appkit';
 import {
     Transaction,
     useSwapQuote,
-    useAppKit,
     useSelectedWalletNetwork,
     useSelectedWalletAddress,
+    useBuildSwapTransaction,
 } from '@ton/appkit-ui-react';
 
 export const USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
 
 export const SwapButton: FC = () => {
-    const appKit = useAppKit();
     const network = useSelectedWalletNetwork();
     const address = useSelectedWalletAddress();
-
     const {
         data: quote,
         isError,
@@ -35,20 +33,18 @@ export const SwapButton: FC = () => {
         network,
     });
 
-    const getTransactionRequest = useCallback(async () => {
-        if (!quote) {
-            return null;
+    const { mutateAsync: buildSwapTransaction } = useBuildSwapTransaction();
+
+    const handleBuildSwapTransaction = () => {
+        if (!quote || !address) {
+            return Promise.reject(new Error('Missing quote or address'));
         }
 
-        if (!address) {
-            throw new Error('Wallet not connected');
-        }
-
-        return appKit.swapManager.buildSwapTransaction({
+        return buildSwapTransaction({
             quote,
             userAddress: address,
         });
-    }, [quote, address, appKit]);
+    };
 
     const buttonText = useMemo(() => {
         if (isLoading) {
@@ -64,7 +60,7 @@ export const SwapButton: FC = () => {
 
     return (
         <Transaction
-            getTransactionRequest={getTransactionRequest}
+            getTransactionRequest={handleBuildSwapTransaction}
             disabled={!quote || isLoading || isError}
             text={buttonText}
         />

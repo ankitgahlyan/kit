@@ -30,11 +30,7 @@ export const getBalanceQueryOptions = <selectData = GetBalanceData>(
         queryFn: async (context) => {
             const [, parameters] = context.queryKey as [string, GetBalanceParameters];
             if (!parameters.address) throw new Error('address is required');
-            const balance = await getBalance(appKit, {
-                ...(parameters as GetBalanceParameters),
-                address: parameters.address,
-                network: parameters.network,
-            });
+            const balance = await getBalance(appKit, parameters);
             return balance ?? null;
         },
         queryKey: getBalanceQueryKey(options),

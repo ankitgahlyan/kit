@@ -31,13 +31,7 @@ export const getJettonsQueryOptions = <selectData = GetJettonsData>(
             const [, parameters] = context.queryKey as [string, GetJettonsParameters];
             if (!parameters.address) throw new Error('address is required');
 
-            const jettons = await getJettons(appKit, {
-                ...(parameters as GetJettonsParameters),
-                address: parameters.address,
-                network: parameters.network,
-                limit: parameters.limit,
-                offset: parameters.offset,
-            });
+            const jettons = await getJettons(appKit, parameters);
             return jettons;
         },
         queryKey: getJettonsQueryKey(options),

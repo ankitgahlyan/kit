@@ -31,11 +31,7 @@ export const getNftQueryOptions = <selectData = GetNftData>(
             const [, parameters] = context.queryKey as [string, GetNftParameters];
             if (!parameters.address) throw new Error('address is required');
 
-            const nft = await getNft(appKit, {
-                ...(parameters as GetNftParameters),
-                address: parameters.address,
-                network: parameters.network,
-            });
+            const nft = await getNft(appKit, parameters);
             return nft;
         },
         queryKey: getNftQueryKey(options),

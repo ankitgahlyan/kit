@@ -39,12 +39,7 @@ export const getJettonWalletAddressQueryOptions = <selectData = GetJettonWalletA
             if (!parameters.jettonAddress) throw new Error('jettonAddress is required');
             if (!parameters.ownerAddress) throw new Error('ownerAddress is required');
 
-            const jettonWalletAddress = await getJettonWalletAddress(appKit, {
-                ...(parameters as GetJettonWalletAddressParameters),
-                jettonAddress: parameters.jettonAddress,
-                ownerAddress: parameters.ownerAddress,
-                network: parameters.network,
-            });
+            const jettonWalletAddress = await getJettonWalletAddress(appKit, parameters);
             return jettonWalletAddress;
         },
         queryKey: getJettonWalletAddressQueryKey(options),

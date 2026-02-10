@@ -31,11 +31,7 @@ export const getJettonInfoQueryOptions = <selectData = GetJettonInfoData>(
             const [, parameters] = context.queryKey as [string, GetJettonInfoParameters];
             if (!parameters.address) throw new Error('address is required');
 
-            const jettonInfo = await getJettonInfo(appKit, {
-                ...(parameters as GetJettonInfoParameters),
-                address: parameters.address,
-                network: parameters.network,
-            });
+            const jettonInfo = await getJettonInfo(appKit, parameters);
             return jettonInfo;
         },
         queryKey: getJettonInfoQueryKey(options),

@@ -8,31 +8,25 @@
 
 'use client';
 
-import type { MutateFunction, MutateOptions } from '@tanstack/react-query';
-import { buildSwapTransaction } from '@ton/appkit';
-import type { BuildSwapTransactionData, BuildSwapTransactionVariables } from '@ton/appkit';
-
-import { useMutation } from '../../../libs/query';
-import type { UseMutationParameters, UseMutationReturnType } from '../../../libs/query';
-import { useAppKit } from '../../../hooks/use-app-kit';
-
-export type UseBuildSwapTransactionParameters<context = unknown> = UseMutationParameters<
+import type { UseMutationResult } from '@tanstack/react-query';
+import { buildSwapTransactionMutationOptions } from '@ton/appkit/queries';
+import type {
     BuildSwapTransactionData,
-    Error,
+    BuildSwapTransactionErrorType,
+    BuildSwapTransactionMutationOptions,
+    BuildSwapTransactionVariables,
+} from '@ton/appkit';
+
+import { useAppKit } from '../../../hooks/use-app-kit';
+import { useMutation } from '../../../libs/query';
+
+export type UseBuildSwapTransactionParameters<context = unknown> = BuildSwapTransactionMutationOptions<context>;
+
+export type UseBuildSwapTransactionReturnType<context = unknown> = UseMutationResult<
+    BuildSwapTransactionData,
+    BuildSwapTransactionErrorType,
     BuildSwapTransactionVariables,
     context
->;
-
-export type UseBuildSwapTransactionReturnType<context = unknown> = UseMutationReturnType<
-    BuildSwapTransactionData,
-    Error,
-    BuildSwapTransactionVariables,
-    context,
-    (
-        variables: BuildSwapTransactionVariables,
-        options?: MutateOptions<BuildSwapTransactionData, Error, BuildSwapTransactionVariables, context>,
-    ) => void,
-    MutateFunction<BuildSwapTransactionData, Error, BuildSwapTransactionVariables, context>
 >;
 
 export const useBuildSwapTransaction = <context = unknown>(
@@ -40,8 +34,5 @@ export const useBuildSwapTransaction = <context = unknown>(
 ): UseBuildSwapTransactionReturnType<context> => {
     const appKit = useAppKit();
 
-    return useMutation({
-        mutationFn: (variables) => buildSwapTransaction(appKit, variables),
-        ...parameters,
-    });
+    return useMutation(buildSwapTransactionMutationOptions(appKit, parameters));
 };

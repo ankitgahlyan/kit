@@ -34,12 +34,7 @@ export const getJettonBalanceQueryOptions = <selectData = GetJettonBalanceData>(
             if (!parameters.jettonAddress) throw new Error('jettonAddress is required');
             if (!parameters.ownerAddress) throw new Error('ownerAddress is required');
 
-            const balance = await getJettonBalance(appKit, {
-                ...(parameters as GetJettonBalanceParameters),
-                jettonAddress: parameters.jettonAddress,
-                ownerAddress: parameters.ownerAddress,
-                network: parameters.network,
-            });
+            const balance = await getJettonBalance(appKit, parameters);
             return balance;
         },
         queryKey: getJettonBalanceQueryKey(options),

@@ -34,13 +34,7 @@ export const getSwapQuoteQueryOptions = <selectData = GetSwapQuoteData>(
                 throw new Error('amountFrom, fromToken, and toToken are required');
             }
 
-            return getSwapQuote(appKit, {
-                ...(parameters as GetSwapQuoteParameters),
-                amountFrom: parameters.amountFrom,
-                fromToken: parameters.fromToken,
-                toToken: parameters.toToken,
-                amountTo: parameters.amountTo,
-            });
+            return getSwapQuote(appKit, parameters);
         },
         queryKey: getSwapQuoteQueryKey(options),
         // refetchInterval: (query) => {
