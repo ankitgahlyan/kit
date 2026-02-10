@@ -23,6 +23,13 @@ export {
 // NFT
 export { getNFTsQueryOptions, type GetNFTsQueryConfig, type GetNFTsData, type GetNFTsErrorType } from './nft/get-nfts';
 export {
+    getNftQueryOptions,
+    type GetNftQueryConfig,
+    type GetNftData,
+    type GetNftErrorType,
+    type GetNftQueryOptions,
+} from './nft/get-nft';
+export {
     transferNftMutationOptions,
     type TransferNftData,
     type TransferNftErrorType,

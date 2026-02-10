@@ -23,6 +23,7 @@ export { getJettonInfo, type GetJettonInfoOptions, type GetJettonInfoReturnType 
 
 // NFTs
 export { getNfts, type GetNftsOptions, type GetNftsReturnType } from './nft/get-nfts';
+export { getNft, type GetNftOptions, type GetNftReturnType } from './nft/get-nft';
 export { transferNft, type TransferNftParameters, type TransferNftReturnType } from './nft/transfer-nft';
 
 // Transactions
