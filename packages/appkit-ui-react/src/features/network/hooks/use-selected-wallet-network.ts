@@ -7,14 +7,11 @@
  */
 
 import { useMemo } from 'react';
+import type { Network } from '@ton/appkit';
 
 import { useSelectedWallet } from '../../wallets/hooks/use-selected-wallet';
 
-export type UseSelectedWalletNetworkReturnType = ReturnType<typeof useSelectedWallet>[0] extends infer W
-    ? W extends { getNetwork: () => infer N }
-        ? N
-        : null
-    : null;
+export type UseSelectedWalletNetworkReturnType = Network | undefined;
 
 /**
  * Hook to get the network of the currently selected wallet
@@ -22,7 +19,5 @@ export type UseSelectedWalletNetworkReturnType = ReturnType<typeof useSelectedWa
 export const useSelectedWalletNetwork = (): UseSelectedWalletNetworkReturnType => {
     const [wallet] = useSelectedWallet();
 
-    return useMemo(() => {
-        return wallet?.getNetwork() ?? null;
-    }, [wallet]);
+    return useMemo(() => wallet?.getNetwork(), [wallet]);
 };

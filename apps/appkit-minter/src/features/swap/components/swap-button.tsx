@@ -9,13 +9,20 @@
 import { useCallback, useMemo } from 'react';
 import type { FC } from 'react';
 import { formatUnits, parseUnits } from '@ton/appkit';
-import { Transaction, useSwapQuote, useAppKit, useSelectedWallet } from '@ton/appkit-ui-react';
+import {
+    Transaction,
+    useSwapQuote,
+    useAppKit,
+    useSelectedWalletNetwork,
+    useSelectedWalletAddress,
+} from '@ton/appkit-ui-react';
 
 export const USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
 
 export const SwapButton: FC = () => {
     const appKit = useAppKit();
-    const [wallet] = useSelectedWallet();
+    const network = useSelectedWalletNetwork();
+    const address = useSelectedWalletAddress();
 
     const {
         data: quote,
@@ -25,7 +32,7 @@ export const SwapButton: FC = () => {
         amountFrom: parseUnits('1', 9).toString(),
         fromToken: 'TON',
         toToken: USDT_ADDRESS,
-        network: wallet?.getNetwork(),
+        network,
     });
 
     const getTransactionRequest = useCallback(async () => {
@@ -33,16 +40,15 @@ export const SwapButton: FC = () => {
             return null;
         }
 
-        const userAddress = wallet?.getAddress();
-        if (!userAddress) {
+        if (!address) {
             throw new Error('Wallet not connected');
         }
 
         return appKit.swapManager.buildSwapTransaction({
             quote,
-            userAddress,
+            userAddress: address,
         });
-    }, [quote, wallet, appKit]);
+    }, [quote, address, appKit]);
 
     const buttonText = useMemo(() => {
         if (isLoading) {
