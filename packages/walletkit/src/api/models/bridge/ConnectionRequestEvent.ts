@@ -21,10 +21,6 @@ export interface ConnectionRequestEvent extends BridgeEvent {
      * Preview information for UI display
      */
     preview: ConnectionRequestEventPreview;
-    /**
-     * Raw TonConnect return strategy string.
-     */
-    returnStrategy?: string;
 }
 
 /**

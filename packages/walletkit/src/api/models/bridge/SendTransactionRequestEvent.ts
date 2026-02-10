@@ -22,10 +22,6 @@ export interface SendTransactionRequestEvent extends BridgeEvent {
      * Raw transaction request data
      */
     request: TransactionRequest;
-    /**
-     * Raw TonConnect return strategy string.
-     */
-    returnStrategy?: string;
 }
 
 /**
