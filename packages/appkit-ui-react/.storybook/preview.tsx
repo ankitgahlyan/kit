@@ -20,6 +20,7 @@ const withI18n: Decorator = (Story) => (
 );
 
 const preview: Preview = {
+    tags: ['autodocs'],
     parameters: {
         actions: { argTypesRegex: '^on[A-Z].*' },
         controls: {
