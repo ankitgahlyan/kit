@@ -88,13 +88,6 @@ export {
     type DisconnectOptions,
     type DisconnectVariables,
 } from './wallets/disconnect';
-export {
-    getSeqnoByAddressQueryOptions,
-    type GetSeqnoByAddressQueryConfig,
-    type GetSeqnoByAddressData,
-    type GetSeqnoErrorType,
-    type GetSeqnoByAddressQueryOptions,
-} from './wallet/get-seqno-by-address';
 
 // Transaction
 export {
