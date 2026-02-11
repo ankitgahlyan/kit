@@ -23,4 +23,15 @@ export default defineConfig([
         platform: 'node',
         external: [/^@modelcontextprotocol/, /^zod/],
     },
+    {
+        input: 'src/cli.ts',
+        output: {
+            dir: 'dist',
+            format: 'esm',
+            entryFileNames: '[name].js',
+            banner: '#!/usr/bin/env node',
+        },
+        platform: 'node',
+        external: [/^@modelcontextprotocol/, /^zod/],
+    },
 ]);

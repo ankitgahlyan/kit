@@ -7,6 +7,9 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "ton-mcp": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": {
@@ -28,6 +31,8 @@
     "build:clean": "rimraf dist",
     "build:types": "tsc -p tsconfig.json --emitDeclarationOnly",
     "dev": "rolldown -c --watch",
+    "dev:cli": "node --import tsx/esm src/cli.ts",
+    "dev:cli:http": "node --import tsx/esm src/cli.ts --http",
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --max-warnings 0 --fix",
     "test": "vitest run",
