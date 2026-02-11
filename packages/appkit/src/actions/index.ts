@@ -7,16 +7,19 @@
  */
 
 // Balances
-export { getBalance, type GetBalanceOptions } from './balances/get-balance';
+// Balances
 export {
-    getBalanceOfSelectedWallet,
-    type GetBalanceOfSelectedWalletOptions,
-} from './balances/get-balance-of-selected-wallet';
-export { getJettons, type GetJettonsOptions } from './balances/get-jettons';
+    getBalanceByAddress,
+    type GetBalanceByAddressOptions,
+    type GetBalanceByAddressReturnType,
+} from './balances/get-balance-by-address';
+export { getBalance, type GetBalanceOptions, type GetBalanceReturnType } from './balances/get-balance';
 export {
-    getJettonsOfSelectedWallet,
-    type GetJettonsOfSelectedWalletOptions,
-} from './balances/get-jettons-of-selected-wallet';
+    getJettonsByAddress,
+    type GetJettonsByAddressOptions,
+    type GetJettonsByAddressReturnType,
+} from './balances/get-jettons-by-address';
+export { getJettons, type GetJettonsOptions, type GetJettonsReturnType } from './balances/get-jettons';
 
 // Jettons
 export { getJettonInfo, type GetJettonInfoOptions, type GetJettonInfoReturnType } from './jettons/get-jetton-info';
@@ -32,6 +35,11 @@ export {
 } from './jettons/get-jetton-balance';
 
 // NFTs
+export {
+    getNftsByAddress,
+    type GetNftsByAddressOptions,
+    type GetNftsByAddressReturnType,
+} from './nft/get-nfts-by-address';
 export { getNfts, type GetNftsOptions, type GetNftsReturnType } from './nft/get-nfts';
 export { getNft, type GetNftOptions, type GetNftReturnType } from './nft/get-nft';
 export { transferNft, type TransferNftParameters, type TransferNftReturnType } from './nft/transfer-nft';
@@ -70,7 +78,6 @@ export { disconnect, type DisconnectReturnType, type DisconnectParameters } from
 export { getConnectors, type GetConnectorsReturnType } from './wallets/get-connectors';
 export { getConnectedWallets, type GetConnectedWalletsReturnType } from './wallets/get-connected-wallets';
 export { getSelectedWallet, type GetSelectedWalletReturnType } from './wallets/get-selected-wallet';
-export { getSeqno, type GetSeqnoOptions, type GetSeqnoReturnType } from './wallet/get-seqno';
 export {
     setSelectedWalletId,
     type SetSelectedWalletIdParameters,
@@ -95,21 +102,18 @@ export { addConnector, type AddConnectorParameters, type AddConnectorReturnType 
 
 // Network
 export { getNetworks, type GetNetworksReturnType } from './network/get-networks';
-export {
-    getSelectedWalletNetwork,
-    type GetSelectedWalletNetworkReturnType,
-} from './network/get-selected-wallet-network';
+export { getNetwork, type GetNetworkReturnType } from './network/get-network';
 export { watchNetworks, type WatchNetworksParameters, type WatchNetworksReturnType } from './network/watch-networks';
 
 // Swap
-export { getSwapManager, type GetSwapManagerReturnType } from './swap/get-swap-manager';
-export { getSwapQuote, type GetSwapQuoteOptions, type GetSwapQuoteReturnType } from './swap/get-swap-quote';
+export { getSwapManager, type GetSwapManagerReturnType } from './defi/get-swap-manager';
+export { getSwapQuote, type GetSwapQuoteOptions, type GetSwapQuoteReturnType } from './defi/get-swap-quote';
 export {
     buildSwapTransaction,
     type BuildSwapTransactionOptions,
     type BuildSwapTransactionReturnType,
-} from './swap/build-swap-transaction';
-export { registerSwapProvider, type RegisterSwapProviderOptions } from './swap/register-swap-provider';
+} from './defi/build-swap-transaction';
+export { registerProvider, type RegisterProviderOptions } from './defi/register-provider';
 
 // Signing
 export { signText, type SignTextParameters, type SignTextReturnType } from './signing/sign-text';

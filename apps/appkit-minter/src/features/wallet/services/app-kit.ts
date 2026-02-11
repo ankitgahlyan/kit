@@ -8,8 +8,8 @@
 
 import { AppKit, Network } from '@ton/appkit';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
-import { registerSwapProvider } from '@ton/appkit';
 import { TonConnectConnector } from '@ton/appkit/tonconnect';
+import { registerProvider } from '@ton/appkit';
 
 import { ENV_TON_API_KEY_MAINNET, ENV_TON_API_KEY_TESTNET } from '@/core/configs/env';
 
@@ -37,4 +37,4 @@ export const appKit = new AppKit({
     ],
 });
 
-registerSwapProvider(appKit, new OmnistonSwapProvider());
+registerProvider(appKit, new OmnistonSwapProvider());

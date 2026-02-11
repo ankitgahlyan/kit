@@ -11,11 +11,11 @@ import type { MutateOptions, MutationOptions } from '@tanstack/query-core';
 import type { AppKit } from '../../core/app-kit';
 import type { MutationParameter } from '../../types/query';
 import type { Compute } from '../../types/utils';
-import { buildSwapTransaction } from '../../actions/swap/build-swap-transaction';
+import { buildSwapTransaction } from '../../actions/defi/build-swap-transaction';
 import type {
     BuildSwapTransactionOptions,
     BuildSwapTransactionReturnType,
-} from '../../actions/swap/build-swap-transaction';
+} from '../../actions/defi/build-swap-transaction';
 
 export type BuildSwapTransactionMutationOptions<context = unknown> = MutationParameter<
     BuildSwapTransactionData,
@@ -27,22 +27,16 @@ export type BuildSwapTransactionMutationOptions<context = unknown> = MutationPar
 export const buildSwapTransactionMutationOptions = <context = unknown>(
     appKit: AppKit,
     options: BuildSwapTransactionMutationOptions<context> = {},
-    variables?: Partial<BuildSwapTransactionVariables>,
 ): BuildSwapTransactionMutationConfig<context> => {
     return {
         ...options.mutation,
-        mutationFn(newVariables) {
-            const mergedVariables = {
-                ...variables,
-                ...newVariables,
-            };
-
-            const { quote, userAddress } = mergedVariables;
+        mutationFn(variables) {
+            const { quote, userAddress } = variables;
             if (!quote || !userAddress) {
                 throw new Error('Required parameters "quote" and "userAddress" are missing');
             }
 
-            return buildSwapTransaction(appKit, mergedVariables);
+            return buildSwapTransaction(appKit, variables);
         },
         mutationKey: ['buildSwapTransaction'],
     };
