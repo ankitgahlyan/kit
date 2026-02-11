@@ -20,7 +20,7 @@ import {
     createMcpTransferTools,
     createMcpSwapTools,
     createMcpPendingTools,
-} from './tools/mcp-tools.js';
+} from './tools/index.js';
 
 const SERVER_NAME = 'ton-mcp';
 const SERVER_VERSION = '0.1.0';
