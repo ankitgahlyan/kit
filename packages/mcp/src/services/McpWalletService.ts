@@ -41,6 +41,28 @@ export interface JettonInfoResult {
 }
 
 /**
+ * NFT information
+ */
+export interface NftInfoResult {
+    address: string;
+    name?: string;
+    description?: string;
+    image?: string;
+    collection?: {
+        address: string;
+        name?: string;
+    };
+    attributes?: Array<{
+        trait_type?: string;
+        value?: string;
+    }>;
+    ownerAddress?: string;
+    isOnSale?: boolean;
+    isSoulbound?: boolean;
+    saleContractAddress?: string;
+}
+
+/**
  * Transaction info (from events API)
  */
 export interface TransactionInfo {
@@ -456,6 +478,91 @@ export class McpWalletService {
                 validUntil: tx.validUntil,
             },
         };
+    }
+
+    /**
+     * Get all NFTs
+     */
+    async getNfts(limit: number = 20, offset: number = 0): Promise<NftInfoResult[]> {
+        const nftsResponse = await this.wallet.getNfts({ pagination: { limit, offset } });
+
+        return nftsResponse.nfts.map((nft) => ({
+            address: nft.address,
+            name: nft.info?.name,
+            description: nft.info?.description,
+            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.url,
+            collection: nft.collection
+                ? {
+                      address: nft.collection.address,
+                      name: nft.collection.name,
+                  }
+                : undefined,
+            attributes: nft.attributes?.map((attr) => ({
+                trait_type: attr.traitType,
+                value: attr.value,
+            })),
+            ownerAddress: nft.ownerAddress,
+            isOnSale: nft.isOnSale,
+            isSoulbound: nft.isSoulbound,
+            saleContractAddress: nft.saleContractAddress,
+        }));
+    }
+
+    /**
+     * Get a specific NFT by address
+     */
+    async getNft(nftAddress: string): Promise<NftInfoResult | null> {
+        const nft = await this.wallet.getNft(nftAddress);
+
+        if (!nft) {
+            return null;
+        }
+
+        return {
+            address: nft.address,
+            name: nft.info?.name,
+            description: nft.info?.description,
+            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.url,
+            collection: nft.collection
+                ? {
+                      address: nft.collection.address,
+                      name: nft.collection.name,
+                  }
+                : undefined,
+            attributes: nft.attributes?.map((attr) => ({
+                trait_type: attr.traitType,
+                value: attr.value,
+            })),
+            ownerAddress: nft.ownerAddress,
+            isOnSale: nft.isOnSale,
+            isSoulbound: nft.isSoulbound,
+            saleContractAddress: nft.saleContractAddress,
+        };
+    }
+
+    /**
+     * Send NFT
+     */
+    async sendNft(nftAddress: string, toAddress: string, comment?: string): Promise<TransferResult> {
+        try {
+            const tx = await this.wallet.createTransferNftTransaction({
+                nftAddress,
+                recipientAddress: toAddress,
+                comment,
+            });
+
+            await this.wallet.sendTransaction(tx);
+
+            return {
+                success: true,
+                message: `Successfully sent NFT ${nftAddress} to ${toAddress}`,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
     }
 
     /**

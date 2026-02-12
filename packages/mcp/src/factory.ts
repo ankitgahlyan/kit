@@ -16,7 +16,7 @@ import type { WalletAdapter } from '@ton/walletkit';
 import type { IContactResolver } from './types/contacts.js';
 import type { NetworkConfig } from './services/McpWalletService.js';
 import { McpWalletService } from './services/McpWalletService.js';
-import { createMcpBalanceTools, createMcpTransferTools, createMcpSwapTools } from './tools/index.js';
+import { createMcpBalanceTools, createMcpTransferTools, createMcpSwapTools, createMcpNftTools } from './tools/index.js';
 import { createMcpKnownJettonsTools } from './tools/known-jettons-tools.js';
 
 const SERVER_NAME = 'ton-mcp';
@@ -89,6 +89,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
     const transferTools = createMcpTransferTools(walletService);
     const swapTools = createMcpSwapTools(walletService);
     const knownJettonsTools = createMcpKnownJettonsTools();
+    const nftTools = createMcpNftTools(walletService);
 
     // Helper to register tools with type assertion (Zod version mismatch workaround)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,6 +113,11 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
 
     // Register known jettons tools
     registerTool('get_known_jettons', knownJettonsTools.get_known_jettons);
+
+    // Register NFT tools
+    registerTool('get_nfts', nftTools.get_nfts);
+    registerTool('get_nft', nftTools.get_nft);
+    registerTool('send_nft', nftTools.send_nft);
 
     return server;
 }
