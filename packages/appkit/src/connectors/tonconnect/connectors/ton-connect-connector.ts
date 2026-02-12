@@ -6,32 +6,42 @@
  *
  */
 
-import type { TonConnectUI } from '@tonconnect/ui';
+import { TonConnectUI } from '@tonconnect/ui';
+import type { TonConnectUiCreateOptions } from '@tonconnect/ui';
 
 import { TonConnectWalletAdapter } from '../adapters/ton-connect-wallet-adapter';
 import { CONNECTOR_EVENTS } from '../../../core/app-kit';
 import type { Connector, ConnectorMetadata } from '../../../types/connector';
 import type { WalletInterface } from '../../../types/wallet';
 import type { AppKitEmitter } from '../../../core/app-kit';
+import { TONCONNECT_DEFAULT_CONNECTOR_ID } from '../constants/id';
 
 export interface TonConnectConnectorConfig {
-    tonConnect: TonConnectUI;
     id?: string;
     metadata?: ConnectorMetadata;
+    tonConnectOptions?: TonConnectUiCreateOptions;
+    tonConnectUI?: TonConnectUI;
 }
 
 export class TonConnectConnector implements Connector {
     readonly id: string;
     readonly type = 'tonconnect';
     readonly metadata: ConnectorMetadata;
+    readonly tonConnectUI: TonConnectUI;
 
-    private tonConnect: TonConnectUI;
     private emitter: AppKitEmitter | null = null;
     private unsubscribeTonConnect: (() => void) | null = null;
 
     constructor(config: TonConnectConnectorConfig) {
-        this.id = config.id ?? 'tonconnect-default';
-        this.tonConnect = config.tonConnect;
+        if (config.tonConnectOptions && config.tonConnectUI) {
+            // eslint-disable-next-line no-console
+            console.warn(
+                'TonConnectConnector: both tonConnectOptions and tonConnectUI are provided, using tonConnectUI',
+            );
+        }
+
+        this.id = config.id ?? TONCONNECT_DEFAULT_CONNECTOR_ID;
+        this.tonConnectUI = config?.tonConnectUI ?? new TonConnectUI(config.tonConnectOptions);
         this.metadata = {
             name: 'TonConnect',
             iconUrl: 'https://avatars.githubusercontent.com/u/113980577',
@@ -43,7 +53,7 @@ export class TonConnectConnector implements Connector {
         this.emitter = emitter;
 
         // Subscribe to TonConnect status changes
-        this.unsubscribeTonConnect = this.tonConnect.onStatusChange((wallet) => {
+        this.unsubscribeTonConnect = this.tonConnectUI.onStatusChange((wallet) => {
             const wallets = this.getConnectedWallets();
 
             if (wallet) {
@@ -54,7 +64,7 @@ export class TonConnectConnector implements Connector {
         });
 
         // Restore existing connection
-        await this.tonConnect.connector.restoreConnection();
+        await this.tonConnectUI.connector.restoreConnection();
     }
 
     destroy(): void {
@@ -64,21 +74,21 @@ export class TonConnectConnector implements Connector {
     }
 
     async connectWallet(): Promise<void> {
-        await this.tonConnect.openModal();
+        await this.tonConnectUI.openModal();
     }
 
     async disconnectWallet(): Promise<void> {
-        await this.tonConnect.disconnect();
+        await this.tonConnectUI.disconnect();
     }
 
     getConnectedWallets(): WalletInterface[] {
-        if (this.tonConnect.connected && this.tonConnect.wallet) {
-            const wallet = this.tonConnect.wallet;
+        if (this.tonConnectUI.connected && this.tonConnectUI.wallet) {
+            const wallet = this.tonConnectUI.wallet;
 
             const walletAdapter = new TonConnectWalletAdapter({
                 connectorId: this.id,
                 tonConnectWallet: wallet,
-                tonConnect: this.tonConnect,
+                tonConnectUI: this.tonConnectUI,
             });
 
             return [walletAdapter];

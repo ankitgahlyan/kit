@@ -6,4 +6,4 @@
  *
  */
 
-export { WalletConnect } from './components/wallet-connect';
+export const TONCONNECT_DEFAULT_CONNECTOR_ID = 'tonconnect';

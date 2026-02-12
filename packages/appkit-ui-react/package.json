@@ -26,6 +26,12 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.js"
     },
+    "./tonconnect": {
+      "types": "./dist/tonconnect/tonconnect-bridge.d.ts",
+      "require": "./dist/tonconnect/tonconnect-bridge.js",
+      "import": "./dist/tonconnect/tonconnect-bridge.mjs",
+      "default": "./dist/tonconnect/tonconnect-bridge.js"
+    },
     "./styles.css": "./dist/styles/index.css"
   },
   "dependencies": {
@@ -42,6 +48,7 @@
     "@storybook/react-vite": "10.2.8",
     "@storybook/test": "^8.6.15",
     "@tanstack/react-query": "catalog:",
+    "@tonconnect/ui-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "react": "catalog:",
@@ -54,8 +61,14 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": ">=5.0.0",
+    "@tonconnect/ui-react": ">=2.4.1",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tonconnect/ui-react": {
+        "optional": true
+    }
   },
   "sideEffects": [
     "*.css"

@@ -8,7 +8,6 @@
 
 import { AppKit } from '@ton/appkit';
 import { TonConnectConnector } from '@ton/appkit/tonconnect';
-import { TonConnectUI } from '@tonconnect/ui';
 import {
     watchConnectedWallets,
     watchSelectedWallet,
@@ -23,16 +22,14 @@ export const setupAppKitExample = () => {
         networks: {
             '-239': {}, // Mainnet
         },
+        connectors: [
+            new TonConnectConnector({
+                tonConnectOptions: {
+                    manifestUrl: 'https://my-app.com/tonconnect-manifest.json',
+                },
+            }),
+        ],
     });
-
-    // Create TonConnectUI instance
-    // Note: In a browser environment
-    const tonConnect = new TonConnectUI({
-        manifestUrl: 'https://my-app.com/tonconnect-manifest.json',
-    });
-
-    // Add TonConnect connector
-    appKit.addConnector(new TonConnectConnector({ tonConnect }));
 
     return appKit;
 };
@@ -60,7 +57,4 @@ export const walletConnectionExample = (appKit: AppKit) => {
     if (wallets.length > 0) {
         setSelectedWalletId(appKit, { walletId: wallets[0].getWalletId() });
     }
-
-    // Disconnect
-    // appKit.disconnect();
 };
