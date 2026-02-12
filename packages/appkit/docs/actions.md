@@ -429,39 +429,6 @@ const transactionResponse = await sendTransaction(appKit, transactionRequest);
 console.log('Swap Transaction:', transactionResponse);
 ```
 
-## Transactions
-
-### `sendTransaction`
-
-Send a generic transaction request.
-
-```ts
-const result = await sendTransaction(appKit, {
-    messages: [
-        {
-            address: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-            amount: '100000000', // 0.1 TON
-        },
-    ],
-});
-
-console.log('Transaction Result:', result);
-```
-
-### `transferTon`
-
-Send a TON transfer transaction.
-
-```ts
-const result = await transferTon(appKit, {
-    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-    amount: '100000000', // 0.1 TON
-    comment: 'Hello from AppKit!',
-});
-
-console.log('Transfer Result:', result);
-```
-
 ### `createTransferTonTransaction`
 
 Create a TON transfer transaction request without sending it.
@@ -474,4 +441,76 @@ const tx = await createTransferTonTransaction(appKit, {
 });
 
 console.log('Transaction Request:', tx);
+```
+
+## Wallets
+
+### `getConnectedWallets`
+
+Get all connected wallets.
+
+```ts
+const wallets = getConnectedWallets(appKit);
+
+console.log('Connected wallets:', wallets.length);
+wallets.forEach((wallet) => {
+    console.log(`- ${wallet.getWalletId()}: ${wallet.getAddress()}`);
+});
+```
+
+### `getSelectedWallet`
+
+Get the currently selected wallet.
+
+```ts
+const wallet = getSelectedWallet(appKit);
+
+if (wallet) {
+    console.log('Selected wallet:', wallet.getWalletId());
+    console.log('Address:', wallet.getAddress());
+} else {
+    console.log('No wallet selected');
+}
+```
+
+### `setSelectedWalletId`
+
+Set the currently selected wallet by its ID.
+
+```ts
+setSelectedWalletId(appKit, {
+    walletId: 'my-wallet-id',
+});
+```
+
+### `watchConnectedWallets`
+
+Watch for changes in the list of connected wallets.
+
+```ts
+const unsubscribe = watchConnectedWallets(appKit, {
+    onChange: (wallets) => {
+        console.log('Connected wallets updated:', wallets.length);
+    },
+});
+
+// Later: unsubscribe();
+```
+
+### `watchSelectedWallet`
+
+Watch for changes in the selected wallet.
+
+```ts
+const unsubscribe = watchSelectedWallet(appKit, {
+    onChange: (wallet) => {
+        if (wallet) {
+            console.log('Selected wallet changed:', wallet.getWalletId());
+        } else {
+            console.log('Wallet deselected');
+        }
+    },
+});
+
+// Later: unsubscribe();
 ```

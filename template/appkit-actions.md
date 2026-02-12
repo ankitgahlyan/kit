@@ -208,22 +208,40 @@ Build (assemble) a swap transaction based on a quote. After the transaction is b
 
 %%demo/examples/src/appkit/actions/swap#BUILD_SWAP_TRANSACTION%%
 
-## Transactions
-
-### `sendTransaction`
-
-Send a generic transaction request.
-
-%%demo/examples/src/appkit/actions/transaction#SEND_TRANSACTION%%
-
-### `transferTon`
-
-Send a TON transfer transaction.
-
-%%demo/examples/src/appkit/actions/transaction#TRANSFER_TON%%
-
 ### `createTransferTonTransaction`
 
 Create a TON transfer transaction request without sending it.
 
 %%demo/examples/src/appkit/actions/transaction#CREATE_TRANSFER_TON_TRANSACTION%%
+
+## Wallets
+
+### `getConnectedWallets`
+
+Get all connected wallets.
+
+%%demo/examples/src/appkit/actions/wallets#GET_CONNECTED_WALLETS%%
+
+### `getSelectedWallet`
+
+Get the currently selected wallet.
+
+%%demo/examples/src/appkit/actions/wallets#GET_SELECTED_WALLET%%
+
+### `setSelectedWalletId`
+
+Set the currently selected wallet by its ID.
+
+%%demo/examples/src/appkit/actions/wallets#SET_SELECTED_WALLET_ID%%
+
+### `watchConnectedWallets`
+
+Watch for changes in the list of connected wallets.
+
+%%demo/examples/src/appkit/actions/wallets#WATCH_CONNECTED_WALLETS%%
+
+### `watchSelectedWallet`
+
+Watch for changes in the selected wallet.
+
+%%demo/examples/src/appkit/actions/wallets#WATCH_SELECTED_WALLET%%
