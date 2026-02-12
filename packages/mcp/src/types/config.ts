@@ -10,25 +10,27 @@
  * Configuration types for createTonWalletMCP factory
  */
 
-import type { IStorageAdapter } from './storage.js';
-import type { ISignerAdapter } from './signer.js';
+import type { Wallet } from '@ton/walletkit';
+
 import type { IContactResolver } from './contacts.js';
+
+/**
+ * Network-specific configuration
+ */
+export interface NetworkConfig {
+    /** TonCenter API key for this network */
+    apiKey?: string;
+}
 
 /**
  * Configuration for createTonWalletMCP factory
  */
 export interface TonMcpConfig {
     /**
-     * Storage adapter for wallet metadata and pending transactions.
+     * Wallet instance to use for operations.
      * Required.
      */
-    storage: IStorageAdapter;
-
-    /**
-     * Signer adapter for secure key management and signing.
-     * Required.
-     */
-    signer: ISignerAdapter;
+    wallet: Wallet;
 
     /**
      * Optional contact resolver for name-to-address resolution.
@@ -36,22 +38,10 @@ export interface TonMcpConfig {
     contacts?: IContactResolver;
 
     /**
-     * Default network for new wallets.
-     * @default 'mainnet'
-     */
-    network?: 'mainnet' | 'testnet';
-
-    /**
-     * If true, transactions require explicit confirmation via confirm_transaction tool.
-     * @default false
-     */
-    requireConfirmation?: boolean;
-
-    /**
      * Network-specific configuration (API keys).
      */
     networks?: {
-        mainnet?: { apiKey?: string };
-        testnet?: { apiKey?: string };
+        mainnet?: NetworkConfig;
+        testnet?: NetworkConfig;
     };
 }

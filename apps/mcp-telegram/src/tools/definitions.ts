@@ -24,14 +24,13 @@ import type { ProfileService } from '../services/ProfileService.js';
 export interface ToolContext {
     walletService: McpWalletService;
     profileService: ProfileService;
-    walletName: string;
 }
 
 /**
  * Create tool definitions with the given context
  */
 export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
-    const { walletService, profileService, walletName } = context;
+    const { walletService, profileService } = context;
 
     return [
         // Balance tools
@@ -43,18 +42,14 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 properties: {},
             },
             handler: async () => {
-                const balance = await walletService.getBalance(walletName);
+                const balance = await walletService.getBalance();
                 const balanceTon = (Number(balance) / 1e9).toFixed(4);
-
-                // Also get address for context (useful when balance is 0)
-                const wallets = await walletService.listWallets();
-                const wallet = wallets.find((w) => w.name === walletName);
 
                 return {
                     balance: balanceTon,
                     unit: 'TON',
                     raw: balance,
-                    walletAddress: wallet?.address,
+                    walletAddress: walletService.getAddress(),
                     hint:
                         Number(balance) === 0 ? 'Balance is 0. Show the walletAddress so user can top up!' : undefined,
                 };
@@ -68,7 +63,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 properties: {},
             },
             handler: async () => {
-                const jettons = await walletService.getJettons(walletName);
+                const jettons = await walletService.getJettons();
                 return {
                     jettons: jettons.map((j) => ({
                         symbol: j.symbol ?? 'Unknown',
@@ -90,14 +85,9 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 properties: {},
             },
             handler: async () => {
-                const wallets = await walletService.listWallets();
-                const wallet = wallets.find((w) => w.name === walletName);
-                if (!wallet) {
-                    return { error: 'Wallet not found' };
-                }
                 return {
-                    address: wallet.address,
-                    network: wallet.network,
+                    address: walletService.getAddress(),
+                    network: walletService.getNetwork(),
                     instruction: 'Show this EXACT address to user. Do not modify it!',
                 };
             },
@@ -118,7 +108,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
             },
             handler: async (args: Record<string, unknown>) => {
                 const limit = Math.min((args.limit as number) ?? 10, 50);
-                const transactions = await walletService.getTransactions(walletName, limit);
+                const transactions = await walletService.getTransactions(limit);
                 return {
                     transactions: transactions.map((tx) => ({
                         type: tx.type,
@@ -177,13 +167,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 // Convert TON to nanoTON
                 const amountNano = BigInt(Math.floor(amount * 1e9)).toString();
 
-                const result = await walletService.sendTon(
-                    walletName,
-                    toAddress,
-                    amountNano,
-                    amount.toString(),
-                    comment,
-                );
+                const result = await walletService.sendTon(toAddress, amountNano, comment);
 
                 return result;
             },
@@ -230,24 +214,14 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 }
 
                 // Get jetton info to get decimals
-                const jettons = await walletService.getJettons(walletName);
+                const jettons = await walletService.getJettons();
                 const jetton = jettons.find((j) => j.address === jettonAddress);
                 const decimals = jetton?.decimals ?? 9;
-                const symbol = jetton?.symbol;
 
                 // Convert to raw amount
                 const amountRaw = BigInt(Math.floor(amount * Math.pow(10, decimals))).toString();
 
-                const result = await walletService.sendJetton(
-                    walletName,
-                    toAddress,
-                    jettonAddress,
-                    amountRaw,
-                    amount.toString(),
-                    symbol,
-                    decimals,
-                    comment,
-                );
+                const result = await walletService.sendJetton(toAddress, jettonAddress, amountRaw, comment);
 
                 return result;
             },
@@ -281,7 +255,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 const toToken = args.to_token as string;
                 const amount = args.amount as string;
 
-                const quote = await walletService.getSwapQuote(walletName, fromToken, toToken, amount);
+                const quote = await walletService.getSwapQuote(fromToken, toToken, amount);
 
                 return {
                     fromToken: quote.fromToken,
@@ -311,7 +285,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 const quoteId = args.quote_id as string;
                 const quote = JSON.parse(quoteId);
 
-                const result = await walletService.executeSwap(walletName, quote);
+                const result = await walletService.executeSwap(quote);
 
                 return result;
             },
@@ -344,7 +318,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 const amount = args.amount as string;
 
                 // Get fresh quote
-                const quote = await walletService.getSwapQuote(walletName, fromToken, toToken, amount);
+                const quote = await walletService.getSwapQuote(fromToken, toToken, amount);
 
                 if (!quote.quote) {
                     return {
@@ -354,7 +328,7 @@ export function createToolDefinitions(context: ToolContext): ToolDefinition[] {
                 }
 
                 // Execute swap
-                const result = await walletService.executeSwap(walletName, quote.quote);
+                const result = await walletService.executeSwap(quote.quote);
 
                 return {
                     success: result.success,

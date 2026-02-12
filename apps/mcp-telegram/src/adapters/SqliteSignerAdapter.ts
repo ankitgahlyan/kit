@@ -8,13 +8,6 @@
 
 /**
  * SqliteSignerAdapter - SQLite-based signer with encrypted mnemonic storage
- *
- * Features:
- * - Persistent wallet storage in SQLite
- * - AES-256-GCM encryption for mnemonics
- * - Uses @ton/walletkit for wallet operations
- *
- * Note: For production use, consider using HSM, KMS, or Vault-based signers.
  */
 
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
@@ -30,7 +23,7 @@ import {
 } from '@ton/walletkit';
 import type { Wallet } from '@ton/walletkit';
 
-import type { ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from '../types/signer.js';
+import type { ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from './types.js';
 import type { SqliteDatabase } from './SqliteStorageAdapter.js';
 
 /**
@@ -50,19 +43,13 @@ interface StoredWalletRow {
  * Configuration for SqliteSignerAdapter
  */
 export interface SqliteSignerConfig {
-    /** SQLite database instance */
     db: SqliteDatabase;
-    /** Encryption key (32-byte hex string or raw bytes) */
     encryptionKey: string | Buffer;
-    /** Table name for wallets (default: 'wallets') */
     tableName?: string;
 }
 
 /**
  * SQLite-based signer adapter with encrypted mnemonic storage.
- *
- * Mnemonics are encrypted using AES-256-GCM before storage.
- * The encryption key should be provided via environment variable.
  */
 export class SqliteSignerAdapter implements ISignerAdapter {
     private readonly db: SqliteDatabase;
@@ -78,9 +65,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         this.initializeTable();
     }
 
-    /**
-     * Derive a 32-byte encryption key
-     */
     private deriveKey(key: string | Buffer): Buffer {
         if (Buffer.isBuffer(key)) {
             if (key.length !== 32) {
@@ -89,18 +73,13 @@ export class SqliteSignerAdapter implements ISignerAdapter {
             return key;
         }
 
-        // If hex string, convert to buffer
         if (/^[0-9a-fA-F]{64}$/.test(key)) {
             return Buffer.from(key, 'hex');
         }
 
-        // Otherwise, derive key using scrypt
         return scryptSync(key, 'ton-mcp-salt', 32);
     }
 
-    /**
-     * Initialize the wallets table
-     */
     private initializeTable(): void {
         this.db.exec(`
             CREATE TABLE IF NOT EXISTS ${this.tableName} (
@@ -114,16 +93,12 @@ export class SqliteSignerAdapter implements ISignerAdapter {
             )
         `);
 
-        // Create index for address lookup
         this.db.exec(`
             CREATE INDEX IF NOT EXISTS idx_${this.tableName}_address 
             ON ${this.tableName}(address)
         `);
     }
 
-    /**
-     * Encrypt mnemonic using AES-256-GCM
-     */
     private encryptMnemonic(mnemonic: string[]): string {
         const iv = randomBytes(16);
         const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
@@ -132,13 +107,9 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
         const authTag = cipher.getAuthTag();
 
-        // Format: iv:authTag:encrypted (all base64)
         return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
     }
 
-    /**
-     * Decrypt mnemonic using AES-256-GCM
-     */
     private decryptMnemonic(encryptedData: string): string[] {
         const [ivB64, authTagB64, encryptedB64] = encryptedData.split(':');
         const iv = Buffer.from(ivB64, 'base64');
@@ -152,16 +123,10 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         return JSON.parse(decrypted.toString('utf8'));
     }
 
-    /**
-     * Get Network instance from network name
-     */
     private getNetwork(networkName: 'mainnet' | 'testnet'): Network {
         return networkName === 'mainnet' ? Network.mainnet() : Network.testnet();
     }
 
-    /**
-     * Initialize or get TonWalletKit instance
-     */
     private async getKit(): Promise<TonWalletKit> {
         if (!this.kit) {
             this.kit = new TonWalletKit({
@@ -176,9 +141,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         return this.kit;
     }
 
-    /**
-     * Create wallet adapter from mnemonic
-     */
     private async createWalletAdapter(
         mnemonic: string[],
         version: 'v5r1' | 'v4r2',
@@ -198,19 +160,14 @@ export class SqliteSignerAdapter implements ISignerAdapter {
                       network,
                   });
 
-        // Get public key from signer
         const publicKey = Buffer.from(signer.publicKey).toString('hex');
 
         return { adapter, publicKey };
     }
 
-    /**
-     * Create a new wallet with generated mnemonic
-     */
     async createWallet(params: CreateWalletParams): Promise<WalletInfo> {
         const { walletId, version, network: networkName } = params;
 
-        // Check if wallet already exists
         const existing = this.db.prepare(`SELECT wallet_id FROM ${this.tableName} WHERE wallet_id = ?`).get(walletId);
         if (existing) {
             throw new Error(`Wallet "${walletId}" already exists`);
@@ -223,7 +180,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         const address = adapter.getAddress();
         const createdAt = new Date().toISOString();
 
-        // Encrypt and store mnemonic
         const encryptedMnemonic = this.encryptMnemonic(mnemonic);
         this.db
             .prepare(
@@ -232,7 +188,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
             )
             .run(walletId, encryptedMnemonic, publicKey, address, networkName, version, createdAt);
 
-        // Add to kit and cache
         const kit = await this.getKit();
         const wallet = await kit.addWallet(adapter);
         if (wallet) {
@@ -249,19 +204,14 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         };
     }
 
-    /**
-     * Import a wallet from mnemonic
-     */
     async importWallet(params: ImportWalletParams): Promise<WalletInfo> {
         const { walletId, mnemonic, version, network: networkName } = params;
 
-        // Check if wallet already exists
         const existing = this.db.prepare(`SELECT wallet_id FROM ${this.tableName} WHERE wallet_id = ?`).get(walletId);
         if (existing) {
             throw new Error(`Wallet "${walletId}" already exists`);
         }
 
-        // Validate mnemonic
         if (mnemonic.length !== 24) {
             throw new Error(`Invalid mnemonic: expected 24 words, got ${mnemonic.length}`);
         }
@@ -272,7 +222,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         const address = adapter.getAddress();
         const createdAt = new Date().toISOString();
 
-        // Encrypt and store mnemonic
         const encryptedMnemonic = this.encryptMnemonic(mnemonic);
         this.db
             .prepare(
@@ -281,7 +230,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
             )
             .run(walletId, encryptedMnemonic, publicKey, address, networkName, version, createdAt);
 
-        // Add to kit and cache
         const kit = await this.getKit();
         const wallet = await kit.addWallet(adapter);
         if (wallet) {
@@ -298,9 +246,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         };
     }
 
-    /**
-     * Get wallet info by ID
-     */
     async getWallet(walletId: string): Promise<WalletInfo | null> {
         const row = this.db.prepare(`SELECT * FROM ${this.tableName} WHERE wallet_id = ?`).get(walletId) as
             | StoredWalletRow
@@ -320,30 +265,19 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         };
     }
 
-    /**
-     * List all wallet IDs
-     */
     async listWalletIds(): Promise<string[]> {
         const rows = this.db.prepare(`SELECT wallet_id FROM ${this.tableName}`).all() as { wallet_id: string }[];
         return rows.map((row) => row.wallet_id);
     }
 
-    /**
-     * Delete a wallet
-     */
     async deleteWallet(walletId: string): Promise<boolean> {
-        // Remove from cache
         this.loadedWallets.delete(walletId);
 
         const result = this.db.prepare(`DELETE FROM ${this.tableName} WHERE wallet_id = ?`).run(walletId);
         return result.changes > 0;
     }
 
-    /**
-     * Get or load a wallet for signing
-     */
     private async getWalletForSigning(walletId: string): Promise<Wallet> {
-        // Check cache
         if (this.loadedWallets.has(walletId)) {
             return this.loadedWallets.get(walletId)!;
         }
@@ -364,7 +298,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         let wallet = await kit.addWallet(adapter);
 
         if (!wallet) {
-            // Wallet already exists in kit, get it
             const kitWalletId = `${network.chainId}:${row.address}`;
             wallet = kit.getWallet(kitWalletId);
             if (!wallet) {
@@ -376,16 +309,10 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         return wallet;
     }
 
-    /**
-     * Sign a transaction
-     */
     async signTransaction(_walletId: string, _unsignedBoc: string): Promise<string> {
         throw new Error('signTransaction with BOC not implemented. Use the wallet service for transaction signing.');
     }
 
-    /**
-     * Sign a message
-     */
     async signMessage(walletId: string, message: Buffer): Promise<Buffer> {
         const row = this.db
             .prepare(`SELECT encrypted_mnemonic FROM ${this.tableName} WHERE wallet_id = ?`)
@@ -402,9 +329,6 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         return Buffer.from(signature, 'hex');
     }
 
-    /**
-     * Close and cleanup
-     */
     async close(): Promise<void> {
         if (this.kit) {
             await this.kit.close();
@@ -413,26 +337,14 @@ export class SqliteSignerAdapter implements ISignerAdapter {
         this.loadedWallets.clear();
     }
 
-    /**
-     * Get TonWalletKit instance for direct wallet operations
-     * Used by McpWalletService for balance/transfer operations
-     */
     async getKitInstance(): Promise<TonWalletKit> {
         return this.getKit();
     }
 
-    /**
-     * Get a loaded wallet by ID for direct operations
-     * Used by McpWalletService for balance/transfer operations
-     */
     async getLoadedWallet(walletId: string): Promise<Wallet> {
         return this.getWalletForSigning(walletId);
     }
 
-    /**
-     * Get stored wallet data (internal use only)
-     * Returns mnemonic for internal operations (used by McpWalletService)
-     */
     getStoredWallet(walletId: string): { mnemonic: string[]; version: 'v5r1' | 'v4r2' } | undefined {
         const row = this.db
             .prepare(`SELECT encrypted_mnemonic, version FROM ${this.tableName} WHERE wallet_id = ?`)

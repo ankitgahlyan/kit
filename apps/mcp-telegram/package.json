@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ton/mcp": "workspace:*",
+    "@ton/walletkit": "workspace:*",
     "better-sqlite3": "^11.10.0",
     "grammy": "^1.35.0",
     "@anthropic-ai/sdk": "^0.52.0",

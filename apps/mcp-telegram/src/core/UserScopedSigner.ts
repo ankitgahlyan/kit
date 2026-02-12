@@ -13,7 +13,7 @@
  * access User B's wallets.
  */
 
-import type { ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from '@ton/mcp';
+import type { ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from '../adapters/index.js';
 
 /**
  * User-scoped signer wrapper.

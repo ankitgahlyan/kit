@@ -17,6 +17,11 @@
  *   npx @ton/mcp --http                   # HTTP server on 0.0.0.0:3000
  *   npx @ton/mcp --http 8080              # HTTP server on custom port
  *   npx @ton/mcp --http --host 127.0.0.1  # HTTP server on custom host
+ *
+ * Environment variables:
+ *   NETWORK - Network to use (mainnet or testnet, default: mainnet)
+ *   MNEMONIC - 24-word mnemonic phrase for wallet (if not provided, a new wallet is created)
+ *   WALLET_VERSION - Wallet version (v5r1 or v4r2, default: v5r1)
  */
 
 import { createServer } from 'node:http';
@@ -24,15 +29,26 @@ import { randomUUID } from 'node:crypto';
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {
+    TonWalletKit,
+    Signer,
+    WalletV5R1Adapter,
+    WalletV4R2Adapter,
+    MemoryStorageAdapter,
+    Network,
+    CreateTonMnemonic,
+} from '@ton/walletkit';
+import type { Wallet, ApiClientConfig } from '@ton/walletkit';
 
 import { createTonWalletMCP } from './factory.js';
-import { InMemoryStorageAdapter } from './adapters/InMemoryStorageAdapter.js';
-import { LocalSignerAdapter } from './adapters/LocalSignerAdapter.js';
 
 const SERVER_NAME = 'ton-mcp';
 
-// Read network from environment variable (default: mainnet)
+// Read configuration from environment variables
 const NETWORK = (process.env.NETWORK as 'mainnet' | 'testnet') || 'mainnet';
+const MNEMONIC = process.env.MNEMONIC;
+const WALLET_VERSION = (process.env.WALLET_VERSION as 'v5r1' | 'v4r2') || 'v5r1';
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY;
 
 function log(message: string) {
     // eslint-disable-next-line no-console
@@ -57,30 +73,92 @@ function parseArgs() {
     return { mode: 'http' as const, port, host };
 }
 
-function createAdaptersAndServer() {
-    const storage = new InMemoryStorageAdapter();
-    const signer = new LocalSignerAdapter();
+async function createWalletAndServer(): Promise<{
+    server: Awaited<ReturnType<typeof createTonWalletMCP>>;
+    kit: TonWalletKit;
+    wallet: Wallet;
+}> {
+    const network = NETWORK === 'mainnet' ? Network.mainnet() : Network.testnet();
 
-    const server = createTonWalletMCP({
-        storage,
-        signer,
-        network: NETWORK,
-        requireConfirmation: false,
+    // Configure API client
+    const apiConfig: ApiClientConfig = {};
+    if (TONCENTER_API_KEY) {
+        apiConfig.url = NETWORK === 'mainnet' ? 'https://toncenter.com' : 'https://testnet.toncenter.com';
+        apiConfig.key = TONCENTER_API_KEY;
+    }
+
+    // Initialize TonWalletKit
+    const kit = new TonWalletKit({
+        networks: {
+            [network.chainId]: { apiClient: apiConfig },
+        },
+        storage: new MemoryStorageAdapter(),
+    });
+    await kit.waitForReady();
+
+    // Get or generate mnemonic
+    let mnemonic: string[];
+    if (MNEMONIC) {
+        mnemonic = MNEMONIC.trim().split(/\s+/);
+        if (mnemonic.length !== 24) {
+            throw new Error(`Invalid mnemonic: expected 24 words, got ${mnemonic.length}`);
+        }
+        log('Using provided mnemonic');
+    } else {
+        mnemonic = await CreateTonMnemonic();
+        log('Generated new wallet');
+        log('IMPORTANT: Save this mnemonic to restore your wallet:');
+        log(`MNEMONIC="${mnemonic.join(' ')}"`);
+    }
+
+    // Create signer and wallet adapter
+    const signer = await Signer.fromMnemonic(mnemonic, { type: 'ton' });
+
+    const walletAdapter =
+        WALLET_VERSION === 'v5r1'
+            ? await WalletV5R1Adapter.create(signer, {
+                  client: kit.getApiClient(network),
+                  network,
+              })
+            : await WalletV4R2Adapter.create(signer, {
+                  client: kit.getApiClient(network),
+                  network,
+              });
+
+    // Add wallet to kit
+    let wallet = await kit.addWallet(walletAdapter);
+    if (!wallet) {
+        wallet = kit.getWallet(walletAdapter.getWalletId());
+    }
+    if (!wallet) {
+        throw new Error('Failed to create wallet');
+    }
+
+    log(`Wallet address: ${wallet.getAddress()}`);
+    log(`Network: ${NETWORK}`);
+    log(`Version: ${WALLET_VERSION}`);
+
+    // Create MCP server with the wallet
+    const server = await createTonWalletMCP({
+        wallet,
+        networks: {
+            mainnet: TONCENTER_API_KEY && NETWORK === 'mainnet' ? { apiKey: TONCENTER_API_KEY } : undefined,
+            testnet: TONCENTER_API_KEY && NETWORK === 'testnet' ? { apiKey: TONCENTER_API_KEY } : undefined,
+        },
     });
 
-    return { server, signer };
+    return { server, kit, wallet };
 }
 
 async function startStdio() {
     log('Starting in stdio mode...');
-    log(`Network: ${NETWORK}`);
 
-    const { server, signer } = createAdaptersAndServer();
+    const { server, kit } = await createWalletAndServer();
     const transport = new StdioServerTransport();
 
     const shutdown = async () => {
         log('Shutting down...');
-        await signer.close();
+        await kit.close();
         log('Shutdown complete');
         process.exit(0);
     };
@@ -94,9 +172,8 @@ async function startStdio() {
 
 async function startHttp(port: number, host: string) {
     log(`Starting in HTTP mode on ${host}:${port}...`);
-    log(`Network: ${NETWORK}`);
 
-    const { server, signer } = createAdaptersAndServer();
+    const { server, kit } = await createWalletAndServer();
 
     const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
@@ -118,7 +195,7 @@ async function startHttp(port: number, host: string) {
         log('Shutting down...');
         httpServer.close();
         await transport.close();
-        await signer.close();
+        await kit.close();
         log('Shutdown complete');
         process.exit(0);
     };

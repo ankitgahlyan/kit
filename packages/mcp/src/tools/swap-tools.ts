@@ -29,7 +29,6 @@ function cleanExpiredQuotes(): void {
 }
 
 export const getSwapQuoteSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to swap from'),
     fromToken: z.string().min(1).describe('Token to swap from ("TON" or jetton address)'),
     toToken: z.string().min(1).describe('Token to swap to ("TON" or jetton address)'),
     amount: z.string().min(1).describe('Amount to swap in raw units'),
@@ -37,7 +36,6 @@ export const getSwapQuoteSchema = z.object({
 });
 
 export const executeSwapSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to execute swap from'),
     quoteId: z.string().min(1).describe('Quote ID returned from get_swap_quote'),
 });
 
@@ -51,7 +49,6 @@ export function createMcpSwapTools(service: McpWalletService) {
                     cleanExpiredQuotes();
 
                     const result = await service.getSwapQuote(
-                        args.wallet,
                         args.fromToken,
                         args.toToken,
                         args.amount,
@@ -106,7 +103,7 @@ export function createMcpSwapTools(service: McpWalletService) {
         },
 
         execute_swap: {
-            description: 'Execute a token swap using a quote. May require confirmation if enabled.',
+            description: 'Execute a token swap using a quote.',
             inputSchema: executeSwapSchema,
             handler: async (args: z.infer<typeof executeSwapSchema>): Promise<ToolResponse> => {
                 cleanExpiredQuotes();
@@ -144,7 +141,7 @@ export function createMcpSwapTools(service: McpWalletService) {
                     };
                 }
 
-                const result = await service.executeSwap(args.wallet, cachedQuote.quote);
+                const result = await service.executeSwap(cachedQuote.quote);
 
                 // Remove used quote
                 quoteCache.delete(args.quoteId);
@@ -178,7 +175,6 @@ export function createMcpSwapTools(service: McpWalletService) {
                                         fromAmount: cachedQuote.quote.fromAmount,
                                         toAmount: cachedQuote.quote.toAmount,
                                         provider: cachedQuote.quote.providerId,
-                                        pendingTransactionId: result.pendingTransactionId || null,
                                     },
                                 },
                                 null,

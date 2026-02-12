@@ -11,21 +11,15 @@ import { z } from 'zod';
 import type { McpWalletService } from '../services/McpWalletService.js';
 import type { ToolResponse } from './types.js';
 
-export const getBalanceSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to check balance'),
-});
+export const getBalanceSchema = z.object({});
 
 export const getJettonBalanceSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet'),
     jettonAddress: z.string().min(1).describe('Jetton master contract address'),
 });
 
-export const getJettonsSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet'),
-});
+export const getJettonsSchema = z.object({});
 
 export const getTransactionsSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to get transactions for'),
     limit: z
         .number()
         .min(1)
@@ -37,11 +31,11 @@ export const getTransactionsSchema = z.object({
 export function createMcpBalanceTools(service: McpWalletService) {
     return {
         get_balance: {
-            description: 'Get the TON balance of a wallet. Returns both human-readable and raw (nanoTON) amounts.',
+            description: 'Get the TON balance of the wallet. Returns both human-readable and raw (nanoTON) amounts.',
             inputSchema: getBalanceSchema,
-            handler: async (args: z.infer<typeof getBalanceSchema>): Promise<ToolResponse> => {
+            handler: async (): Promise<ToolResponse> => {
                 try {
-                    const balance = await service.getBalance(args.wallet);
+                    const balance = await service.getBalance();
                     const balanceTon = Number(BigInt(balance)) / 1e9;
 
                     return {
@@ -51,7 +45,7 @@ export function createMcpBalanceTools(service: McpWalletService) {
                                 text: JSON.stringify(
                                     {
                                         success: true,
-                                        wallet: args.wallet,
+                                        address: service.getAddress(),
                                         balance: `${balanceTon} TON`,
                                         balanceNano: balance,
                                     },
@@ -79,11 +73,11 @@ export function createMcpBalanceTools(service: McpWalletService) {
         },
 
         get_jetton_balance: {
-            description: 'Get the balance of a specific Jetton (token) in a wallet.',
+            description: 'Get the balance of a specific Jetton (token) in the wallet.',
             inputSchema: getJettonBalanceSchema,
             handler: async (args: z.infer<typeof getJettonBalanceSchema>): Promise<ToolResponse> => {
                 try {
-                    const balance = await service.getJettonBalance(args.wallet, args.jettonAddress);
+                    const balance = await service.getJettonBalance(args.jettonAddress);
 
                     return {
                         content: [
@@ -92,7 +86,6 @@ export function createMcpBalanceTools(service: McpWalletService) {
                                 text: JSON.stringify(
                                     {
                                         success: true,
-                                        wallet: args.wallet,
                                         jettonAddress: args.jettonAddress,
                                         balance,
                                     },
@@ -120,11 +113,11 @@ export function createMcpBalanceTools(service: McpWalletService) {
         },
 
         get_jettons: {
-            description: 'List all Jettons (tokens) in a wallet with their balances and metadata.',
+            description: 'List all Jettons (tokens) in the wallet with their balances and metadata.',
             inputSchema: getJettonsSchema,
-            handler: async (args: z.infer<typeof getJettonsSchema>): Promise<ToolResponse> => {
+            handler: async (): Promise<ToolResponse> => {
                 try {
-                    const jettons = await service.getJettons(args.wallet);
+                    const jettons = await service.getJettons();
 
                     return {
                         content: [
@@ -133,7 +126,6 @@ export function createMcpBalanceTools(service: McpWalletService) {
                                 text: JSON.stringify(
                                     {
                                         success: true,
-                                        wallet: args.wallet,
                                         jettons,
                                         count: jettons.length,
                                     },
@@ -162,11 +154,11 @@ export function createMcpBalanceTools(service: McpWalletService) {
 
         get_transactions: {
             description:
-                'Get recent transaction history for a wallet. Returns events with actions like TON transfers, Jetton transfers, swaps, and more.',
+                'Get recent transaction history for the wallet. Returns events with actions like TON transfers, Jetton transfers, swaps, and more.',
             inputSchema: getTransactionsSchema,
             handler: async (args: z.infer<typeof getTransactionsSchema>): Promise<ToolResponse> => {
                 try {
-                    const transactions = await service.getTransactions(args.wallet, args.limit ?? 20);
+                    const transactions = await service.getTransactions(args.limit ?? 20);
 
                     return {
                         content: [
@@ -175,7 +167,6 @@ export function createMcpBalanceTools(service: McpWalletService) {
                                 text: JSON.stringify(
                                     {
                                         success: true,
-                                        wallet: args.wallet,
                                         transactions: transactions.map((tx) => ({
                                             eventId: tx.eventId,
                                             timestamp: tx.timestamp,

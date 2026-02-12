@@ -10,14 +10,8 @@
  * Type exports for @ton/mcp package
  */
 
-// Storage adapter
-export type { IStorageAdapter } from './storage.js';
-
-// Signer adapter
-export type { ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from './signer.js';
-
 // Contact resolver
 export type { IContactResolver, Contact } from './contacts.js';
 
 // Config
-export type { TonMcpConfig } from './config.js';
+export type { TonMcpConfig, NetworkConfig } from './config.js';

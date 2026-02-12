@@ -11,44 +11,69 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Wallet, WalletAdapter } from '@ton/walletkit';
 
-import type { TonMcpConfig } from './types/config.js';
+import type { IContactResolver } from './types/contacts.js';
+import type { NetworkConfig } from './services/McpWalletService.js';
 import { McpWalletService } from './services/McpWalletService.js';
-import {
-    createMcpWalletTools,
-    createMcpBalanceTools,
-    createMcpTransferTools,
-    createMcpSwapTools,
-    createMcpPendingTools,
-} from './tools/index.js';
+import { createMcpBalanceTools, createMcpTransferTools, createMcpSwapTools } from './tools/index.js';
 
 const SERVER_NAME = 'ton-mcp';
 const SERVER_VERSION = '0.1.0';
 
 /**
+ * Configuration for createTonWalletMCP factory
+ */
+export interface TonMcpFactoryConfig {
+    /**
+     * Wallet instance to use for operations.
+     * Required.
+     */
+    wallet: WalletAdapter;
+
+    /**
+     * Optional contact resolver for name-to-address resolution.
+     */
+    contacts?: IContactResolver;
+
+    /**
+     * Network-specific configuration (API keys).
+     */
+    networks?: {
+        mainnet?: NetworkConfig;
+        testnet?: NetworkConfig;
+    };
+}
+
+/**
  * Create a configured TON Wallet MCP server
  *
- * @param config - Configuration with adapters
+ * @param config - Configuration with wallet instance
  * @returns Configured McpServer instance
  *
  * @example
  * ```typescript
- * import { createTonWalletMCP, InMemoryStorageAdapter, LocalSignerAdapter } from '@ton/mcp';
+ * import { createTonWalletMCP } from '@ton/mcp';
+ * import { Signer, WalletV5R1Adapter, TonWalletKit, Network } from '@ton/walletkit';
  *
- * const server = createTonWalletMCP({
- *   storage: new InMemoryStorageAdapter(),
- *   signer: new LocalSignerAdapter(),
+ * // Create wallet adapter
+ * const kit = new TonWalletKit({ ... });
+ * const signer = await Signer.fromMnemonic(mnemonic, { type: 'ton' });
+ * const walletAdapter = await WalletV5R1Adapter.create(signer, {
+ *   client: kit.getApiClient(Network.mainnet()),
+ *   network: Network.mainnet(),
  * });
+ * const wallet = await kit.addWallet(walletAdapter);
+ *
+ * // Create MCP server
+ * const server = createTonWalletMCP({ wallet });
  * ```
  */
-export function createTonWalletMCP(config: TonMcpConfig): McpServer {
+export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<McpServer> {
     // Create wallet service
-    const walletService = new McpWalletService({
-        storage: config.storage,
-        signer: config.signer,
+    const walletService = await McpWalletService.create({
+        wallet: config.wallet,
         contacts: config.contacts,
-        defaultNetwork: config.network,
-        requireConfirmation: config.requireConfirmation,
         networks: config.networks,
     });
 
@@ -59,23 +84,15 @@ export function createTonWalletMCP(config: TonMcpConfig): McpServer {
     });
 
     // Get all tools
-    const walletTools = createMcpWalletTools(walletService);
     const balanceTools = createMcpBalanceTools(walletService);
     const transferTools = createMcpTransferTools(walletService);
     const swapTools = createMcpSwapTools(walletService);
-    const pendingTools = createMcpPendingTools(walletService);
 
     // Helper to register tools with type assertion (Zod version mismatch workaround)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const registerTool = (name: string, tool: { description: string; inputSchema: any; handler: any }) => {
         server.registerTool(name, { description: tool.description, inputSchema: tool.inputSchema }, tool.handler);
     };
-
-    // Register wallet management tools
-    registerTool('create_wallet', walletTools.create_wallet);
-    registerTool('import_wallet', walletTools.import_wallet);
-    registerTool('list_wallets', walletTools.list_wallets);
-    registerTool('remove_wallet', walletTools.remove_wallet);
 
     // Register balance tools
     registerTool('get_balance', balanceTools.get_balance);
@@ -90,13 +107,6 @@ export function createTonWalletMCP(config: TonMcpConfig): McpServer {
     // Register swap tools
     registerTool('get_swap_quote', swapTools.get_swap_quote);
     registerTool('execute_swap', swapTools.execute_swap);
-
-    // Register pending transaction tools (only if confirmation is enabled)
-    if (config.requireConfirmation) {
-        registerTool('confirm_transaction', pendingTools.confirm_transaction);
-        registerTool('cancel_transaction', pendingTools.cancel_transaction);
-        registerTool('list_pending_transactions', pendingTools.list_pending_transactions);
-    }
 
     return server;
 }

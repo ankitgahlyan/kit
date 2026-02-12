@@ -6,8 +6,6 @@
  *
  */
 
-export { createMcpWalletTools } from './wallet-tools.js';
 export { createMcpBalanceTools } from './balance-tools.js';
 export { createMcpTransferTools } from './transfer-tools.js';
 export { createMcpSwapTools } from './swap-tools.js';
-export { createMcpPendingTools } from './pending-tools.js';

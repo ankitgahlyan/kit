@@ -13,8 +13,7 @@
  * to interact with TON wallets through the @ton/mcp package.
  */
 
-import { SqliteStorageAdapter, SqliteSignerAdapter } from '@ton/mcp';
-
+import { SqliteStorageAdapter, SqliteSignerAdapter } from './adapters/index.js';
 import { loadConfig } from './config.js';
 import { initializeDatabase } from './db/schema.js';
 import { ProfileService } from './services/ProfileService.js';
@@ -62,13 +61,10 @@ async function main(): Promise<void> {
     const userServiceFactory = new UserServiceFactory({
         signer: signerAdapter,
         storage: storageAdapter,
-        serviceConfig: {
-            defaultNetwork: config.tonNetwork,
-            requireConfirmation: false,
-            networks: {
-                mainnet: config.toncenterApiKeyMainnet ? { apiKey: config.toncenterApiKeyMainnet } : undefined,
-                testnet: config.toncenterApiKeyTestnet ? { apiKey: config.toncenterApiKeyTestnet } : undefined,
-            },
+        defaultNetwork: config.tonNetwork,
+        networks: {
+            mainnet: config.toncenterApiKeyMainnet ? { apiKey: config.toncenterApiKeyMainnet } : undefined,
+            testnet: config.toncenterApiKeyTestnet ? { apiKey: config.toncenterApiKeyTestnet } : undefined,
         },
     });
     log('User service factory initialized');

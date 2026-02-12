@@ -221,14 +221,19 @@ async function handleStart(ctx: Context, config: BotConfig): Promise<void> {
     }
 
     try {
-        const service = config.userServiceFactory.getService(`tg:${userId}`);
-        const wallets = await service.listWallets();
+        const userIdStr = `tg:${userId}`;
+        const wallets = await config.userServiceFactory.listWallets(userIdStr);
 
         let walletAddress: string;
 
         if (wallets.length === 0) {
             // Create a wallet for the user
-            const result = await service.createWallet(DEFAULT_WALLET_NAME, 'v5r1', config.defaultNetwork);
+            const result = await config.userServiceFactory.createWallet(
+                userIdStr,
+                DEFAULT_WALLET_NAME,
+                'v5r1',
+                config.defaultNetwork,
+            );
             walletAddress = result.address;
 
             // Create/update profile
@@ -293,12 +298,17 @@ async function handleMessage(ctx: Context, config: BotConfig): Promise<void> {
     }
 
     try {
-        const service = config.userServiceFactory.getService(`tg:${userId}`);
-        const wallets = await service.listWallets();
+        const userIdStr = `tg:${userId}`;
+        const wallets = await config.userServiceFactory.listWallets(userIdStr);
 
         if (wallets.length === 0) {
             // Auto-create wallet for new users
-            const result = await service.createWallet(DEFAULT_WALLET_NAME, 'v5r1', config.defaultNetwork);
+            const result = await config.userServiceFactory.createWallet(
+                userIdStr,
+                DEFAULT_WALLET_NAME,
+                'v5r1',
+                config.defaultNetwork,
+            );
 
             // Create profile
             config.profileService.createOrUpdateProfile(userId, result.address, username, firstName);
@@ -310,11 +320,13 @@ async function handleMessage(ctx: Context, config: BotConfig): Promise<void> {
         // Send typing indicator
         await ctx.replyWithChatAction('typing');
 
+        // Get the wallet service for this user
+        const service = await config.userServiceFactory.getService(userIdStr, DEFAULT_WALLET_NAME);
+
         // Create tool context for this user
         const toolContext = {
             walletService: service,
             profileService: config.profileService,
-            walletName: DEFAULT_WALLET_NAME,
         };
 
         // Register tools with user context

@@ -6,16 +6,10 @@
  *
  */
 
-/**
- * Adapter exports
- */
+export type { IStorageAdapter, ISignerAdapter, WalletInfo, CreateWalletParams, ImportWalletParams } from './types.js';
 
-// Storage adapters
-export { InMemoryStorageAdapter } from './InMemoryStorageAdapter.js';
 export { SqliteStorageAdapter } from './SqliteStorageAdapter.js';
 export type { SqliteDatabase, SqliteStorageConfig } from './SqliteStorageAdapter.js';
 
-// Signer adapters
-export { LocalSignerAdapter } from './LocalSignerAdapter.js';
 export { SqliteSignerAdapter } from './SqliteSignerAdapter.js';
 export type { SqliteSignerConfig } from './SqliteSignerAdapter.js';

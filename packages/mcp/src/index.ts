@@ -10,44 +10,21 @@
  * TON MCP Server - Model Context Protocol server for TON blockchain wallet operations
  *
  * This module provides:
- * - Factory function for creating single-user MCP servers with pluggable adapters
- * - Adapter interfaces for custom storage and signing implementations
- * - Built-in adapters for common use cases
+ * - Factory function for creating single-wallet MCP servers
+ * - McpWalletService for wallet operations
  */
 
 // ===========================================
 // Factory and Configuration
 // ===========================================
 
-export { createTonWalletMCP } from './factory.js';
+export { createTonWalletMCP, createShutdownHandler } from './factory.js';
 
 // ===========================================
-// Type Exports (for implementers)
+// Type Exports
 // ===========================================
 
-export type {
-    IStorageAdapter,
-    ISignerAdapter,
-    WalletInfo,
-    CreateWalletParams,
-    ImportWalletParams,
-    IContactResolver,
-    Contact,
-    TonMcpConfig,
-} from './types/index.js';
-
-// ===========================================
-// Adapters
-// ===========================================
-
-export {
-    InMemoryStorageAdapter,
-    LocalSignerAdapter,
-    SqliteStorageAdapter,
-    SqliteSignerAdapter,
-} from './adapters/index.js';
-
-export type { SqliteDatabase, SqliteStorageConfig, SqliteSignerConfig } from './adapters/index.js';
+export type { IContactResolver, Contact, TonMcpConfig, NetworkConfig } from './types/index.js';
 
 // ===========================================
 // Services
@@ -55,14 +32,10 @@ export type { SqliteDatabase, SqliteStorageConfig, SqliteSignerConfig } from './
 
 export { McpWalletService } from './services/McpWalletService.js';
 export type {
-    McpWalletInfo,
     McpWalletServiceConfig,
-    NetworkConfig,
-    CreateWalletResult,
-    ImportWalletResult,
     JettonInfoResult,
     TransferResult,
     SwapQuoteResult,
     SwapResult,
-    PendingTransaction,
+    TransactionInfo,
 } from './services/McpWalletService.js';

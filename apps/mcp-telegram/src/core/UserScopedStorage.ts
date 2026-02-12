@@ -13,7 +13,7 @@
  * User A cannot access User B's data.
  */
 
-import type { IStorageAdapter } from '@ton/mcp';
+import type { IStorageAdapter } from '../adapters/index.js';
 
 /**
  * User-scoped storage wrapper.

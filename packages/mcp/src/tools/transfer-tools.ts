@@ -13,14 +13,12 @@ import { toRawAmount, TON_DECIMALS } from './types.js';
 import type { ToolResponse } from './types.js';
 
 export const sendTonSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to send from'),
     toAddress: z.string().min(1).describe('Recipient TON address'),
     amount: z.string().min(1).describe('Amount of TON to send (e.g., "1.5" for 1.5 TON)'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
 });
 
 export const sendJettonSchema = z.object({
-    wallet: z.string().min(1).describe('Name of the wallet to send from'),
     toAddress: z.string().min(1).describe('Recipient TON address'),
     jettonAddress: z.string().min(1).describe('Jetton master contract address'),
     amount: z.string().min(1).describe('Amount of tokens to send in human-readable format'),
@@ -30,13 +28,12 @@ export const sendJettonSchema = z.object({
 export function createMcpTransferTools(service: McpWalletService) {
     return {
         send_ton: {
-            description:
-                'Send TON from a wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). May require confirmation if enabled.',
+            description: 'Send TON from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON).',
             inputSchema: sendTonSchema,
             handler: async (args: z.infer<typeof sendTonSchema>): Promise<ToolResponse> => {
                 const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
 
-                const result = await service.sendTon(args.wallet, args.toAddress, rawAmount, args.amount, args.comment);
+                const result = await service.sendTon(args.toAddress, rawAmount, args.comment);
 
                 if (!result.success) {
                     return {
@@ -62,11 +59,9 @@ export function createMcpTransferTools(service: McpWalletService) {
                                     success: true,
                                     message: result.message,
                                     details: {
-                                        from: args.wallet,
                                         to: args.toAddress,
                                         amount: `${args.amount} TON`,
                                         comment: args.comment || null,
-                                        pendingTransactionId: result.pendingTransactionId || null,
                                     },
                                 },
                                 null,
@@ -79,8 +74,7 @@ export function createMcpTransferTools(service: McpWalletService) {
         },
 
         send_jetton: {
-            description:
-                'Send Jettons (tokens) from a wallet to an address. Amount is in human-readable format. May require confirmation if enabled.',
+            description: 'Send Jettons (tokens) from the wallet to an address. Amount is in human-readable format.',
             inputSchema: sendJettonSchema,
             handler: async (args: z.infer<typeof sendJettonSchema>): Promise<ToolResponse> => {
                 // Fetch jetton info for decimals
@@ -88,7 +82,7 @@ export function createMcpTransferTools(service: McpWalletService) {
                 let symbol: string | undefined;
 
                 try {
-                    const jettons = await service.getJettons(args.wallet);
+                    const jettons = await service.getJettons();
                     const jetton = jettons.find((j) => j.address.toLowerCase() === args.jettonAddress.toLowerCase());
                     if (jetton) {
                         decimals = jetton.decimals;
@@ -126,16 +120,7 @@ export function createMcpTransferTools(service: McpWalletService) {
 
                 const rawAmount = toRawAmount(args.amount, decimals);
 
-                const result = await service.sendJetton(
-                    args.wallet,
-                    args.toAddress,
-                    args.jettonAddress,
-                    rawAmount,
-                    args.amount,
-                    symbol,
-                    decimals,
-                    args.comment,
-                );
+                const result = await service.sendJetton(args.toAddress, args.jettonAddress, rawAmount, args.comment);
 
                 if (!result.success) {
                     return {
@@ -161,12 +146,10 @@ export function createMcpTransferTools(service: McpWalletService) {
                                     success: true,
                                     message: result.message,
                                     details: {
-                                        from: args.wallet,
                                         to: args.toAddress,
                                         jettonAddress: args.jettonAddress,
                                         amount: `${args.amount} ${symbol || 'tokens'}`,
                                         comment: args.comment || null,
-                                        pendingTransactionId: result.pendingTransactionId || null,
                                     },
                                 },
                                 null,

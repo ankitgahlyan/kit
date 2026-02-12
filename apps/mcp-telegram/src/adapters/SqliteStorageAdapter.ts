@@ -8,18 +8,12 @@
 
 /**
  * SqliteStorageAdapter - SQLite-based persistent storage
- *
- * Features:
- * - Persistent key-value storage using SQLite
- * - TTL support with automatic cleanup
- * - Thread-safe operations via better-sqlite3
  */
 
-import type { IStorageAdapter } from '../types/storage.js';
+import type { IStorageAdapter } from './types.js';
 
 /**
  * Database interface for SQLite operations.
- * This allows injecting a better-sqlite3 database instance.
  */
 export interface SqliteDatabase {
     prepare(sql: string): {
@@ -34,15 +28,12 @@ export interface SqliteDatabase {
  * Configuration for SqliteStorageAdapter
  */
 export interface SqliteStorageConfig {
-    /** SQLite database instance */
     db: SqliteDatabase;
-    /** Table name for storage (default: 'storage') */
     tableName?: string;
 }
 
 /**
  * SQLite-based storage adapter for persistent key-value storage.
- * Uses better-sqlite3 for synchronous, thread-safe operations.
  */
 export class SqliteStorageAdapter implements IStorageAdapter {
     private readonly db: SqliteDatabase;
@@ -54,9 +45,6 @@ export class SqliteStorageAdapter implements IStorageAdapter {
         this.initializeTable();
     }
 
-    /**
-     * Initialize the storage table
-     */
     private initializeTable(): void {
         this.db.exec(`
             CREATE TABLE IF NOT EXISTS ${this.tableName} (
@@ -66,7 +54,6 @@ export class SqliteStorageAdapter implements IStorageAdapter {
             )
         `);
 
-        // Create index for TTL cleanup
         this.db.exec(`
             CREATE INDEX IF NOT EXISTS idx_${this.tableName}_expires 
             ON ${this.tableName}(expires_at) 
@@ -74,17 +61,11 @@ export class SqliteStorageAdapter implements IStorageAdapter {
         `);
     }
 
-    /**
-     * Clean up expired entries
-     */
     private cleanupExpired(): void {
         const now = Date.now();
         this.db.prepare(`DELETE FROM ${this.tableName} WHERE expires_at IS NOT NULL AND expires_at < ?`).run(now);
     }
 
-    /**
-     * Get a value by key
-     */
     async get<T>(key: string): Promise<T | null> {
         this.cleanupExpired();
 
@@ -96,7 +77,6 @@ export class SqliteStorageAdapter implements IStorageAdapter {
             return null;
         }
 
-        // Check if expired
         if (row.expires_at !== null && row.expires_at < Date.now()) {
             await this.delete(key);
             return null;
@@ -109,9 +89,6 @@ export class SqliteStorageAdapter implements IStorageAdapter {
         }
     }
 
-    /**
-     * Set a value with optional TTL
-     */
     async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
         const jsonValue = JSON.stringify(value);
         const expiresAt = ttlSeconds !== undefined && ttlSeconds > 0 ? Date.now() + ttlSeconds * 1000 : null;
@@ -121,17 +98,11 @@ export class SqliteStorageAdapter implements IStorageAdapter {
             .run(key, jsonValue, expiresAt);
     }
 
-    /**
-     * Delete a key
-     */
     async delete(key: string): Promise<boolean> {
         const result = this.db.prepare(`DELETE FROM ${this.tableName} WHERE key = ?`).run(key);
         return result.changes > 0;
     }
 
-    /**
-     * List keys matching prefix
-     */
     async list(prefix: string): Promise<string[]> {
         this.cleanupExpired();
 
@@ -142,16 +113,10 @@ export class SqliteStorageAdapter implements IStorageAdapter {
         return rows.map((row) => row.key);
     }
 
-    /**
-     * Clear all data (useful for testing)
-     */
     clear(): void {
         this.db.exec(`DELETE FROM ${this.tableName}`);
     }
 
-    /**
-     * Get the number of stored items
-     */
     size(): number {
         this.cleanupExpired();
         const row = this.db.prepare(`SELECT COUNT(*) as count FROM ${this.tableName}`).get() as { count: number };
