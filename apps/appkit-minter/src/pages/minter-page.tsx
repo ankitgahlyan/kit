@@ -8,7 +8,6 @@
 
 import type React from 'react';
 import { useSelectedWallet } from '@ton/appkit-ui-react';
-import { useTonWallet } from '@tonconnect/ui-react';
 
 import { TokensCard } from '@/features/balances';
 import { CardGenerator } from '@/features/mint';
@@ -21,10 +20,6 @@ import { SignMessageCard } from '@/features/signing';
 export const MinterPage: React.FC = () => {
     const [wallet] = useSelectedWallet();
     const isConnected = !!wallet;
-
-    const tonWallet = useTonWallet();
-
-    console.log('tonWallet', tonWallet);
 
     return (
         <Layout title="NFT Minter">

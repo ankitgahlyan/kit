@@ -674,6 +674,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.90.20(react@19.2.3)
+      '@tonconnect/ui-react':
+        specifier: 'catalog:'
+        version: 2.4.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.8

@@ -14,6 +14,7 @@ import { CONNECTOR_EVENTS } from '../../../core/app-kit';
 import type { Connector, ConnectorMetadata } from '../../../types/connector';
 import type { WalletInterface } from '../../../types/wallet';
 import type { AppKitEmitter } from '../../../core/app-kit';
+import { TONCONNECT_DEFAULT_CONNECTOR_ID } from '../constants/id';
 
 export interface TonConnectConnectorConfig {
     tonConnectOptions: TonConnectUiCreateOptions;
@@ -31,7 +32,7 @@ export class TonConnectConnector implements Connector {
     private unsubscribeTonConnect: (() => void) | null = null;
 
     constructor(config: TonConnectConnectorConfig) {
-        this.id = config.id ?? 'tonconnect-default';
+        this.id = config.id ?? TONCONNECT_DEFAULT_CONNECTOR_ID;
         this.tonConnectUI = new TonConnectUI(config.tonConnectOptions);
         this.metadata = {
             name: 'TonConnect',
