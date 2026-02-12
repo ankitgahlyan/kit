@@ -38,6 +38,23 @@ await connect(appKit, {
 });
 ```
 
+### `addConnector`
+
+Add a wallet connector to AppKit (e.g., TonConnect).
+
+```ts
+const stopWatching = addConnector(
+    appKit,
+    new TonConnectConnector({
+        tonConnectOptions: {
+            manifestUrl: 'https://tonconnect-demo-dapp-with-react-ui.vercel.app/tonconnect-manifest.json',
+        },
+    }),
+);
+
+// Later: stopWatching();
+```
+
 ### `disconnect`
 
 Disconnect a wallet using a specific connector.
@@ -315,4 +332,18 @@ const result = await transferNft(appKit, {
 });
 
 console.log('NFT Transfer Result:', result);
+```
+
+## Providers
+
+### `registerProvider`
+
+Register a custom token swap provider in AppKit (e.g., Omniston).
+
+```ts
+const omnistonProvider = new OmnistonSwapProvider({
+    defaultSlippageBps: 100, // 1%
+});
+
+registerProvider(appKit, omnistonProvider);
 ```

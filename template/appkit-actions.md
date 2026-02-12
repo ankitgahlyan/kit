@@ -28,6 +28,12 @@ Connect a wallet using a specific connector.
 
 %%demo/examples/src/appkit/actions/connectors#CONNECT%%
 
+### `addConnector`
+
+Add a wallet connector to AppKit (e.g., TonConnect).
+
+%%demo/examples/src/appkit/actions/connectors#ADD_CONNECTOR%%
+
 ### `disconnect`
 
 Disconnect a wallet using a specific connector.
@@ -153,3 +159,11 @@ Create a transaction for transferring a NFT without sending it.
 Transfer a NFT to a recipient address.
 
 %%demo/examples/src/appkit/actions/nft#TRANSFER_NFT%%
+
+## Providers
+
+### `registerProvider`
+
+Register a custom token swap provider in AppKit (e.g., Omniston).
+
+%%demo/examples/src/appkit/actions/providers#REGISTER_PROVIDER%%
