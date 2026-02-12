@@ -25,6 +25,19 @@ export const sendJettonSchema = z.object({
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
 });
 
+const transactionMessageSchema = z.object({
+    address: z.string().min(1).describe('Recipient wallet address'),
+    amount: z.string().min(1).describe('Amount to transfer in nanotons'),
+    stateInit: z.string().optional().describe('Initial state for deploying a new contract (Base64)'),
+    payload: z.string().optional().describe('Message payload data (Base64)'),
+});
+
+export const sendRawTransactionSchema = z.object({
+    messages: z.array(transactionMessageSchema).min(1).describe('Array of messages to include in the transaction'),
+    validUntil: z.number().optional().describe('Unix timestamp after which the transaction becomes invalid'),
+    fromAddress: z.string().optional().describe('Sender wallet address'),
+});
+
 export function createMcpTransferTools(service: McpWalletService) {
     return {
         send_ton: {
@@ -150,6 +163,57 @@ export function createMcpTransferTools(service: McpWalletService) {
                                         jettonAddress: args.jettonAddress,
                                         amount: `${args.amount} ${symbol || 'tokens'}`,
                                         comment: args.comment || null,
+                                    },
+                                },
+                                null,
+                                2,
+                            ),
+                        },
+                    ],
+                };
+            },
+        },
+
+        send_raw_transaction: {
+            description:
+                'Send a raw transaction with full control over messages. Amounts are in nanotons. Supports multiple messages in a single transaction.',
+            inputSchema: sendRawTransactionSchema,
+            handler: async (args: z.infer<typeof sendRawTransactionSchema>): Promise<ToolResponse> => {
+                const result = await service.sendRawTransaction({
+                    messages: args.messages,
+                    validUntil: args.validUntil,
+                    fromAddress: args.fromAddress,
+                });
+
+                if (!result.success) {
+                    return {
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: JSON.stringify({
+                                    success: false,
+                                    error: result.message,
+                                }),
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+
+                return {
+                    content: [
+                        {
+                            type: 'text' as const,
+                            text: JSON.stringify(
+                                {
+                                    success: true,
+                                    message: result.message,
+                                    details: {
+                                        messageCount: args.messages.length,
+                                        messages: args.messages.map((m) => ({
+                                            to: m.address,
+                                            amount: `${m.amount} nanoTON`,
+                                        })),
                                     },
                                 },
                                 null,

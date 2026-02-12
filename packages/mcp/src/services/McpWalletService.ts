@@ -17,7 +17,15 @@
  */
 
 import { TonWalletKit, MemoryStorageAdapter, Network, wrapWalletInterface } from '@ton/walletkit';
-import type { Wallet, SwapQuote, SwapQuoteParams, SwapParams, ApiClientConfig, WalletAdapter } from '@ton/walletkit';
+import type {
+    Wallet,
+    SwapQuote,
+    SwapQuoteParams,
+    SwapParams,
+    ApiClientConfig,
+    WalletAdapter,
+    TransactionRequest,
+} from '@ton/walletkit';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
 
 import type { IContactResolver } from '../types/contacts.js';
@@ -363,6 +371,35 @@ export class McpWalletService {
             return {
                 success: true,
                 message: `Successfully sent jettons to ${toAddress}`,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
+    }
+
+    /**
+     * Send a raw transaction request directly
+     */
+    async sendRawTransaction(request: {
+        messages: Array<{
+            address: string;
+            amount: string;
+            mode?: number;
+            stateInit?: string;
+            payload?: string;
+        }>;
+        validUntil?: number;
+        fromAddress?: string;
+    }): Promise<TransferResult> {
+        try {
+            await this.wallet.sendTransaction(request as TransactionRequest);
+
+            return {
+                success: true,
+                message: `Successfully sent transaction with ${request.messages.length} message(s)`,
             };
         } catch (error) {
             return {

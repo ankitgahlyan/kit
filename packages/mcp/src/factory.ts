@@ -11,7 +11,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { Wallet, WalletAdapter } from '@ton/walletkit';
+import type { WalletAdapter } from '@ton/walletkit';
 
 import type { IContactResolver } from './types/contacts.js';
 import type { NetworkConfig } from './services/McpWalletService.js';
@@ -103,6 +103,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
     // Register transfer tools
     registerTool('send_ton', transferTools.send_ton);
     registerTool('send_jetton', transferTools.send_jetton);
+    registerTool('send_raw_transaction', transferTools.send_raw_transaction);
 
     // Register swap tools
     registerTool('get_swap_quote', swapTools.get_swap_quote);
