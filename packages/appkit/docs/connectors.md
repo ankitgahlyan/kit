@@ -39,7 +39,7 @@ appKit.addConnector(new TonConnectConnector({ tonConnect }));
 
 ### Usage with React
 
-If you are using `@ton/appkit-ui-react`, the connector setup is handled internally by the `AppKitProvider` or similar setup, but for standalone usage or custom integrations, the above approach is standard.
+If you are using `@ton/appkit-react`, the connector setup is handled internally by the `AppKitProvider` or similar setup, but for standalone usage or custom integrations, the above approach is standard.
 
 ### Configuration
 

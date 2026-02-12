@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import type React from 'react';
 import { Sparkles, Coins, AlertCircle } from 'lucide-react';
-import { useSelectedWallet, Transaction } from '@ton/appkit-ui-react';
+import { useSelectedWallet, Transaction } from '@ton/appkit-react';
 import { getErrorMessage } from '@ton/appkit';
 import { toast } from 'sonner';
 

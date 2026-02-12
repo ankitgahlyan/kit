@@ -7,7 +7,7 @@
  */
 
 import { useContext, useEffect } from 'react';
-import { useAppKitTheme } from '@ton/appkit-ui-react';
+import { useAppKitTheme } from '@ton/appkit-react';
 
 import { ThemeProviderContext } from '@/core/components/layout/theme-provider';
 

@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { useBalance, useJettons, useNfts } from '@ton/appkit-ui-react';
+import { useBalance, useJettons, useNfts } from '@ton/appkit-react';
 
 export const DataHooksExample = () => {
     // Get balance of selected wallet

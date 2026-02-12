@@ -7,7 +7,7 @@
  */
 
 import type React from 'react';
-import { ConnectButton } from '@ton/appkit-ui-react';
+import { ConnectButton } from '@ton/appkit-react';
 
 import { ThemeSwitcher } from './theme-switcher';
 

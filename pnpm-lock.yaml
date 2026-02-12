@@ -93,9 +93,9 @@ importers:
       '@ton/appkit':
         specifier: workspace:*
         version: link:../../packages/appkit
-      '@ton/appkit-ui-react':
+      '@ton/appkit-react':
         specifier: workspace:*
-        version: link:../../packages/appkit-ui-react
+        version: link:../../packages/appkit-react
       '@ton/core':
         specifier: 'catalog:'
         version: 0.63.0(@ton/crypto@3.3.0)
@@ -510,9 +510,9 @@ importers:
       '@ton/appkit':
         specifier: workspace:*
         version: link:../../packages/appkit
-      '@ton/appkit-ui-react':
+      '@ton/appkit-react':
         specifier: workspace:*
-        version: link:../../packages/appkit-ui-react
+        version: link:../../packages/appkit-react
       '@ton/walletkit':
         specifier: workspace:*
         version: link:../../packages/walletkit
@@ -638,7 +638,7 @@ importers:
         specifier: ^4.0.17
         version: 4.0.18(@types/node@24.10.13)(@vitest/ui@4.0.18)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/appkit-ui-react:
+  packages/appkit-react:
     dependencies:
       '@fontsource-variable/inter':
         specifier: 5.2.8

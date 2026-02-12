@@ -1,11 +1,11 @@
-# @ton/appkit-ui-react
+# @ton/appkit-react
 
 React components and hooks for AppKit.
 
 ## Installation
 
 ```bash
-pnpm add @ton/appkit @ton/appkit-ui-react
+pnpm add @ton/appkit @ton/appkit-react
 ```
 
 ## Documentation

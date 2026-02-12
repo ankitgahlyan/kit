@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { useAppKitTheme, useSelectedWallet } from '@ton/appkit-ui-react';
+import { useAppKitTheme, useSelectedWallet } from '@ton/appkit-react';
 
 export const UsageExample = () => {
     const [theme, setTheme] = useAppKitTheme();

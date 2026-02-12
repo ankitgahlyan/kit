@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import type { FC, ComponentProps } from 'react';
-import { useSignText, useSelectedWallet } from '@ton/appkit-ui-react';
+import { useSignText, useSelectedWallet } from '@ton/appkit-react';
 import { toast } from 'sonner';
 
 import { Card, Button } from '@/core/components';

@@ -8,14 +8,14 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { AppKitProvider } from '@ton/appkit-ui-react';
-import { TonConnectBridge } from '@ton/appkit-ui-react/tonconnect';
+import { AppKitProvider } from '@ton/appkit-react';
+import { TonConnectBridge } from '@ton/appkit-react/tonconnect';
 
 import { appKit } from '@/core/configs/app-kit';
 import { AppRouter, ThemeProvider } from '@/core/components';
 
 import './core/styles/app.css';
-import '@ton/appkit-ui-react/styles.css';
+import '@ton/appkit-react/styles.css';
 
 const queryClient = new QueryClient();
 

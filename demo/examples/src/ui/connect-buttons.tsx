@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { ConnectButton } from '@ton/appkit-ui-react';
+import { ConnectButton } from '@ton/appkit-react';
 
 export const ConnectButtonExample = () => {
     return (

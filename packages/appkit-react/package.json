@@ -1,5 +1,5 @@
 {
-  "name": "@ton/appkit-ui-react",
+  "name": "@ton/appkit-react",
   "version": "0.0.1",
   "scripts": {
     "build": "tsup",

@@ -1,6 +1,6 @@
 # AppKit UI React Hooks
 
-`@ton/appkit-ui-react` provides a React-friendly interface to AppKit, leveraging TanStack Query for data fetching.
+`@ton/appkit-react` provides a React-friendly interface to AppKit, leveraging TanStack Query for data fetching.
 
 ## Core Hooks
 

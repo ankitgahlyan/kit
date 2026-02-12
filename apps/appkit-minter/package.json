@@ -17,7 +17,7 @@
     "@ston-fi/omniston-sdk": "^0.7.8",
     "@tailwindcss/vite": "^4.1.18",
     "@ton/appkit": "workspace:*",
-    "@ton/appkit-ui-react": "workspace:*",
+    "@ton/appkit-react": "workspace:*",
     "@ton/core": "catalog:",
     "@ton/crypto": "catalog:",
     "@ton/walletkit": "workspace:*",

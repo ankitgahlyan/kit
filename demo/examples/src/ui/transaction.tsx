@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { Transaction } from '@ton/appkit-ui-react';
+import { Transaction } from '@ton/appkit-react';
 import { beginCell } from '@ton/core';
 import type { Base64String } from '@ton/walletkit';
 

@@ -7,7 +7,7 @@
  */
 
 import type React from 'react';
-import { useSelectedWallet } from '@ton/appkit-ui-react';
+import { useSelectedWallet } from '@ton/appkit-react';
 
 import { TokensCard } from '@/features/balances';
 import { CardGenerator } from '@/features/mint';

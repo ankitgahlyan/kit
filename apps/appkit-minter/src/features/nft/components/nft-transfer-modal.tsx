@@ -9,7 +9,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { NFT } from '@ton/appkit';
 import { getFormattedNftInfo, createTransferNftTransaction, getErrorMessage } from '@ton/appkit';
-import { Transaction, useAppKit } from '@ton/appkit-ui-react';
+import { Transaction, useAppKit } from '@ton/appkit-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/core/components';

@@ -9,7 +9,7 @@
 import { useMemo, useState } from 'react';
 import type { FC, ComponentProps } from 'react';
 import type { NFT } from '@ton/appkit';
-import { NftItem, useNfts } from '@ton/appkit-ui-react';
+import { NftItem, useNfts } from '@ton/appkit-react';
 
 import { NftTransferModal } from './nft-transfer-modal';
 

@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import type { Jetton } from '@ton/appkit';
 import { getFormattedJettonInfo, formatUnits, parseUnits, getErrorMessage } from '@ton/appkit';
-import { SendButton } from '@ton/appkit-ui-react';
+import { SendButton } from '@ton/appkit-react';
 
 import { Button } from '@/core/components';
 

@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import type { FC, ComponentProps } from 'react';
 import type { Jetton } from '@ton/appkit';
 import { getFormattedJettonInfo } from '@ton/appkit';
-import { CurrencyItem, useJettons, useBalance } from '@ton/appkit-ui-react';
+import { CurrencyItem, useJettons, useBalance } from '@ton/appkit-react';
 
 import { TokenTransferModal } from './token-transfer-modal';
 

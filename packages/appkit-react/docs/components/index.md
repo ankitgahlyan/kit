@@ -1,6 +1,6 @@
 # Components
 
-`@ton/appkit-ui-react` provides a set of themed, ready-to-use UI components for building TON dApps.
+`@ton/appkit-react` provides a set of themed, ready-to-use UI components for building TON dApps.
 
 ## Wallet Connection
 
@@ -9,7 +9,7 @@
 A button that triggers the wallet connection flow.
 
 ```tsx
-import { ConnectButton } from '@ton/appkit-ui-react';
+import { ConnectButton } from '@ton/appkit-react';
 
 function Header() {
     return (
@@ -34,7 +34,7 @@ Renders a single connector option with its icon and name.
 ### `BalanceBadge`
 Displays the TON balance with a currency icon. Useful for headers or wallet info sections.
 ```tsx
-import { BalanceBadge } from '@ton/appkit-ui-react';
+import { BalanceBadge } from '@ton/appkit-react';
 
 <BalanceBadge />
 ```

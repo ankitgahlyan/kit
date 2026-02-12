@@ -9,7 +9,7 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
 import { formatUnits, parseUnits } from '@ton/appkit';
-import { Transaction, useSwapQuote, useNetwork, useAddress, useBuildSwapTransaction } from '@ton/appkit-ui-react';
+import { Transaction, useSwapQuote, useNetwork, useAddress, useBuildSwapTransaction } from '@ton/appkit-react';
 
 export const USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
 

@@ -154,11 +154,11 @@ async function fetchNfts(wallet: Wallet) {
 
 ## React Integration
 
-For React/Next.js apps using `@ton/appkit-ui-react`:
+For React/Next.js apps using `@ton/appkit-react`:
 
 ```tsx
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useTonConnectUI, useTonWallet } from '@ton/appkit-ui-react';
+import { useTonConnectUI, useTonWallet } from '@ton/appkit-react';
 import { AppKit, PROVIDER_EVENTS } from '@ton/appkit';
 import { TonConnectProvider } from '@ton/appkit/tonconnect';
 import { Network } from '@ton/walletkit';
@@ -218,7 +218,7 @@ export function useAppKit() {
 
 See [apps/appkit-minter](https://github.com/ton-connect/kit/tree/main/apps/appkit-minter) for a complete React app demonstrating:
 
-- TonConnect wallet connection with `@ton/appkit-ui-react`
+- TonConnect wallet connection with `@ton/appkit-react`
 - AppKit integration for asset operations
 - Jetton and NFT transfers with confirmation modals
 - Real-time asset loading and display
