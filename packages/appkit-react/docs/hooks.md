@@ -218,3 +218,37 @@ Hook to get all configured networks.
 ```tsx
 %%demo/examples/src/appkit/hooks/network#USE_NETWORKS%%
 ```
+
+## NFT
+
+### `useNft`
+
+Hook to get a single NFT.
+
+```tsx
+%%demo/examples/src/appkit/hooks/nft#USE_NFT%%
+```
+
+### `useNfts`
+
+Hook to get NFTs of the selected wallet.
+
+```tsx
+%%demo/examples/src/appkit/hooks/nft#USE_NFTS%%
+```
+
+### `useNFTsByAddress`
+
+Hook to get NFTs of a specific address.
+
+```tsx
+%%demo/examples/src/appkit/hooks/nft#USE_NFTS_BY_ADDRESS%%
+```
+
+### `useTransferNft`
+
+Hook to transfer NFT to another wallet.
+
+```tsx
+%%demo/examples/src/appkit/hooks/nft#USE_TRANSFER_NFT%%
+```
