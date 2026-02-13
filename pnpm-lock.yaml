@@ -102,9 +102,6 @@ importers:
       '@ton/crypto':
         specifier: 'catalog:'
         version: 3.3.0
-      '@ton/walletkit':
-        specifier: workspace:*
-        version: link:../../packages/walletkit
       '@tonconnect/sdk':
         specifier: 'catalog:'
         version: 3.4.1
@@ -646,9 +643,6 @@ importers:
       '@ton/appkit':
         specifier: workspace:*
         version: link:../appkit
-      '@ton/walletkit':
-        specifier: workspace:*
-        version: link:../walletkit
       clsx:
         specifier: 2.1.1
         version: 2.1.1

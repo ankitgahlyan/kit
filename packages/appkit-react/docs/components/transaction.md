@@ -7,7 +7,7 @@ The `Transaction` component provides a pre-built UI for sending transactions. It
 ```tsx
 import { Transaction } from '@ton/appkit-react';
 import { beginCell } from '@ton/core';
-import type { Base64String } from '@ton/walletkit';
+import type { Base64String } from '@ton/appkit';
 
 function SendTransactionButton() {
     return (

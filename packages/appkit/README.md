@@ -51,4 +51,7 @@ const appKit = new AppKit({
 
 ## Documentation
 
-- [Actions](./docs/actions.md)
+- [Actions](./docs/actions.md) - Standardized blockchain actions
+- [Connectors](./docs/connectors.md) - Wallet connection management (TonConnect)
+- [Queries](./docs/query.md) - TanStack Query options for easy data fetching
+- [Swap](./docs/swap.md) - Swap assets using DEX aggregators (Omniston)

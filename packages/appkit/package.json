@@ -37,6 +37,16 @@
         "types": "./dist/queries/index.d.ts",
         "default": "./dist/queries/index.cjs"
       }
+    },
+    "./swap/omniston": {
+      "import": {
+        "types": "./dist/swap/omniston/index.d.ts",
+        "default": "./dist/swap/omniston/index.js"
+      },
+      "require": {
+        "types": "./dist/swap/omniston/index.d.ts",
+        "default": "./dist/swap/omniston/index.cjs"
+      }
     }
   },
   "typesVersions": {
@@ -46,6 +56,9 @@
       ],
       "queries": [
         "./dist/queries/index.d.ts"
+      ],
+      "swap/omniston": [
+        "./dist/swap/omniston/index.d.ts"
       ]
     }
   },
@@ -70,6 +83,9 @@
       "optional": true
     },
     "@tonconnect/ui": {
+      "optional": true
+    },
+    "@ston-fi/omniston-sdk": {
       "optional": true
     }
   },
