@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Network } from '@ton/walletkit';
 import { WALLETS_EVENTS } from '@ton/appkit';
 
-import { createWrapper } from '../../../../src/__tests__/test-utils';
+import { createWrapper } from '../../../__tests__/test-utils';
 import { UseSelectedWalletExample } from './use-selected-wallet';
 import { UseConnectedWalletsExample } from './use-connected-wallets';
 import { UseConnectorsExample } from './use-connectors';
