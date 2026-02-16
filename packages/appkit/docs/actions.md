@@ -429,10 +429,12 @@ const transactionResponse = await sendTransaction(appKit, transactionRequest);
 console.log('Swap Transaction:', transactionResponse);
 ```
 
+## Transaction
+
 ### `createTransferTonTransaction`
-
+ 
 Create a TON transfer transaction request without sending it.
-
+ 
 ```ts
 const tx = await createTransferTonTransaction(appKit, {
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
@@ -441,6 +443,37 @@ const tx = await createTransferTonTransaction(appKit, {
 });
 
 console.log('Transaction Request:', tx);
+```
+
+### `sendTransaction`
+ 
+Send a transaction to the blockchain.
+ 
+```ts
+const result = await sendTransaction(appKit, {
+    messages: [
+        {
+            address: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+            amount: '100000000', // 0.1 TON
+        },
+    ],
+});
+
+console.log('Transaction Result:', result);
+```
+ 
+### `transferTon`
+ 
+Transfer TON to a recipient address.
+ 
+```ts
+const result = await transferTon(appKit, {
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100000000', // 0.1 TON
+    comment: 'Hello from AppKit!',
+});
+
+console.log('Transfer Result:', result);
 ```
 
 ## Wallets

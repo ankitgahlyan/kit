@@ -208,11 +208,25 @@ Build (assemble) a swap transaction based on a quote. After the transaction is b
 
 %%demo/examples/src/appkit/actions/swap#BUILD_SWAP_TRANSACTION%%
 
+## Transaction
+
 ### `createTransferTonTransaction`
-
+ 
 Create a TON transfer transaction request without sending it.
-
+ 
 %%demo/examples/src/appkit/actions/transaction#CREATE_TRANSFER_TON_TRANSACTION%%
+
+### `sendTransaction`
+ 
+Send a transaction to the blockchain.
+ 
+%%demo/examples/src/appkit/actions/transaction#SEND_TRANSACTION%%
+ 
+### `transferTon`
+ 
+Transfer TON to a recipient address.
+ 
+%%demo/examples/src/appkit/actions/transaction#TRANSFER_TON%%
 
 ## Wallets
 
