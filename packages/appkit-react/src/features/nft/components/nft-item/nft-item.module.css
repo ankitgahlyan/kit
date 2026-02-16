@@ -1,6 +1,6 @@
 .nftItem {
     box-sizing: border-box;
-    width: 160px;
+    width: 100%;
     background-color: var(--ta-color-background-secondary);
     border-radius: var(--ta-border-radius-l);
     overflow: hidden;
