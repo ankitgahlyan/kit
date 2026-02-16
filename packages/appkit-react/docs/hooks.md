@@ -2,7 +2,33 @@
 
 AppKit React provides a set of hooks to interact with the blockchain and wallets.
 
-## Balances
+## Core
+ 
+ ### `useAppKit`
+ 
+ Hook to access the `AppKit` instance.
+ 
+ ```ts
+const appKit = useAppKit();
+```
+ 
+ ### `useAppKitTheme`
+ 
+ Hook to access and toggle the current theme.
+ 
+ ```tsx
+const [theme, setTheme] = useAppKitTheme();
+
+return (
+    <div>
+        <h3>Current Theme: {theme}</h3>
+        <button onClick={() => setTheme('dark')}>Set Dark Theme</button>
+        <button onClick={() => setTheme('light')}>Set Light Theme</button>
+    </div>
+);
+```
+ 
+ ## Balances
 
 ### `useBalance`
 

@@ -6,7 +6,15 @@ target: packages/appkit-react/docs/components.md
 
 `@ton/appkit-react` provides a set of themed, ready-to-use UI components for building TON dApps.
 
-## Balances
+## Providers
+ 
+ ### `AppKitProvider`
+ 
+ The root provider for AppKit. It must wrap your application.
+ 
+ %%demo/examples/src/appkit/components/providers#APP_KIT_PROVIDER%%
+ 
+ ## Balances
 
 ### `SendTonButton`
 

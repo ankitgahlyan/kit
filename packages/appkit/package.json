@@ -75,17 +75,17 @@
   "peerDependencies": {
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
-    "@tonconnect/protocol": ">=2.4.1",
+    "@ton/crypto": "^3.3.0",
     "@tonconnect/ui": ">=2.4.1"
   },
   "peerDependenciesMeta": {
-    "@tonconnect/protocol": {
-      "optional": true
-    },
     "@tonconnect/ui": {
       "optional": true
     },
     "@ston-fi/omniston-sdk": {
+      "optional": true
+    },
+    "@tanstack/query-core": {
       "optional": true
     }
   },
@@ -96,7 +96,6 @@
   "devDependencies": {
     "@tanstack/query-core": "catalog:",
     "@ton/core": "catalog:",
-    "@tonconnect/protocol": "catalog:",
     "@tonconnect/ui": "catalog:",
     "tsup": "^8.5.0",
     "typescript": "~5.8.3",

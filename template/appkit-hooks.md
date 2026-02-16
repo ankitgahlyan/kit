@@ -6,7 +6,21 @@ target: packages/appkit-react/docs/hooks.md
 
 AppKit React provides a set of hooks to interact with the blockchain and wallets.
 
-## Balances
+## Core
+ 
+ ### `useAppKit`
+ 
+ Hook to access the `AppKit` instance.
+ 
+ %%demo/examples/src/appkit/hooks/core#USE_APP_KIT%%
+ 
+ ### `useAppKitTheme`
+ 
+ Hook to access and toggle the current theme.
+ 
+ %%demo/examples/src/appkit/hooks/core#USE_APP_KIT_THEME%%
+ 
+ ## Balances
 
 ### `useBalance`
 

@@ -9,8 +9,17 @@ React components and hooks for AppKit.
 ## Installation
 
 ```bash
-pnpm add @ton/appkit @ton/appkit-react
+pnpm add @ton/appkit-react @tanstack/react-query
 ```
+
+## Dependencies
+
+`@ton/appkit-react` requires the following peer dependencies:
+
+-   `react` (>= 18.0.0)
+-   `react-dom` (>= 18.0.0)
+-   `@tanstack/react-query` (>= 5.0.0)
+-   `@tonconnect/ui` (>= 2.4.1) or `@tonconnect/ui-react` (>= 2.4.1) (Optional: Required for wallet connection)
 
 ## Initialization
 
@@ -20,6 +29,31 @@ Wrap your application in `AppKitProvider` and pass the `AppKit` instance.
 > Don't forget to import styles from `@ton/appkit-react/styles.css`.
 
 %%demo/examples/src/appkit#APPKIT_REACT_INIT%%
+
+### Setup TanStack Query
+
+Wrap your application in `QueryClientProvider` from `@tanstack/react-query` inside `AppKitProvider`.
+
+```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppKitProvider } from '@ton/appkit-react';
+
+const queryClient = new QueryClient();
+
+// ... appKit initialization
+
+function App() {
+    return (
+        <AppKitProvider appKit={appKit}>
+            <QueryClientProvider client={queryClient}>
+                {/* ... */}
+            </QueryClientProvider>
+        </AppKitProvider>
+    );
+}
+```
+
+[Read more about TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview)
 
 ## Swap
 

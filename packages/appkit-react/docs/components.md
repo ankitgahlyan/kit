@@ -2,7 +2,22 @@
 
 `@ton/appkit-react` provides a set of themed, ready-to-use UI components for building TON dApps.
 
-## Balances
+## Providers
+ 
+ ### `AppKitProvider`
+ 
+ The root provider for AppKit. It must wrap your application.
+ 
+ ```tsx
+return (
+    <AppKitProvider appKit={appKit}>
+        {/* Your App Content */}
+        <div>My App</div>
+    </AppKitProvider>
+);
+```
+ 
+ ## Balances
 
 ### `SendTonButton`
 
