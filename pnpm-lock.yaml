@@ -6,21 +6,52 @@ settings:
 
 catalogs:
   default:
+    '@tanstack/query-core':
+      specifier: 5.90.20
+      version: 5.90.20
+    '@tanstack/react-query':
+      specifier: 5.90.20
+      version: 5.90.20
+    '@ton/core':
+      specifier: ^0.63.0
+      version: 0.63.0
+    '@ton/crypto':
+      specifier: 3.3.0
+      version: 3.3.0
+    '@tonconnect/protocol':
+      specifier: 2.4.0
+      version: 2.4.0
     '@tonconnect/sdk':
       specifier: 3.4.1
       version: 3.4.1
+    '@tonconnect/ui':
+      specifier: 2.4.1
+      version: 2.4.1
     '@tonconnect/ui-react':
       specifier: 2.4.1
       version: 2.4.1
     '@types/react':
       specifier: 19.2.8
       version: 19.2.8
+    '@types/react-dom':
+      specifier: 19.2.3
+      version: 19.2.3
     react:
       specifier: 19.2.3
       version: 19.2.3
     react-dom:
       specifier: 19.2.3
       version: 19.2.3
+  react-native:
+    '@types/react':
+      specifier: 19.1.17
+      version: 19.1.17
+    react:
+      specifier: 19.1.0
+      version: 19.1.0
+    react-native:
+      specifier: 0.81.5
+      version: 0.81.5
 
 importers:
 
@@ -590,6 +621,9 @@ importers:
 
   packages/appkit:
     dependencies:
+      '@ton/crypto':
+        specifier: ^3.3.0
+        version: 3.3.0
       '@ton/walletkit':
         specifier: workspace:*
         version: link:../walletkit
@@ -600,9 +634,6 @@ importers:
       '@ton/core':
         specifier: 'catalog:'
         version: 0.63.0(@ton/crypto@3.3.0)
-      '@tonconnect/protocol':
-        specifier: 'catalog:'
-        version: 2.4.0
       '@tonconnect/ui':
         specifier: 'catalog:'
         version: 2.4.1
@@ -624,6 +655,9 @@ importers:
       '@ton/appkit':
         specifier: workspace:*
         version: link:../appkit
+      '@tonconnect/ui':
+        specifier: '>=2.4.1'
+        version: 2.4.1
       clsx:
         specifier: 2.1.1
         version: 2.1.1
