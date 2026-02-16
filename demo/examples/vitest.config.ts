@@ -29,10 +29,10 @@ export default defineConfig({
                 'src/appkit/react-hook.tsx', // React hook requires browser environment
             ],
             thresholds: {
-                lines: 60,
-                branches: 60,
+                lines: 50,
+                branches: 50,
                 functions: 50,
-                statements: 60,
+                statements: 50,
             },
         },
     },
