@@ -49,6 +49,37 @@ const appKit = new AppKit({
 });
 ```
 
+## Usage
+ 
+### Get Balance
+ 
+```ts
+const balance = await getBalance(appKit);
+if (balance) {
+    console.log('Balance:', balance.toString());
+}
+```
+ 
+### Transfer TON
+ 
+```ts
+const result = await transferTon(appKit, {
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100000000', // 0.1 TON
+    comment: 'Hello from AppKit!',
+});
+
+console.log('Transfer Result:', result);
+```
+ 
+> See all available actions in the [Actions Documentation](./docs/actions.md).
+ 
+## React Integration
+ 
+If you are using React, you can use `@ton/appkit-react` which provides hooks for all AppKit actions.
+ 
+[Read more about AppKit React](https://github.com/ton-connect/kit/tree/main/packages/appkit-react/README.md)
+ 
 ## Documentation
 
 - [Actions](./docs/actions.md) - Standardized blockchain actions

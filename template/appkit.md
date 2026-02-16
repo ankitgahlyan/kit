@@ -27,6 +27,24 @@ npm install @ton/appkit @tonconnect/sdk
 
 %%demo/examples/src/appkit#APPKIT_INIT%%
 
+## Usage
+ 
+### Get Balance
+ 
+%%demo/examples/src/appkit/actions/balances#GET_BALANCE%%
+ 
+### Transfer TON
+ 
+%%demo/examples/src/appkit/actions/transaction#TRANSFER_TON%%
+ 
+> See all available actions in the [Actions Documentation](./docs/actions.md).
+ 
+## React Integration
+ 
+If you are using React, you can use `@ton/appkit-react` which provides hooks for all AppKit actions.
+ 
+[Read more about AppKit React](https://github.com/ton-connect/kit/tree/main/packages/appkit-react/README.md)
+ 
 ## Documentation
 
 - [Actions](./docs/actions.md) - Standardized blockchain actions
