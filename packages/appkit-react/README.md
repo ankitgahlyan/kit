@@ -5,7 +5,7 @@ React components and hooks for AppKit.
 ## Installation
 
 ```bash
-pnpm add @ton/appkit-react @tanstack/react-query
+npm install @ton/appkit-react @tanstack/react-query @tonconnect/ui-react @ton/core @ton/crypto
 ```
 
 ## Dependencies
@@ -93,7 +93,7 @@ AppKit supports swapping assets through `OmnistonSwapProvider`.
 ### Installation
 
 ```bash
-pnpm add @ston-fi/omniston-sdk
+npm install @ston-fi/omniston-sdk
 ```
 
 ### Setup
