@@ -167,6 +167,7 @@ if (!selectedWallet) {
 const balance = await getJettonBalance(appKit, {
     jettonAddress: 'EQDBE420tTQIkoWcZ9pEOTKY63WVmwyIl3hH6yWl0r_h51Tl',
     ownerAddress: selectedWallet.getAddress(),
+    jettonDecimals: 6,
 });
 console.log('Jetton Balance:', balance.toString());
 ```
