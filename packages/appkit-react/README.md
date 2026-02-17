@@ -70,7 +70,7 @@ const appKit = new AppKit({
     connectors: [
         new TonConnectConnector({
             tonConnectOptions: {
-                manifestUrl: 'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json',
+                manifestUrl: 'your-manifest-url',
             },
         }),
     ],
