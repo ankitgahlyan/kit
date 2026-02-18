@@ -18,6 +18,7 @@ import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, addressToToken, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';
 import type { TransactionRequest } from '../../../api/models';
 import { asBase64, getUnixtime } from '../../../utils';
+import { formatUnits, parseUnits } from '../../../utils/units';
 
 const log = globalLogger.createChild('OmnistonSwapProvider');
 
@@ -106,7 +107,9 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
             const flexibleReferrerFee = params.providerOptions?.flexibleReferrerFee ?? this.flexibleReferrerFee;
 
             // Determine amount based on whether amountFrom or amountTo is specified
-            const amount = params.isReverseSwap ? { askUnits: params.amount } : { bidUnits: params.amount };
+            const amount = params.isReverseSwap
+                ? { askUnits: parseUnits(params.amount, params.to.decimals).toString() }
+                : { bidUnits: parseUnits(params.amount, params.from.decimals).toString() };
 
             const quoteRequest: QuoteRequest = {
                 amount,
@@ -128,7 +131,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
             const quoteEvent = await new Promise<QuoteResponseEvent>((resolve, reject) => {
                 let isSettled = false;
 
-                log.debug('Requesting quote');
+                log.debug('Requesting quote', { quoteRequest });
 
                 const timeoutId = setTimeout(() => {
                     log.debug('Timeout reached');
@@ -303,13 +306,19 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         }
 
         return {
+            rawFromAmount: quote.bidUnits,
+            rawToAmount: quote.askUnits,
+            rawMinReceived: quote.askUnits,
+
+            fromAmount: formatUnits(quote.bidUnits, params.from.decimals),
+            toAmount: formatUnits(quote.askUnits, params.to.decimals),
+            minReceived: formatUnits(quote.askUnits, params.to.decimals),
+
             metadata,
             providerId: this.providerId,
             fromToken: params.from,
             toToken: params.to,
-            fromAmount: quote.bidUnits,
-            toAmount: quote.askUnits,
-            minReceived: quote.askUnits,
+
             network: params.network,
             expiresAt: quote.tradeStartDeadline ? quote.tradeStartDeadline : undefined,
             fee: fee?.length ? fee : undefined,
