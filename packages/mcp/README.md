@@ -4,26 +4,25 @@ A Model Context Protocol (MCP) server for TON blockchain wallet operations. Buil
 
 ## Features
 
-- **Balance Queries**: Check TON and Jetton balances, list all tokens
-- **Transaction History**: View recent transactions with detailed info
-- **Transfers**: Send TON, Jettons, and NFTs
-- **Swaps**: Get quotes and execute token swaps via DEX
-- **NFT Support**: List, view details, and transfer NFTs
-- **DNS Resolution**: Resolve .ton domains and reverse lookup addresses
+- **Wallet Management**: Create, import, list, and remove TON wallets
+- **Balance Queries**: Check TON and Jetton balances
+- **Transfers**: Send TON and Jettons to any address
+- **Swaps**: Get quotes and execute token swaps
 - **Dual Transport**: Stdio (default) and HTTP server modes
-- **Serverless Support**: Deploy to AWS Lambda, Vercel, etc.
 
 ## Quick Start
 
+> **Note:** We currently do not support launch without a mnemonic or private key.
+
 ```bash
-# Run with mnemonic (full control)
-MNEMONIC="word1 word2 ... word24" npx @ton/mcp
+# Run as stdio MCP server
+MNEMONIC="word1 word2 ..." npx @ton/mcp
 
-# Run as HTTP server
-MNEMONIC="word1 word2 ... word24" npx @ton/mcp --http
+# Run as HTTP server (port 3000)
+MNEMONIC="word1 word2 ..." npx @ton/mcp --http
 
-# Run on custom port and host
-MNEMONIC="word1 word2 ... word24" npx @ton/mcp --http 8080 --host 127.0.0.1
+# Run as HTTP server on custom port
+MNEMONIC="word1 word2 ..." npx @ton/mcp --http 8080
 ```
 
 ## Usage with MCP Clients
@@ -37,75 +36,87 @@ Add to your MCP configuration:
   "mcpServers": {
     "ton": {
       "command": "npx",
-      "args": ["@ton/mcp"],
+      "args": ["-y", "@ton/mcp"],
       "env": {
-        "MNEMONIC": "word1 word2 ... word24",
-        "NETWORK": "mainnet"
+        "MNEMONIC": "word1 word2 word3 ...",
+        "PRIVATE_KEY": "0xyour_private_key_here (optional, alternative to MNEMONIC)"
       }
     }
   }
 }
 ```
 
-### HTTP Mode
+### HTTP mode
 
 Start the server and point your MCP client to the endpoint:
 
 ```bash
-MNEMONIC="..." npx @ton/mcp --http 3000
+MNEMONIC="word1 word2 ..." npx @ton/mcp --http 3000
 # MCP endpoint: http://localhost:3000/mcp
 ```
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MNEMONIC` | - | 24-word mnemonic phrase (required for mnemonic mode) |
-| `NETWORK` | `mainnet` | TON network (`mainnet` / `testnet`) |
-| `WALLET_VERSION` | `v5r1` | Wallet version (`v5r1` / `v4r2`) |
-| `WALLET_ADDRESS` | - | User's wallet address (for controlled wallet mode) |
-| `TONCENTER_API_KEY` | - | Optional TonCenter API key for higher rate limits |
-
-## Wallet Modes
-
-### Mnemonic Mode (Default)
-Provide a `MNEMONIC` environment variable to use traditional wallet control with full signing capabilities.
-
-### Controlled Wallet Mode
-When `MNEMONIC` is not provided, the MCP operates in controlled wallet mode:
-1. Checks for existing keypair in `~/.ton/key.json`
-2. If not found, requires `WALLET_ADDRESS` and generates a new keypair
-3. Stores the keypair for future use
-4. Uses this keypair to sign transactions (requires wallet to authorize the public key)
+| Variable          | Default   | Description                                           |
+|-------------------|-----------|-------------------------------------------------------|
+| `NETWORK`         | `mainnet` | TON network (`mainnet` / `testnet`)                   |
+| `MNEMONIC`        |           | Space-separated 24-word mnemonic phrase for wallet    |
+| `PRIVATE_KEY`     |           | Hex-encoded private key (alternative to mnemonic)     |
+| `WALLET_VERSION`  | `v5r1`    | Wallet version to use (`v5r1` or `v4r2`)              |
+| `TONCENTER_API_KEY`|          | API key for Toncenter (optional, for higher rate limits)|
 
 ## Available Tools
 
-### Balance & Info
+### Wallet Management
+
+#### `create_wallet`
+Create a new TON wallet with a generated 24-word mnemonic.
+
+**Parameters:**
+- `name` (required): Unique name for the wallet
+- `version` (optional): Wallet version - `v5r1` (default, recommended) or `v4r2`
+
+**Returns:** Wallet address and mnemonic (save securely!)
+
+#### `import_wallet`
+Import an existing wallet using a mnemonic phrase.
+
+**Parameters:**
+- `name` (required): Unique name for the wallet
+- `mnemonic` (required): 24-word mnemonic phrase (space-separated)
+- `version` (optional): Wallet version - `v5r1` (default) or `v4r2`
+
+#### `list_wallets`
+List all stored wallets with their addresses and metadata.
+
+#### `remove_wallet`
+Remove a wallet from storage.
+
+**Parameters:**
+- `name` (required): Name of the wallet to remove
+
+### Balance Queries
 
 #### `get_balance`
-Get the TON balance of the wallet.
+Get the TON balance for a wallet.
 
-**Returns:** Balance in TON and nanoTON
+**Parameters:**
+- `wallet` (required): Name of the wallet
+
+**Returns:** Balance in nanoTON and TON
 
 #### `get_jetton_balance`
 Get the balance of a specific Jetton.
 
 **Parameters:**
+- `wallet` (required): Name of the wallet
 - `jettonAddress` (required): Jetton master contract address
 
 #### `get_jettons`
-List all Jettons in the wallet with balances and metadata.
-
-#### `get_transactions`
-Get recent transaction history.
+List all Jettons held by a wallet.
 
 **Parameters:**
-- `limit` (optional): Max transactions to return (default: 20, max: 100)
-
-**Returns:** Transaction events including TON transfers, Jetton transfers, swaps
-
-#### `get_known_jettons`
-Get a list of known/popular Jettons on TON with their addresses and metadata.
+- `wallet` (required): Name of the wallet
 
 ### Transfers
 
@@ -113,101 +124,28 @@ Get a list of known/popular Jettons on TON with their addresses and metadata.
 Send TON to an address.
 
 **Parameters:**
+- `wallet` (required): Name of the wallet to send from
 - `toAddress` (required): Recipient TON address
-- `amount` (required): Amount in TON (e.g., "1.5" for 1.5 TON)
+- `amount` (required): Amount in nanoTON (1 TON = 1,000,000,000 nanoTON)
 - `comment` (optional): Transaction comment/memo
 
 #### `send_jetton`
 Send Jettons to an address.
 
 **Parameters:**
+- `wallet` (required): Name of the wallet to send from
 - `toAddress` (required): Recipient TON address
 - `jettonAddress` (required): Jetton master contract address
-- `amount` (required): Amount in human-readable format
+- `amount` (required): Amount in raw units (apply decimals yourself)
 - `comment` (optional): Transaction comment/memo
-
-#### `send_raw_transaction`
-Send a raw transaction with full control over messages.
-
-**Parameters:**
-- `messages` (required): Array of messages with `address`, `amount` (nanoTON), optional `stateInit` and `payload` (Base64)
-- `validUntil` (optional): Unix timestamp for transaction expiry
-- `fromAddress` (optional): Sender wallet address
 
 ### Swaps
 
 #### `get_swap_quote`
-Get a quote for swapping tokens.
+Get a quote for a token swap.
 
-**Parameters:**
-- `fromToken` (required): Token to swap from ("TON" or jetton address)
-- `toToken` (required): Token to swap to ("TON" or jetton address)
-- `amount` (required): Amount to swap in raw units
-- `slippageBps` (optional): Slippage tolerance in basis points (default: 100 = 1%)
-
-**Returns:** Quote details and transaction params for `send_raw_transaction`
-
-### NFTs
-
-#### `get_nfts`
-List all NFTs in the wallet.
-
-**Parameters:**
-- `limit` (optional): Max NFTs to return (default: 20, max: 100)
-- `offset` (optional): Pagination offset (default: 0)
-
-#### `get_nft`
-Get detailed information about a specific NFT.
-
-**Parameters:**
-- `nftAddress` (required): NFT item contract address
-
-#### `send_nft`
-Transfer an NFT to another address.
-
-**Parameters:**
-- `nftAddress` (required): NFT item contract address
-- `toAddress` (required): Recipient TON address
-- `comment` (optional): Transaction comment/memo
-
-### DNS
-
-#### `resolve_dns`
-Resolve a TON DNS domain to a wallet address.
-
-**Parameters:**
-- `domain` (required): TON DNS domain (e.g., "foundation.ton")
-
-#### `back_resolve_dns`
-Reverse resolve a wallet address to its DNS domain.
-
-**Parameters:**
-- `address` (required): TON wallet address
-
-## Serverless Deployment
-
-The package exports a serverless handler for deployment to AWS Lambda, Vercel, etc.
-
-```typescript
-// AWS Lambda
-import { createServerlessHandler } from '@ton/mcp/serverless';
-export const handler = createServerlessHandler();
-
-// Vercel
-import { createServerlessHandler } from '@ton/mcp/serverless';
-export default createServerlessHandler();
-```
-
-### Serverless Headers
-
-Pass credentials via request headers:
-
-| Header | Description |
-|--------|-------------|
-| `MNEMONIC` or `mnemonic` | 24-word mnemonic phrase |
-| `PRIVATE_KEY` or `private-key` | Hex-encoded private key (priority over mnemonic) |
-| `NETWORK` or `network` | Network (`mainnet` / `testnet`) |
-| `TONCENTER_KEY` or `toncenter-key` | Optional TonCenter API key |
+#### `execute_swap`
+Execute a token swap.
 
 ## Development
 
@@ -228,54 +166,31 @@ node packages/mcp/dist/cli.js --http 8080
 
 ## Library Usage
 
-The package exports a programmatic API for building custom MCP servers:
+The package also exports a programmatic API for building custom MCP servers:
 
 ```typescript
 import { createTonWalletMCP } from '@ton/mcp';
-import { Signer, WalletV5R1Adapter, TonWalletKit, Network, MemoryStorageAdapter } from '@ton/walletkit';
+import { Signer, WalletV5R1Adapter, TonWalletKit, MemoryStorageAdapter, Network } from '@ton/walletkit';
 
-// Initialize kit
+// Initialize TonWalletKit
+const network = Network.mainnet();
 const kit = new TonWalletKit({
-  networks: { [Network.mainnet().chainId]: {} },
+  networks: { [network.chainId]: {} },
   storage: new MemoryStorageAdapter(),
 });
 await kit.waitForReady();
 
-// Create wallet adapter
+// Create wallet from mnemonic
 const signer = await Signer.fromMnemonic(mnemonic, { type: 'ton' });
 const walletAdapter = await WalletV5R1Adapter.create(signer, {
-  client: kit.getApiClient(Network.mainnet()),
-  network: Network.mainnet(),
+  client: kit.getApiClient(network),
+  network,
 });
 const wallet = await kit.addWallet(walletAdapter);
 
 // Create MCP server
 const server = await createTonWalletMCP({ wallet });
-
-// Connect to transport
-const transport = new StdioServerTransport();
-await server.connect(transport);
 ```
-
-## Agent Skills
-
-This package includes skill files for AI agent integration:
-
-- **`skills/SKILL.md`** - Concise skill description for Claude Code and compatible agents
-- **`llms.txt`** - Detailed tool documentation for LLM context
-
-### Using with Claude Code
-
-Copy the skill to your project:
-
-```bash
-mkdir -p .claude/skills/ton-wallet
-cp node_modules/@ton/mcp/skills/SKILL.md .claude/skills/ton-wallet/
-```
-
-### Using llms.txt
-
-The `llms.txt` file follows the [llms.txt standard](https://llmstxt.org/) and can be used to provide context to any LLM about the available tools.
 
 ## License
 
