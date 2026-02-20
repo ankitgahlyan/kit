@@ -4,10 +4,12 @@ A Model Context Protocol (MCP) server for TON blockchain wallet operations. Buil
 
 ## Features
 
-- **Wallet Management**: Create, import, list, and remove TON wallets
-- **Balance Queries**: Check TON and Jetton balances
-- **Transfers**: Send TON and Jettons to any address
-- **Swaps**: Get quotes and execute token swaps
+- **Balance Queries**: Check TON and Jetton balances, view transaction history
+- **Transfers**: Send TON, Jettons, and NFTs to any address
+- **Swaps**: Get quotes for token swaps via DEX aggregators
+- **NFTs**: List, inspect, and transfer NFTs
+- **DNS**: Resolve `.ton` domains and reverse-lookup addresses
+- **Known Jettons**: Built-in directory of popular tokens
 - **Dual Transport**: Stdio (default) and HTTP server modes
 
 ## Quick Start
@@ -67,85 +69,111 @@ MNEMONIC="word1 word2 ..." npx @ton/mcp --http 3000
 
 ## Available Tools
 
-### Wallet Management
-
-#### `create_wallet`
-Create a new TON wallet with a generated 24-word mnemonic.
-
-**Parameters:**
-- `name` (required): Unique name for the wallet
-- `version` (optional): Wallet version - `v5r1` (default, recommended) or `v4r2`
-
-**Returns:** Wallet address and mnemonic (save securely!)
-
-#### `import_wallet`
-Import an existing wallet using a mnemonic phrase.
-
-**Parameters:**
-- `name` (required): Unique name for the wallet
-- `mnemonic` (required): 24-word mnemonic phrase (space-separated)
-- `version` (optional): Wallet version - `v5r1` (default) or `v4r2`
-
-#### `list_wallets`
-List all stored wallets with their addresses and metadata.
-
-#### `remove_wallet`
-Remove a wallet from storage.
-
-**Parameters:**
-- `name` (required): Name of the wallet to remove
-
-### Balance Queries
+### Balance & History
 
 #### `get_balance`
-Get the TON balance for a wallet.
+Get the TON balance of the wallet.
 
-**Parameters:**
-- `wallet` (required): Name of the wallet
-
-**Returns:** Balance in nanoTON and TON
+**Returns:** Balance in TON and nanoTON
 
 #### `get_jetton_balance`
-Get the balance of a specific Jetton.
+Get the balance of a specific Jetton in the wallet.
 
 **Parameters:**
-- `wallet` (required): Name of the wallet
 - `jettonAddress` (required): Jetton master contract address
 
 #### `get_jettons`
-List all Jettons held by a wallet.
+List all Jettons held by the wallet with balances and metadata.
+
+#### `get_transactions`
+Get recent transaction history for the wallet (TON transfers, Jetton transfers, swaps, etc.).
 
 **Parameters:**
-- `wallet` (required): Name of the wallet
+- `limit` (optional): Maximum number of transactions to return (default: 20, max: 100)
 
 ### Transfers
 
 #### `send_ton`
-Send TON to an address.
+Send TON to an address. Amount is in human-readable format (e.g., `"1.5"` means 1.5 TON).
 
 **Parameters:**
-- `wallet` (required): Name of the wallet to send from
 - `toAddress` (required): Recipient TON address
-- `amount` (required): Amount in nanoTON (1 TON = 1,000,000,000 nanoTON)
+- `amount` (required): Amount in TON (e.g., `"1.5"`)
 - `comment` (optional): Transaction comment/memo
 
 #### `send_jetton`
-Send Jettons to an address.
+Send Jettons to an address. Amount is in human-readable format.
 
 **Parameters:**
-- `wallet` (required): Name of the wallet to send from
 - `toAddress` (required): Recipient TON address
 - `jettonAddress` (required): Jetton master contract address
-- `amount` (required): Amount in raw units (apply decimals yourself)
+- `amount` (required): Amount in human-readable format (e.g., `"100"`)
 - `comment` (optional): Transaction comment/memo
+
+#### `send_raw_transaction`
+Send a raw transaction with full control over messages. Supports multiple messages in a single transaction.
+
+**Parameters:**
+- `messages` (required): Array of messages, each with:
+  - `address` (required): Recipient wallet address
+  - `amount` (required): Amount in nanotons
+  - `stateInit` (optional): Initial state for deploying a contract (Base64)
+  - `payload` (optional): Message payload data (Base64)
+- `validUntil` (optional): Unix timestamp after which the transaction becomes invalid
+- `fromAddress` (optional): Sender wallet address
 
 ### Swaps
 
 #### `get_swap_quote`
-Get a quote for a token swap.
+Get a quote for swapping tokens. Returns quote details and transaction params that can be executed via `send_raw_transaction`.
 
-#### `execute_swap`
-Execute a token swap.
+**Parameters:**
+- `fromToken` (required): Token to swap from (`"TON"` or jetton address)
+- `toToken` (required): Token to swap to (`"TON"` or jetton address)
+- `amount` (required): Amount in human-readable format (e.g., `"1.5"` for 1.5 TON)
+- `slippageBps` (optional): Slippage tolerance in basis points (default: 100 = 1%)
+
+### NFTs
+
+#### `get_nfts`
+List all NFTs in the wallet with metadata, collection info, and attributes.
+
+**Parameters:**
+- `limit` (optional): Maximum number of NFTs to return (default: 20, max: 100)
+- `offset` (optional): Offset for pagination (default: 0)
+
+#### `get_nft`
+Get detailed information about a specific NFT by its address.
+
+**Parameters:**
+- `nftAddress` (required): NFT item contract address
+
+#### `send_nft`
+Transfer an NFT from the wallet to another address.
+
+**Parameters:**
+- `nftAddress` (required): NFT item contract address to transfer
+- `toAddress` (required): Recipient TON address
+- `comment` (optional): Transaction comment/memo
+
+### DNS
+
+#### `resolve_dns`
+Resolve a TON DNS domain (e.g., `"foundation.ton"`) to a wallet address.
+
+**Parameters:**
+- `domain` (required): TON DNS domain to resolve
+
+#### `back_resolve_dns`
+Reverse-resolve a TON wallet address to its `.ton` domain.
+
+**Parameters:**
+- `address` (required): TON wallet address to reverse resolve
+
+### Utility
+
+#### `get_known_jettons`
+Get a list of known/popular Jettons on TON with their addresses and metadata. Useful for looking up token addresses for swaps or transfers.
 
 ## Development
 
