@@ -42,19 +42,18 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
         const cleanValue = value.toLowerCase().replace(/[^a-z]/g, '');
         newWords[index] = cleanValue;
         setWords(newWords);
-
-        // Auto-focus next input if word is entered
-        if (cleanValue && index < 23) {
-            setTimeout(() => {
-                inputRefs.current[index + 1]?.focus();
-            }, 0);
-        }
     };
 
     const handleKeyDown = (index: number, event: React.KeyboardEvent) => {
         if (event.key === 'Backspace' && !words[index] && index > 0) {
             // Move to previous input on backspace if current is empty
             inputRefs.current[index - 1]?.focus();
+        } else if (event.key === ' ') {
+            // Move to next input on space (word complete)
+            event.preventDefault();
+            if (index < 23) {
+                inputRefs.current[index + 1]?.focus();
+            }
         } else if (event.key === 'Enter') {
             event.preventDefault();
             if (index < 23) {
@@ -86,15 +85,17 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
 
         if (pastedWords.length >= 12 && pastedWords.length <= 24) {
             const newWords = Array(24).fill('');
-            pastedWords.forEach((word, index) => {
-                if (index < 24) {
-                    newWords[index] = word;
+            let fillIndex = 0;
+            pastedWords.forEach((word) => {
+                if (fillIndex < 24) {
+                    newWords[fillIndex] = word;
+                    fillIndex++;
                 }
             });
             setWords(newWords);
 
-            // Focus the first empty input or the last filled input
-            const lastFilledIndex = Math.min(pastedWords.length - 1, 23);
+            // Focus the last filled input
+            const lastFilledIndex = Math.min(fillIndex - 1, 23);
             setTimeout(() => {
                 inputRefs.current[lastFilledIndex]?.focus();
             }, 0);
@@ -136,11 +137,10 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                                 type="button"
                                 data-testid="version-select-v5r1"
                                 onClick={() => setWalletVersion('v5r1')}
-                                className={`px-3 py-1.5 text-xs font-medium transition-all ${
-                                    walletVersion === 'v5r1'
+                                className={`px-3 py-1.5 text-xs font-medium transition-all ${walletVersion === 'v5r1'
                                         ? 'bg-blue-500 text-white'
                                         : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 V5R1
                             </button>
@@ -148,11 +148,10 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                                 type="button"
                                 data-testid="version-select-v4r2"
                                 onClick={() => setWalletVersion('v4r2')}
-                                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${
-                                    walletVersion === 'v4r2'
+                                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${walletVersion === 'v4r2'
                                         ? 'bg-blue-500 text-white'
                                         : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 V4R2
                             </button>
@@ -170,11 +169,10 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                                 type="button"
                                 data-testid="interface-select-mnemonic"
                                 onClick={() => setInterfaceType('mnemonic')}
-                                className={`px-3 py-1.5 text-xs font-medium transition-all ${
-                                    interfaceType === 'mnemonic'
+                                className={`px-3 py-1.5 text-xs font-medium transition-all ${interfaceType === 'mnemonic'
                                         ? 'bg-blue-500 text-white'
                                         : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 Mnemonic
                             </button>
@@ -182,11 +180,10 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                                 type="button"
                                 data-testid="interface-select-signer"
                                 onClick={() => setInterfaceType('signer')}
-                                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${
-                                    interfaceType === 'signer'
+                                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${interfaceType === 'signer'
                                         ? 'bg-blue-500 text-white'
                                         : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 Signer
                             </button>
@@ -235,13 +232,13 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                                 onFocus={() => setActiveInput(index)}
                                 placeholder={`${index + 1}`}
                                 data-testid={`mnemonic-input-${index + 1}`}
-                                className={`w-full px-1.5 py-1.5 text-xs border rounded text-center font-mono transition-colors ${
-                                    word
+                                maxLength={20}
+                                className={`w-full px-1.5 py-1.5 text-xs border rounded text-center font-mono transition-colors ${word
                                         ? 'border-green-300 bg-green-50 text-green-800'
                                         : activeInput === index
-                                          ? 'border-blue-300 bg-blue-50'
-                                          : 'border-gray-300 bg-white'
-                                } focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+                                            ? 'border-blue-300 bg-blue-50'
+                                            : 'border-gray-300 bg-white'
+                                    } focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                 autoComplete="off"
                                 spellCheck={false}
                             />
