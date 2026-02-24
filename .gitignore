@@ -30,7 +30,6 @@ node.log
 
 packages/walletkit-ios-bridge/build/*
 packages/walletkit-android-bridge/*.sh
-packages/phosphate
 
 release-artifacts
 *.tgz
