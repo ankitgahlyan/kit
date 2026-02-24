@@ -18,8 +18,8 @@ import { validateTransactionMessage } from '../validation';
 // Constants
 // ==========================================
 
-/** Default gas fee for jetton transfers (0.05 TON) */
-export const DEFAULT_JETTON_GAS_FEE = '50000000';
+/** Default gas fee for jetton transfers (0.55 TON) */
+export const DEFAULT_JETTON_GAS_FEE = '550000000';
 
 /** Default gas fee for NFT transfers (0.1 TON) */
 export const DEFAULT_NFT_GAS_FEE = '100000000';

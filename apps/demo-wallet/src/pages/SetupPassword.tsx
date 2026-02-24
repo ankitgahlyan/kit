@@ -74,18 +74,21 @@ export const SetupPassword: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
                             data-testid="password"
-                            type="password"
+                            type="number"
+                            // type="password"
                             label="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter a strong password"
                             required
-                            helperText="At least 8 characters with uppercase, lowercase, and numbers"
+                            helperText="At least 4 characters"
+                            // helperText="At least 8 characters with uppercase, lowercase, and numbers"
                         />
 
                         <Input
                             data-testid="password-confirm"
-                            type="password"
+                            type="number"
+                            // type="password"
                             label="Confirm Password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}

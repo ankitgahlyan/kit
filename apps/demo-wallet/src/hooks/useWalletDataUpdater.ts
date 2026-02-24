@@ -29,7 +29,7 @@ export const useWalletDataUpdater = () => {
 
         const timeout = setInterval(() => {
             void Promise.allSettled([updateBalance(), refreshJettons(), refreshNfts()]);
-        }, 30_000);
+        }, 30_0000);
 
         return () => {
             clearInterval(timeout);

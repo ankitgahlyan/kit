@@ -1,0 +1,309 @@
+import "storage"
+import "../common/consts"
+import "../common/errors"
+import "../common/fees-management"
+import "../common/messages"
+import "../common/sharding"
+import "../lottery/messages"
+
+fun calcDeployFiWallet(
+    ownerAddress: address,
+    treasury: address,
+    minterAddress: address,
+    baseFiWalletCode: cell,
+): AutoDeployAddress {
+    val emptyFiWalletStore: FiWalletStore = {
+        addresses: Addresses {
+            ownerAddress,
+            treasury,
+            initialOwnerAddr: ownerAddress,
+            id: createEmptyCell(),
+            nomInAddrs: NomInAddrs {}.toCell(),
+            trustedJettonAddrs: TrustedAddrs {
+                minterAddr: minterAddress,
+                authorisedAccs: createEmptyMap(),
+            }.toCell(),
+            others: Codes {
+                a: createEmptyCell(),
+                b: createEmptyCell(),
+                c: createEmptyCell(),
+                d: createEmptyCell(),
+            }.toCell(),
+        }.toCell(),
+        maps: Maps {
+            allowances: createEmptyMap(),
+            invited: createEmptyMap(),
+            votedFor: createEmptyMap(),
+            reportInfo: ReportInfo { reports: createEmptyMap() }.toCell(),
+        }.toCell(), // todo: learn how to set it default
+        timestamps: TimeStamps {}.toCell(),
+        baseFiWalletCode,
+    };
+
+    return {
+        stateInit: { code: baseFiWalletCode, data: emptyFiWalletStore.toCell() },
+        toShard: { fixedPrefixLength: SHARD_DEPTH, closeTo: ownerAddress },
+    };
+}
+
+fun address.getAddrFiWallet(self, store: FiWalletStore) {
+    // used by: wallet txn sending
+    val addrs = lazy store.addresses.load();
+    return calcDeployFiWallet(
+        self,
+        addrs.treasury,
+        addrs.trustedJettonAddrs.load().minterAddr,
+        store.baseFiWalletCode
+    )
+        .calculateAddress();
+}
+
+// fun address.connected(self, store: FiWalletStore) {
+//     // val store = lazy FiWalletStore.load();
+//     val addrs = lazy store.addresses.load();
+//     val maps = lazy store.maps.load();
+
+//     return ((self == contract.getAddress()) || (self == addrs.nomInAddrs.load().invitor!) ||
+//     (maps.followers.exists(self)) ||
+//     (maps.followings.exists(self)) ||
+//     (maps.friends.exists(self)) ||
+//     (maps.invited.exists(self)))
+//         ? true
+//         : false; // todo fixme null  
+// }
+
+fun checkCorrectSenderInternal(sender: address, senderInitOwner: address, store: FiWalletStore) {
+    if (sender == senderInitOwner.getAddrFiWallet(store)) {
+        assert (store.active) throw ACCOUNT_INACTIVE;
+    } else {
+        var addrs = lazy store.addresses.load();
+        assert (sender == addrs.trustedJettonAddrs.load().minterAddr) throw ERROR_NOT_VALID_WALLET;
+    }
+}
+
+// fun mintInternal(amount: coins, store: FiWalletStore) {
+//     amount = deductDebts(amount, store);
+//     if (amount > 0) {
+//         // var store = lazy FiWalletStore.load();
+//         store.jettonBalance += amount;
+//     }
+// }
+
+// fun deductDebts(amount: coins, store: FiWalletStore) {
+//     // var store = lazy FiWalletStore.load();
+//     var debtsMap = store.maps.load().debts; // todo simple bool store toggle to prevent expensive loads
+
+//     var remaining = amount;
+//     var debt = store.debt;
+//     val noDebts = debtsMap.isEmpty();
+//     // nothing to do
+//     if (remaining <= 0 || (debt == 0 && noDebts)) {
+//         return remaining;
+//     }
+//     if (debt > 0) {
+//         // TODO: pay a portion and shift to transfer side also
+//         if (remaining >= debt) {
+//             remaining -= debt; // continue deducting others
+//             store.debt = 0;
+//         } else {
+//             store.debt = debt - remaining;
+//             remaining = 0;
+//             return remaining;
+//         }
+//     }
+
+//     if (!noDebts) {
+//         // Pay debts in map order until remaining is exhausted
+//         var debt = debtsMap.findFirst();
+//         while (debt.isFound) {
+//             // ... use r.getKey() and r.loadValue()
+//             if (remaining <= 0) {
+//                 // ==0
+//                 return remaining; // 0
+//             }
+
+//             val from = debt.getKey();
+//             var foundDebt = debt.loadValue();
+
+//             var pay = 0;
+//             if (remaining >= foundDebt) {
+//                 pay = foundDebt;
+//             } else {
+//                 pay = remaining;
+//             }
+//             foundDebt -= pay;
+//             remaining -= pay;
+
+//             if (foundDebt == 0) {
+//                 var _ = debtsMap.delete(from);
+//             } else {
+//                 debtsMap.set(from, foundDebt);
+//             }
+//             // emitEvent(2, self.owner, from, pay);
+//             debt = debtsMap.iterateNext(debt);
+//         }
+//     }
+//     // optional: emit an event for debt payment
+//     return remaining;
+// }
+
+fun idActionChecks(store: FiWalletStore) {
+    val reports = lazy store.maps.load();
+    val reportInfo = lazy reports.reportInfo.load();
+    assert (
+        store.active
+    ) throw ACCOUNT_INACTIVE; // mint/burn actions allowed only for active/ID accounts
+    assert (reportInfo.reporterCount < 1) throw ALREADY_REPORTED; // reported IDs can't act
+}
+
+// fun newConnectionChecks(store: FiWalletStore, targetJetton: address) {
+//     assert (store.connections < MAX_CONNECTIONS) throw MAX_CONNECTIONS;
+//     assert (
+//         !targetJetton.connected(store)
+//     ) throw CONNECTION_EXISTS; // todo maybe use advanced map methods instead?
+// }
+
+fun address.deActivate(self, commandAmount: coins, store: FiWalletStore) {
+    assert (store.active) throw ACCOUNT_INACTIVE;
+    val internalDeActivate = createMessage({
+        bounce: BounceMode.Only256BitsOfBody,
+        dest: self.getAddrFiWallet(store),
+        value: 0,
+        body: InternalDeActivate {}, // emptybody as jettonAddrs are stored
+    });
+    internalDeActivate.send(SEND_MODE_BOUNCE_ON_ACTION_FAIL |
+    SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+}
+
+// fun burnForce(sender: address, amount: int, store: FiWalletStore) {
+//     // todo: refactor
+//     if (amount <= 0) {
+//         return;
+//     }
+
+//     if (store.jettonBalance >= amount) {
+//         store.jettonBalance -= amount;
+//         return;
+//     }
+
+//     // Not enough balance — consume what is left and record remaining as debt to sender
+//     val shortfall = amount - store.jettonBalance;
+//     store.jettonBalance = 0;
+
+//     var prevDebt = 0; // TODO: need this? 
+//     var maps = lazy store.maps.load();
+//     if (maps.debts.exists(sender)) {
+//         prevDebt = maps.debts.mustGet(sender);
+//     }
+//     // TODO FEES?
+//     maps.debts.set(sender, prevDebt + shortfall); // turnover += amount; // eventually debt gets paid
+// }
+
+@inline
+fun requestUpgrade(from: address, sender: address, version: uint10) {
+    createMessage({
+        dest: from,
+        bounce: BounceMode.NoBounce,
+        value: ton("0.1"),
+        body: RequestUpgradeCode { sender, version },
+    })
+        .send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_IGNORE_ERRORS);
+}
+
+@inline
+fun sendUpgrade(to: address, sender: address, walletVersion: uint10) {
+    createMessage({
+        dest: to,
+        value: ton("0.1"),
+        bounce: false,
+        body: Upgrade {
+            walletVersion,
+            sender,
+            newCode: contract.getCode(),
+        },
+    })
+        .send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_IGNORE_ERRORS);
+}
+
+fun cmpStringTail(mutate a: slice, mutate b: slice): bool {
+    while (true) {
+        val minBits = min(a.remainingBitsCount(), b.remainingBitsCount());
+        if (minBits > 0) {
+            val aBits = a.loadBits(minBits);
+            val bBits = b.loadBits(minBits);
+            if (!aBits.bitsEqual(bBits)) {
+                return false;
+            }
+        }
+        
+        // Check if both slices are fully consumed
+        val aEndBits = a.isEndOfBits();
+        val bEndBits = b.isEndOfBits();
+        val aEndRefs = a.isEndOfRefs();
+        val bEndRefs = b.isEndOfRefs();
+        
+        // Both fully consumed - equal
+        if (aEndBits && aEndRefs && bEndBits && bEndRefs) {
+            return true;
+        }
+        
+        // Advance to refs if slices are empty of bits but have refs
+        if (aEndBits && !aEndRefs) {
+            a = a.loadRef().beginParse();
+        }
+        if (bEndBits && !bEndRefs) {
+            b = b.loadRef().beginParse();
+        }
+        
+        // Mismatch: one has more data/refs than the other
+        if (a.isEndOfBits() != b.isEndOfBits() || 
+            a.isEndOfRefs() != b.isEndOfRefs()) {
+            return false;
+        }
+    }
+}
+
+@inline
+fun enterLottery(sender: address, dest: address) {
+    val enterLottery = createMessage({
+                bounce: BounceMode.Only256BitsOfBody,
+                dest, // todo: fixme: treasury for now
+                value: 0,
+                body: EnterLottery {
+                    sender,
+                }
+            });
+            enterLottery.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_BOUNCE_ON_ACTION_FAIL);
+}
+
+fun sendExcesses(queryId: uint64, inValue: coins, to: address) {
+    var toLeaveOnBalance = contract.getOriginalBalance() - inValue +
+    contract.getStorageDuePayment();
+    reserveToncoinsOnBalance(
+        // todo: manage fees properly
+        max(toLeaveOnBalance + ton("0.5"), calculateJettonWalletMinStorageFee()),
+        RESERVE_MODE_AT_MOST
+    );
+
+    createMessage({
+        bounce: BounceMode.NoBounce,
+        dest: to,
+        value: 0,
+        body: ReturnExcessesBack { queryId },
+    }).send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
+}
+
+fun notifyOwner(queryId: uint64, transferInitiator: address, dest: address, jettonAmount: coins, forwardPayload: slice) {
+    createMessage({
+        bounce: BounceMode.NoBounce, // cause receiver can have uninitialized contract
+        dest, // notify current owner
+        value: ton("0.001"),
+        body: TransferNotificationForRecipient {
+            queryId,
+            jettonAmount,
+            transferInitiator,
+            forwardPayload,
+        },
+    }).send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_BOUNCE_ON_ACTION_FAIL); // bounce back to sender
+            
+}

@@ -17,6 +17,9 @@ import { createComponentLogger } from '../utils/logger';
 
 import { useFormattedJetton } from '@/hooks/useFormattedJetton';
 
+import { Html5Qrcode } from 'html5-qrcode';
+import { QrCode, X } from "lucide-react";
+
 // Create logger for send transaction
 const log = createComponentLogger('SendTransaction');
 
@@ -40,6 +43,10 @@ export const SendTransaction: React.FC = () => {
     const { userJettons, isLoadingJettons, loadUserJettons, formatJettonAmount } = useJettons();
 
     const selectedJettonInfo = useFormattedJetton(selectedToken?.data);
+
+    const [showQRScanner, setShowQRScanner] = useState(false);
+    // let qrScanner: Html5Qrcode | null = null;
+    const [qrScanner, setQRScanner] = useState<Html5Qrcode | null>(null)
 
     // Load jettons on mount
     useEffect(() => {
@@ -187,8 +194,70 @@ export const SendTransaction: React.FC = () => {
         }
     };
 
+    async function initializeQRScanner() {
+        // Show the scanner UI first to render the element
+        setShowQRScanner(true);
+        qrScanner || setQRScanner(new Html5Qrcode('qr-reader'));
+        const cameras = await Html5Qrcode.getCameras();
+        // Wait for DOM to update
+        // await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            await qrScanner!.start(
+                cameras.length > 1 ? cameras[1].id : cameras[0].id,
+                undefined,
+                onScanSuccess,
+                () => { } // onScanError: Silently ignore QR scanning errors (continuous scanning attempts)
+            );
+            // setQRScannerReady(true);
+        } catch (err: any) {
+            setError('Failed to initialize camera for QR scanning');
+            console.error('QR Scanner initialization failed:', err);
+            setShowQRScanner(false);
+        }
+    }
+
+    async function onScanSuccess(qrCodeMessage: string) {
+        let address = qrCodeMessage.trim();
+
+        // Extract address from ton://transfer/ prefix if present
+        const tonTransferMatch = address.match(/ton:\/\/transfer\/(.+)/);
+        if (tonTransferMatch) {
+            address = tonTransferMatch[1];
+        }
+
+        await stopQRScanner();
+        setRecipient(address);
+    }
+
+    async function stopQRScanner() {
+        // if (qrScanner && showQRScanner) {
+        try {
+            await qrScanner!.stop();
+            setShowQRScanner(false);
+        } catch (err: any) {
+            console.error('Error stopping QR scanner:', err);
+        }
+        // }
+    }
+
     return (
         <Layout title={`Send ${getCurrentTokenSymbol()}`}>
+            {/* <!-- QR Scanner Overlay --> */}
+            {showQRScanner &&
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+                    <div className="relative w-full max-w-sm">
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold text-white">Scan QR Code</h3>
+                                <Button size="sm" onClick={stopQRScanner} className="h-auto p-1">
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                            <div id="qr-reader"/>
+                        </div>
+                    </div>
+                </div>
+            }
             <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                     <Button variant="secondary" size="sm" onClick={() => navigate('/wallet')}>
@@ -230,9 +299,8 @@ export const SendTransaction: React.FC = () => {
                                 </div>
                             </div>
                             <svg
-                                className={`w-5 h-5 text-gray-400 transition-transform ${
-                                    showTokenSelector ? 'rotate-180' : ''
-                                }`}
+                                className={`w-5 h-5 text-gray-400 transition-transform ${showTokenSelector ? 'rotate-180' : ''
+                                    }`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -250,9 +318,8 @@ export const SendTransaction: React.FC = () => {
                                         setShowTokenSelector(false);
                                         setAmount('');
                                     }}
-                                    className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 ${
-                                        selectedToken.type === 'TON' ? 'bg-blue-50' : ''
-                                    }`}
+                                    className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 ${selectedToken.type === 'TON' ? 'bg-blue-50' : ''
+                                        }`}
                                 >
                                     <div className="flex items-center space-x-3">
                                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -280,12 +347,11 @@ export const SendTransaction: React.FC = () => {
                                             setShowTokenSelector(false);
                                             setAmount('');
                                         }}
-                                        className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 ${
-                                            selectedToken.type === 'JETTON' &&
+                                        className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 ${selectedToken.type === 'JETTON' &&
                                             selectedToken.data?.address === jetton.address
-                                                ? 'bg-blue-50'
-                                                : ''
-                                        }`}
+                                            ? 'bg-blue-50'
+                                            : ''
+                                            }`}
                                     >
                                         <div className="flex items-center space-x-3">
                                             <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -367,18 +433,37 @@ export const SendTransaction: React.FC = () => {
                                         className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
                                         data-testid="use-my-address"
                                     >
-                                        Use my address
+                                        Transfer-2-SELF
                                     </button>
                                 )}
                             </div>
-                            <Input
-                                value={recipient}
-                                onChange={(e) => setRecipient(e.target.value)}
-                                placeholder="EQxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                                required
-                                helperText="Enter the recipient's TON address"
-                                data-testid="recipient-input"
-                            />
+
+                            {/* Recipient */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    {/* <Label for="recipient">Recipient Address</Label> */}
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={initializeQRScanner}
+                                        className="h-auto p-1"
+                                        title="Scan QR code"
+                                    >
+                                        <QrCode className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <Input
+                                    id="recipient"
+                                    value={recipient}
+                                    type="text"
+                                    onChange={(e) => setRecipient(e.target.value)}
+                                    placeholder="0Q..."
+                                    className="font-mono"
+                                    required
+                                    helperText="Enter the recipient's address"
+                                    data-testid="recipient-input"
+                                />
+                            </div>
                         </div>
 
                         <div>
