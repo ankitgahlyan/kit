@@ -76,7 +76,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
     };
 
     const processPastedText = (text: string) => {
-        // Split by spaces and clean each word
+        // Split by spaces, newlines, and other whitespace, then clean each word
         const pastedWords = text
             .trim()
             .split(/\s+/)
@@ -206,7 +206,14 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onImport, onBack, is
                             Clear
                         </button>
                         <button
-                            onClick={() => navigator.clipboard?.readText().then(processPastedText)}
+                            onClick={() => {
+                                navigator.clipboard?.readText()
+                                    .then(processPastedText)
+                                    .catch(() => {
+                                        // Clipboard API not available on this device
+                                        alert('Please paste directly into the input fields using long-press');
+                                    });
+                            }}
                             data-testid="paste-mnemonic"
                             className="text-xs text-blue-600 hover:text-blue-800 underline"
                             type="button"
