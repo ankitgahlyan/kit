@@ -1,6 +1,6 @@
 {
   "name": "@ton/mcp",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "TON MCP Server - Model Context Protocol server for TON blockchain wallet operations",
   "license": "MIT",
   "type": "module",
@@ -44,7 +44,7 @@
     "build:clean": "rimraf dist",
     "build:types": "tsc -p tsconfig.json --emitDeclarationOnly",
     "build:chmod": "chmod +x dist/cli.js",
-    "dev": "rolldown -c --watch",
+    "dev": "rolldown --watch -c",
     "dev:cli": "node --import tsx/esm src/cli.ts",
     "dev:cli:http": "node --import tsx/esm src/cli.ts --http",
     "lint": "eslint src --max-warnings 0",
