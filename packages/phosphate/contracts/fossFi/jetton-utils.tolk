@@ -7,16 +7,15 @@ import "../common/sharding"
 import "../lottery/messages"
 
 fun calcDeployFiWallet(
-    ownerAddress: address,
+    owner: address,
     treasury: address,
     minterAddress: address,
     baseFiWalletCode: cell,
 ): AutoDeployAddress {
     val emptyFiWalletStore: FiWalletStore = {
         addresses: Addresses {
-            ownerAddress,
+            owner,
             treasury,
-            initialOwnerAddr: ownerAddress,
             id: createEmptyCell(),
             nomInAddrs: NomInAddrs {}.toCell(),
             trustedJettonAddrs: TrustedAddrs {
@@ -42,7 +41,7 @@ fun calcDeployFiWallet(
 
     return {
         stateInit: { code: baseFiWalletCode, data: emptyFiWalletStore.toCell() },
-        toShard: { fixedPrefixLength: SHARD_DEPTH, closeTo: ownerAddress },
+        toShard: { fixedPrefixLength: SHARD_DEPTH, closeTo: owner },
     };
 }
 
@@ -72,8 +71,8 @@ fun address.getAddrFiWallet(self, store: FiWalletStore) {
 //         : false; // todo fixme null  
 // }
 
-fun checkCorrectSenderInternal(sender: address, senderInitOwner: address, store: FiWalletStore) {
-    if (sender == senderInitOwner.getAddrFiWallet(store)) {
+fun checkCorrectSenderInternal(sender: address, owner: address, store: FiWalletStore) {
+    if (sender == owner.getAddrFiWallet(store)) {
         assert (store.active) throw ACCOUNT_INACTIVE;
     } else {
         var addrs = lazy store.addresses.load();
@@ -264,13 +263,14 @@ fun cmpStringTail(mutate a: slice, mutate b: slice): bool {
 }
 
 @inline
-fun enterLottery(sender: address, dest: address) {
+fun enterLottery(sender: address, dest: address, amount: coins) {
     val enterLottery = createMessage({
                 bounce: BounceMode.Only256BitsOfBody,
-                dest, // todo: fixme: treasury for now
+                dest, // through minter
                 value: 0,
                 body: EnterLottery {
                     sender,
+                    amount,
                 }
             });
             enterLottery.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_BOUNCE_ON_ACTION_FAIL);

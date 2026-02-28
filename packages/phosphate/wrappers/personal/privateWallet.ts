@@ -3,7 +3,7 @@ import { Op } from '../constants';
 import {endParse} from "./privateMinter";
 
 export type JettonWalletConfig = {
-    ownerAddress: Address,
+    owner: Address,
     jettonMasterAddress: Address
 };
 
@@ -11,7 +11,7 @@ export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
     return beginCell()
         .storeUint(0, 4) // status
         .storeCoins(0) // jetton balance
-        .storeAddress(config.ownerAddress)
+        .storeAddress(config.owner)
         .storeAddress(config.jettonMasterAddress)
         .endCell();
 }
@@ -21,7 +21,7 @@ export function parseJettonWalletData(data: Cell) {
     const parsed = {
         status: sc.loadUint(4),
         balance: sc.loadCoins(),
-        ownerAddress: sc.loadAddress(),
+        owner: sc.loadAddress(),
         jettonMasterAddress: sc.loadAddress(),
     };
     endParse(sc);

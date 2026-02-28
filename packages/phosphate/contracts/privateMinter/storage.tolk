@@ -8,7 +8,7 @@ struct FiFields {
 
 struct PriWalletStore {
     jettonBalance: coins = 0 
-    ownerAddress: address
+    owner: address
     deployer: address
     minterAddress: address
 }

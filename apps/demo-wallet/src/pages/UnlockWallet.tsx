@@ -66,7 +66,7 @@ export const UnlockWallet: React.FC = () => {
                 <Card>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
-                            type="password"
+                            type="number"
                             label="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

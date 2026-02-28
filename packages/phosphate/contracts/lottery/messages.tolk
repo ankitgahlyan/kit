@@ -4,6 +4,7 @@
 
 struct (0x11111111) EnterLottery {
     sender: address
+    amount: coins
 }
 
 struct (0x22222222) LotteryWin {

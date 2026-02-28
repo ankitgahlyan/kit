@@ -51,14 +51,14 @@ struct (0x7bdd97de) NotifyMinter {
 
 struct (0x2c76b973) RequestWalletAddress {
     queryId: uint64
-    ownerAddress: address
+    owner: address
     includeOwnerAddress: bool
 }
 
 struct (0xd1735400) ResponseWalletAddress {
     queryId: uint64
     jettonWalletAddress: address?
-    ownerAddress: Cell<address>?
+    owner: Cell<address>?
 }
 
 struct (0x642b7d07) MintNewJettons {

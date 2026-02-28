@@ -5,6 +5,7 @@ import "../common/errors"
 import "../common/messages"
 import "../common/sharding"
 import "../lottery/storage"
+import "../lottery/messages"
 
 type AllowedMessageToMinter =
     | MintNewJettons
@@ -16,6 +17,8 @@ type AllowedMessageToMinter =
     | TopUpTons
     | InformMinterInviteInternal
     | RequestUpgradeCode
+    | EnterLottery
+    | LotteryWin
 
 fun onInternalMessage(in: InMessage): void {
     val msg = lazy AllowedMessageToMinter.fromSlice(in.body);
@@ -51,15 +54,15 @@ fun onInternalMessage(in: InMessage): void {
         }
 
         RequestWalletAddress => {
-            var ownerAddress: Cell<address>? = msg.includeOwnerAddress
-                ? msg.ownerAddress.toCell()
+            var owner: Cell<address>? = msg.includeOwnerAddress
+                ? msg.owner.toCell()
                 : null;
 
             var walletAddress: address? = null;
-            if (msg.ownerAddress.getWorkchain() == MY_WORKCHAIN) {
+            if (msg.owner.getWorkchain() == MY_WORKCHAIN) {
                 val store = lazy FiStore.load();
                 walletAddress = calcDeployFiWallet(
-                    msg.ownerAddress,
+                    msg.owner,
                     store.adminAddress,
                     contract.getAddress(),
                     store.baseFiWalletCode
@@ -74,7 +77,7 @@ fun onInternalMessage(in: InMessage): void {
                 body: ResponseWalletAddress {
                     queryId: msg.queryId,
                     jettonWalletAddress: walletAddress,
-                    ownerAddress,
+                    owner,
                 },
             });
             respondMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE |
@@ -176,6 +179,14 @@ fun onInternalMessage(in: InMessage): void {
             }
         }
 
+        EnterLottery => {
+            // todo: forward to lottery contract
+        }
+
+        LotteryWin => {
+            // todo: forward to winner
+        }
+
         else => {
             // invalid input; a typical reaction is:
             // ignore empty messages, "wrong opcode" if not
@@ -223,10 +234,10 @@ get fun get_jetton_data_all() {
     return FiStore.load(); // todo: return contract code + data also
 }
 
-get fun get_wallet_address(ownerAddress: address) {
+get fun get_wallet_address(owner: address) {
     val store = lazy FiStore.load();
     return calcDeployFiWallet(
-        ownerAddress,
+        owner,
         store.adminAddress,
         // owner/deployer/treasury
         contract.getAddress(),
@@ -235,11 +246,11 @@ get fun get_wallet_address(ownerAddress: address) {
         .calculateAddress();
 }
 
-fun checkCorrectSender(sender: address, senderInitOwner: address, store: FiStore) {
+fun checkCorrectSender(sender: address, owner: address, store: FiStore) {
     assert (
         sender ==
         calcDeployFiWallet(
-            senderInitOwner,
+            owner,
             store.adminAddress,
             contract.getAddress(),
             store.baseFiWalletCode
@@ -251,17 +262,15 @@ fun checkCorrectSender(sender: address, senderInitOwner: address, store: FiStore
 // todo: implement minter deploy(efficient) not jetton(costly stateinit send)
 // todo: implement bouncing-lottery also for gamification of network
 fun calcDeployLottery(
-    treasury: address,
-    minter: address,
-    fiJettonInitCode: cell,
-    lotteryCode: cell // todo: fixme,,,
+    owner: address,
+    entryAmount: coins,
+    lotteryCode: cell, // todo: fixme,,,
 ): AutoDeployAddress {
-    val emptyFiWalletStore: LotteryStorage = {
+    val emptyLotteryStore: LotteryStorage = {
+        owner,
+        entryAmount,
         participants: createEmptyMap(),
-        minter,
-        treasury,
-        fiJettonInitCode,
     };
 
-    return { stateInit: { code: lotteryCode, data: emptyFiWalletStore.toCell() } };
+    return { stateInit: { code: lotteryCode, data: emptyLotteryStore.toCell() } };
 }

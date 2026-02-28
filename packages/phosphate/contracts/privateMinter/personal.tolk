@@ -93,14 +93,14 @@ fun onInternalMessage(in: InMessage) {
         }
 
         RequestWalletAddress => {
-            val ownerAddress: Cell<address>? = msg.includeOwnerAddress
-                ? msg.ownerAddress.toCell()
+            val owner: Cell<address>? = msg.includeOwnerAddress
+                ? msg.owner.toCell()
                 : null;
 
             var jettonWalletAddress: address? = null;
-            if (msg.ownerAddress.getWorkchain() == MY_WORKCHAIN) {
+            if (msg.owner.getWorkchain() == MY_WORKCHAIN) {
                 jettonWalletAddress = calcAddrPriWallet(
-                    msg.ownerAddress,
+                    msg.owner,
                     storage.adminAddress,
                     contract.getAddress(),
                     storage.jettonWalletCode
@@ -114,7 +114,7 @@ fun onInternalMessage(in: InMessage) {
                 body: ResponseWalletAddress {
                     queryId: msg.queryId,
                     jettonWalletAddress,
-                    ownerAddress,
+                    owner,
                 },
             });
             respondMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE |
@@ -222,11 +222,11 @@ get fun get_jetton_data(): JettonDataReply {
     };
 }
 
-get fun get_wallet_address(ownerAddress: address): address {
+get fun get_wallet_address(owner: address): address {
     val storage = lazy PriStore.load();
 
     return calcAddrPriWallet(
-        ownerAddress,
+        owner,
         storage.adminAddress,
         contract.getAddress(),
         storage.jettonWalletCode

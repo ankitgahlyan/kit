@@ -1150,7 +1150,7 @@ export function dictValueParserJettonExcesses(): DictionaryValue<JettonExcesses>
 export type ProvideWalletAddress = {
     $$type: 'ProvideWalletAddress';
     queryId: bigint;
-    ownerAddress: Address;
+    owner: Address;
     includeAddress: boolean;
 }
 
@@ -1159,7 +1159,7 @@ export function storeProvideWalletAddress(src: ProvideWalletAddress) {
         const b_0 = builder;
         b_0.storeUint(745978227, 32);
         b_0.storeUint(src.queryId, 64);
-        b_0.storeAddress(src.ownerAddress);
+        b_0.storeAddress(src.owner)
         b_0.storeBit(src.includeAddress);
     };
 }
@@ -1170,27 +1170,27 @@ export function loadProvideWalletAddress(slice: Slice) {
     const _queryId = sc_0.loadUintBig(64);
     const _ownerAddress = sc_0.loadAddress();
     const _includeAddress = sc_0.loadBit();
-    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, ownerAddress: _ownerAddress, includeAddress: _includeAddress };
+    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, owner: _ownerAddress, includeAddress: _includeAddress };
 }
 
 export function loadTupleProvideWalletAddress(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _ownerAddress = source.readAddress();
     const _includeAddress = source.readBoolean();
-    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, ownerAddress: _ownerAddress, includeAddress: _includeAddress };
+    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, owner: _ownerAddress, includeAddress: _includeAddress };
 }
 
 export function loadGetterTupleProvideWalletAddress(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _ownerAddress = source.readAddress();
     const _includeAddress = source.readBoolean();
-    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, ownerAddress: _ownerAddress, includeAddress: _includeAddress };
+    return { $$type: 'ProvideWalletAddress' as const, queryId: _queryId, owner: _ownerAddress, includeAddress: _includeAddress };
 }
 
 export function storeTupleProvideWalletAddress(source: ProvideWalletAddress) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.queryId);
-    builder.writeAddress(source.ownerAddress);
+    builder.writeAddress(source.owner);
     builder.writeBoolean(source.includeAddress);
     return builder.build();
 }
@@ -1210,7 +1210,7 @@ export type TakeWalletAddress = {
     $$type: 'TakeWalletAddress';
     queryId: bigint;
     walletAddress: Address;
-    ownerAddress: Cell | null;
+    owner: Cell | null;
 }
 
 export function storeTakeWalletAddress(src: TakeWalletAddress) {
@@ -1219,7 +1219,7 @@ export function storeTakeWalletAddress(src: TakeWalletAddress) {
         b_0.storeUint(3513996288, 32);
         b_0.storeUint(src.queryId, 64);
         b_0.storeAddress(src.walletAddress);
-        if (src.ownerAddress !== null && src.ownerAddress !== undefined) { b_0.storeBit(true).storeRef(src.ownerAddress); } else { b_0.storeBit(false); }
+        if (src.owner !== null && src.owner !== undefined) { b_0.storeBit(true).storeRef(src.owner); } else { b_0.storeBit(false); }
     };
 }
 
@@ -1229,28 +1229,28 @@ export function loadTakeWalletAddress(slice: Slice) {
     const _queryId = sc_0.loadUintBig(64);
     const _walletAddress = sc_0.loadAddress();
     const _ownerAddress = sc_0.loadBit() ? sc_0.loadRef() : null;
-    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, ownerAddress: _ownerAddress };
+    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, owner: _ownerAddress };
 }
 
 export function loadTupleTakeWalletAddress(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _walletAddress = source.readAddress();
     const _ownerAddress = source.readCellOpt();
-    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, ownerAddress: _ownerAddress };
+    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, owner: _ownerAddress };
 }
 
 export function loadGetterTupleTakeWalletAddress(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _walletAddress = source.readAddress();
     const _ownerAddress = source.readCellOpt();
-    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, ownerAddress: _ownerAddress };
+    return { $$type: 'TakeWalletAddress' as const, queryId: _queryId, walletAddress: _walletAddress, owner: _ownerAddress };
 }
 
 export function storeTupleTakeWalletAddress(source: TakeWalletAddress) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.queryId);
     builder.writeAddress(source.walletAddress);
-    builder.writeCell(source.ownerAddress);
+    builder.writeCell(source.owner);
     return builder.build();
 }
 
@@ -4465,7 +4465,7 @@ const JettonWalletSharded_types: ABIType[] = [
     {"name":"JettonBurn","header":1499400124,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"amount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"responseDestination","type":{"kind":"simple","type":"address","optional":true}},{"name":"customPayload","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"JettonBurnNotification","header":2078119902,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"amount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"sender","type":{"kind":"simple","type":"address","optional":false}},{"name":"responseDestination","type":{"kind":"simple","type":"address","optional":true}}]},
     {"name":"JettonExcesses","header":3576854235,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
-    {"name":"ProvideWalletAddress","header":745978227,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"includeAddress","type":{"kind":"simple","type":"bool","optional":false}}]},
+    {"name":"ProvideWalletAddress","header":745978227,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"includeAddress","type":{"kind":"simple","type":"bool","optional":false}}]},
     {"name":"TakeWalletAddress","header":3513996288,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"walletAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"Mint","header":1680571655,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"receiver","type":{"kind":"simple","type":"address","optional":false}},{"name":"mintMessage","type":{"kind":"simple","type":"JettonTransferInternal","optional":false}}]},
     {"name":"CloseMinting","header":22,"fields":[]},

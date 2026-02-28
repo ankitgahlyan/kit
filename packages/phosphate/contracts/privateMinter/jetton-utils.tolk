@@ -2,13 +2,13 @@ import "storage"
 import "../common/sharding"
 
 fun calcDeployPriWallet(
-    ownerAddress: address,
+    owner: address,
     deployer: address,
     minterAddress: address,
     jettonWalletCode: cell,
 ): AutoDeployAddress {
     val emptyPriWalletStore: PriWalletStore = {
-        ownerAddress,
+        owner,
         deployer,
         minterAddress,
     };
@@ -16,7 +16,7 @@ fun calcDeployPriWallet(
     return {
         workchain: MY_WORKCHAIN,
         stateInit: { code: jettonWalletCode, data: emptyPriWalletStore.toCell() },
-        toShard: { fixedPrefixLength: SHARD_DEPTH, closeTo: ownerAddress },
+        toShard: { fixedPrefixLength: SHARD_DEPTH, closeTo: owner },
     };
 }
 
@@ -47,11 +47,11 @@ fun addrPriWallet(owner: address) {
 }
 
 fun calcAddrPriWallet(
-    ownerAddress: address,
+    owner: address,
     deployer: address,
     minterAddress: address,
     jettonWalletCode: cell,
 ) {
-    return calcDeployPriWallet(ownerAddress, deployer, minterAddress, jettonWalletCode)
+    return calcDeployPriWallet(owner, deployer, minterAddress, jettonWalletCode)
         .calculateAddress();
 }

@@ -2,10 +2,10 @@
 // Addresses are used as part of the commitment to ensure uniqueness
 
 import "@stdlib/common"
-import "../fossFi/storage"
 import "messages"
 import "utils"
 import "consts"
+import "storage"
 // import "@stdlib/exotic-cells"
 // import "@stdlib/tvm-dicts"
 // import "@stdlib/tvm-lowlevel"
@@ -24,7 +24,7 @@ fun onInternalMessage(in: InMessage) {
     match (msg) {
         EnterLottery => {
             // correct sender
-            assert (in.senderAddress == getFiWallet(msg.sender, storage.treasury, storage.minter, storage.fiJettonInitCode)) throw 700; // todo: incorrectSender
+            assert (in.senderAddress == storage.owner) throw 700; // todo: incorrectSender
             
             // Deadline check
             assert(blockchain.now() <= storage.revealDeadline) throw 201;
@@ -35,14 +35,14 @@ fun onInternalMessage(in: InMessage) {
             }
 
             // add if not already entered
-            if (!storage.participants.exists(in.senderAddress)) {
+            if (!storage.participants.exists(msg.sender)) {
                 // Add participant
-                storage.participants.set(in.senderAddress, ());
+                storage.participants.set(msg.sender, ());
                 storage.participantCount += 1;
             }
             
             storage.prizePool += ENTRY_FEE;
-            val addrHash = in.senderAddress.toCell().hash();
+            val addrHash = msg.sender.toCell().hash();
             storage.randomSeed ^= addrHash;
         }   
 
@@ -71,10 +71,10 @@ fun onInternalMessage(in: InMessage) {
             storage.revealDeadline = 0;
         }
         
-        else => {
-            // Reject unkblockchain.nown messages
-            assert(in.body.isEmpty()) throw 0xFFFF;
-        }
+        // else => {
+        //     // Reject unkblockchain.nown messages
+        //     assert(in.body.isEmpty()) throw 0xFFFF;
+        // }
     }
 
     storage.save();
@@ -83,11 +83,6 @@ fun onInternalMessage(in: InMessage) {
 // ============================================================================
 // GET METHODS
 // ============================================================================
-
-get fun getCurrentPhase() {
-    val storage = lazy LotteryStorage.load();
-    return storage.currentPhase;
-}
 
 get fun getParticipantCount() {
     val storage = lazy LotteryStorage.load();

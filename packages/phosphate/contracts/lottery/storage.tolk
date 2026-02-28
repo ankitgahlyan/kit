@@ -3,14 +3,13 @@
 // ============================================================================
 
 struct LotteryStorage {
+    owner: address // minter
+    entryAmount: coins
     participants: map<address, ()> // todo: fixme max participants
     participantCount: int32 = 0
     revealDeadline: int32 = 0
     prizePool: coins = 0
     randomSeed: uint256 = 0
-    minter: address
-    treasury: address
-    fiJettonInitCode: cell
 }
 
 fun LotteryStorage.load() {

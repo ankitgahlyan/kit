@@ -171,7 +171,7 @@ get getDeadlines() -> (int32, int32)
 1. **Deploy contract** with initial storage:
 ```tolk
 {
-    ownerAddress: <your_address>,
+    owner: <your_address>,
     currentPhase: 0,
     entryFee: ton("1.0"),
     participants: createEmptyMap(),

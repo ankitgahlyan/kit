@@ -79,9 +79,9 @@ fun onInternalMessage(in: InMessage): void {
             if (msg.version == store.version) {
                 // continue
             } else if (msg.version < store.version) {
-                sendUpgrade(in.senderAddress, addrs.initialOwnerAddr, store.version);
+                sendUpgrade(in.senderAddress, addrs.owner, store.version);
             } else {
-                requestUpgrade(in.senderAddress, addrs.initialOwnerAddr, store.version);
+                requestUpgrade(in.senderAddress, addrs.owner, store.version);
             }
             // val incomingTransfersLocked = ((self.status & 2) == 2);
             // val incomingTransfersLocked = (store.locked != false);
@@ -131,7 +131,7 @@ fun onInternalMessage(in: InMessage): void {
                 }).send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_IGNORE_ERRORS);
             }
 
-            notifyOwner(msg.queryId, msg.transferInitiator, addrs.ownerAddress, msg.jettonAmount, msg.forwardPayload);
+            notifyOwner(msg.queryId, msg.transferInitiator, addrs.owner, msg.jettonAmount, msg.forwardPayload);
 
             val excessesTo = msg.sendExcessesTo != null ? msg.sendExcessesTo : msg.transferInitiator;
             sendExcesses(msg.queryId, in.valueCoins, excessesTo);
@@ -144,7 +144,7 @@ fun onInternalMessage(in: InMessage): void {
             // val outgoingTransfersAllowed = (store.locked != true);
             // require(outgoingTransfersAllowed || isFromMaster, "Contract is locked");
             // require(sender() == self.owner || isFromMaster, "Incorrect sender");
-            assert (in.senderAddress == addrs.ownerAddress) throw ERROR_NOT_OWNER;
+            assert (in.senderAddress == addrs.owner) throw ERROR_NOT_OWNER;
             // assert (false, 0); // todo what it does?
             msg.forwardPayload.checkIsCorrectTLBEither();
             assert (
@@ -162,7 +162,7 @@ fun onInternalMessage(in: InMessage): void {
                     CustomPayloadMsg => {
                         // do something now send custom msg to contracts etc.
                         transferredAsCredit = customMsg.queryId == 1;
-                        // notifyOwner(msg.queryId, msg.transferInitiator, addrs.ownerAddress, msg.jettonAmount, msg.forwardPayload);
+                        // notifyOwner(msg.queryId, msg.transferInitiator, addrs.owner, msg.jettonAmount, msg.forwardPayload);
                     },
                     // else => {}, // need2b exhaustive?
                 }
@@ -185,7 +185,7 @@ fun onInternalMessage(in: InMessage): void {
                             body: NotifyMinter {
                                 queryId: 0, // to inform about BURN
                                 jettonAmount: burnAmount,
-                                burnInitiator: addrs.initialOwnerAddr,
+                                burnInitiator: addrs.owner,
                                 sendExcessesTo: msg.sendExcessesTo,
                             },
                         });
@@ -216,7 +216,7 @@ fun onInternalMessage(in: InMessage): void {
                             jettonAmount: msg.jettonAmount,
                             version: store.version,
                             transferredAsCredit,
-                            transferInitiator: addrs.initialOwnerAddr,
+                            transferInitiator: addrs.owner,
                             sendExcessesTo: msg.sendExcessesTo,
                             forwardTonAmount: msg.forwardTonAmount,
                             forwardPayload: msg.forwardPayload,
@@ -255,7 +255,7 @@ fun onInternalMessage(in: InMessage): void {
                             body: NotifyMinter {
                                 queryId: msg.queryId, // to inform about MINT
                                 jettonAmount: claimAmount,
-                                burnInitiator: addrs.initialOwnerAddr,
+                                burnInitiator: addrs.owner,
                                 sendExcessesTo: msg.sendExcessesTo,
                             },
                         });
@@ -288,7 +288,7 @@ fun onInternalMessage(in: InMessage): void {
                             body: InternalInvite {
                                 queryId: msg.queryId,
                                 version: store.version,
-                                sender: addrs.initialOwnerAddr,
+                                sender: addrs.owner,
                                 invitor: nomins.invitor!, // todo null?
                                 currentWalletCode: contract.getCode(),
                                 forwardPayload: msg.forwardPayload,
@@ -316,7 +316,7 @@ fun onInternalMessage(in: InMessage): void {
                             body: VotingAction {
                                 // positiveVote: true, // default
                                 // count: 10, // default
-                                originalSender: addrs.initialOwnerAddr,
+                                originalSender: addrs.owner,
                             },
                         });
                         votingMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE |
@@ -337,7 +337,7 @@ fun onInternalMessage(in: InMessage): void {
                             value: 0,
                             body: VotingAction {
                                 positiveVote: false,
-                                originalSender: addrs.initialOwnerAddr,
+                                originalSender: addrs.owner,
                             },
                         });
                         votingMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE |
@@ -353,7 +353,7 @@ fun onInternalMessage(in: InMessage): void {
                         // todo: fixme
                         requestUpgrade(
                             trustedAddrs.minterAddr,
-                            addrs.initialOwnerAddr,
+                            addrs.owner,
                             store.version
                         );
                     }
@@ -368,7 +368,7 @@ fun onInternalMessage(in: InMessage): void {
                             bounce: BounceMode.Only256BitsOfBody,
                             dest: msg.transferRecipient.getAddrFiWallet(store),
                             value: 0,
-                            body: AuthorityAction { sender: addrs.initialOwnerAddr },
+                            body: AuthorityAction { sender: addrs.owner },
                         });
                         authorityMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE |
                         SEND_MODE_BOUNCE_ON_ACTION_FAIL);
@@ -376,7 +376,7 @@ fun onInternalMessage(in: InMessage): void {
 
                     ton("0.99") => {
                         store.jettonBalance -= LOTTERY_ENTRY_AMT; // todo: fixme check all deductions
-                        enterLottery(addrs.initialOwnerAddr, addrs.treasury); // todo: fixme: use lottery addr
+                        enterLottery(addrs.owner, trustedAddrs.minterAddr, LOTTERY_ENTRY_AMT); // todo: fixme: use lottery addr
                     }
 
                     ton("0.777") => {
@@ -385,7 +385,7 @@ fun onInternalMessage(in: InMessage): void {
                         } // else ignore
                     }
 
-                    // todo: FIXME: else
+                    else => {},
                 }
             }
         }
@@ -404,7 +404,7 @@ fun onInternalMessage(in: InMessage): void {
                     queryId: msg.queryId,
                     jettonAmount: msg.amount,
                     version: store.version,
-                    transferInitiator: addrs.ownerAddress,
+                    transferInitiator: addrs.owner,
                     sendExcessesTo: null,
                     forwardTonAmount: 0,
                     forwardPayload: createEmptySlice(),
@@ -441,7 +441,7 @@ fun onInternalMessage(in: InMessage): void {
                 dest: trustedAddrs.minterAddr,
                 value: ton("0.01"),
                 body: InformMinterInviteInternal {
-                    sender: addrs.initialOwnerAddr, // different for mint for addr calc
+                    sender: addrs.owner, // different for mint for addr calc
                     invitor: msg.sender, // just invitor not invitor0
                     forwardPayload: msg.forwardPayload, // for broadcast, ledger update
                 },
@@ -474,8 +474,8 @@ fun onInternalMessage(in: InMessage): void {
                             queryId: 0,
                             jettonAmount: store.jettonBalance, // all coins
                             version: store.version,
-                            transferInitiator: addrs.initialOwnerAddr,
-                            sendExcessesTo: addrs.initialOwnerAddr,
+                            transferInitiator: addrs.owner,
+                            sendExcessesTo: addrs.owner,
                             forwardTonAmount: 0,
                             forwardPayload: "authorityFreeze", // todo
                         },
@@ -492,7 +492,7 @@ fun onInternalMessage(in: InMessage): void {
 
         RequestUpgradeCode => {
             checkCorrectSenderInternal(in.senderAddress, msg.sender, store);
-            sendUpgrade(in.senderAddress, addrs.initialOwnerAddr, store.version);
+            sendUpgrade(in.senderAddress, addrs.owner, store.version);
         },
 
         Upgrade => {
@@ -532,17 +532,17 @@ fun onInternalMessage(in: InMessage): void {
         }
 
         TransferNotificationForRecipient => {
-            notifyOwner(msg.queryId, msg.transferInitiator, addrs.ownerAddress, msg.jettonAmount, msg.forwardPayload);
+            notifyOwner(msg.queryId, msg.transferInitiator, addrs.owner, msg.jettonAmount, msg.forwardPayload);
         }
 
         EnterLottery => {
-            checkCorrectSenderInternal(in.senderAddress, addrs.initialOwnerAddr, store);
-            enterLottery(addrs.initialOwnerAddr, addrs.treasury);
+            checkCorrectSenderInternal(in.senderAddress, addrs.owner, store);
+            enterLottery(addrs.owner, trustedAddrs.minterAddr, msg.amount);
         },
 
         // todo: complete it
         LotteryWin => {
-            assert (in.senderAddress == addrs.treasury) throw INCORRECT_SENDER;
+            assert (in.senderAddress == trustedAddrs.minterAddr) throw INCORRECT_SENDER;
             store.jettonBalance += msg.amt;
         }
 
@@ -563,7 +563,7 @@ fun onInternalMessage(in: InMessage): void {
 
 struct JettonWalletDataReply {
     jettonBalance: coins
-    ownerAddress: address
+    owner: address
     minterAddress: address
     jettonWalletCode: cell
 }
@@ -574,7 +574,7 @@ get fun get_wallet_data(): JettonWalletDataReply {
 
     return {
         jettonBalance: store.jettonBalance,
-        ownerAddress: addrs.initialOwnerAddr, // init owner
+        owner: addrs.owner, // init owner
         minterAddress: addrs.trustedJettonAddrs.load().minterAddr,
         jettonWalletCode: store.baseFiWalletCode, // init code
     };

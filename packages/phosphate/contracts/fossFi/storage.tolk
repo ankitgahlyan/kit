@@ -12,9 +12,8 @@ struct TrustedAddrs { // todo: map field to store variable trusted addrs by root
 }
 
 struct Addresses {
-    ownerAddress: address // todo: changeAble/Recoverable use as verifying incoming msg from owner
+    owner: address // todo: changeAble/Recoverable use as verifying incoming msg from owner
     treasury: address // todo: killSwitch for when mainstream
-    initialOwnerAddr: address // sent as owner in outbound msg for correct sender check
     id: cell // todo: implement manual change; unique ID username@localLatitudeGroupName
     nomInAddrs: Cell<NomInAddrs>
     trustedJettonAddrs: Cell<TrustedAddrs>
@@ -86,7 +85,7 @@ struct FiStore {
     walletVersion: uint10
     adminAddress: address // todo: implement: use dao address
     readonly baseFiWalletCode: cell // for address calculation
-    latestFiWalletCode: cell? // for upgrades
+    latestFiWalletCode: cell // for upgrades
     metadataUri: cell // Cell<SnakeString>
     others: Cell<Codes>
 }

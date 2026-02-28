@@ -41,7 +41,7 @@ fun onInternalMessage(in: InMessage) {
             if (msg.forwardTonAmount) {
                 val notifyOwnerMsg = createMessage({
                     bounce: BounceMode.NoBounce,
-                    dest: storage.ownerAddress,
+                    dest: storage.owner,
                     value: msg.forwardTonAmount,
                     body: TransferNotificationForRecipient {
                         queryId: msg.queryId,
@@ -83,7 +83,7 @@ fun onInternalMessage(in: InMessage) {
             );
 
             // var storage = lazy PriWalletStore.load();
-            assert (in.senderAddress == storage.ownerAddress) throw ERROR_NOT_OWNER;
+            assert (in.senderAddress == storage.owner) throw ERROR_NOT_OWNER;
             assert (storage.jettonBalance >= msg.jettonAmount) throw ERROR_BALANCE_ERROR;
             storage.jettonBalance -= msg.jettonAmount;
             storage.save();
@@ -114,7 +114,7 @@ fun onInternalMessage(in: InMessage) {
                     queryId: msg.queryId,
                     jettonAmount: msg.jettonAmount,
                     version: 0,
-                    transferInitiator: storage.ownerAddress,
+                    transferInitiator: storage.owner,
                     sendExcessesTo: msg.sendExcessesTo,
                     forwardTonAmount: msg.forwardTonAmount,
                     forwardPayload: msg.forwardPayload,
@@ -126,7 +126,7 @@ fun onInternalMessage(in: InMessage) {
 
         AskToBurn => {
             checkAmountIsEnoughToBurn(in.valueCoins);
-            assert (in.senderAddress == storage.ownerAddress) throw ERROR_NOT_OWNER;
+            assert (in.senderAddress == storage.owner) throw ERROR_NOT_OWNER;
             assert (storage.jettonBalance >= msg.jettonAmount) throw ERROR_BALANCE_ERROR;
             storage.jettonBalance -= msg.jettonAmount;
 
@@ -137,7 +137,7 @@ fun onInternalMessage(in: InMessage) {
                 body: NotifyMinter {
                     queryId: msg.queryId,
                     jettonAmount: msg.jettonAmount,
-                    burnInitiator: storage.ownerAddress,
+                    burnInitiator: storage.owner,
                     sendExcessesTo: msg.sendExcessesTo,
                 },
             });
@@ -160,7 +160,7 @@ fun onInternalMessage(in: InMessage) {
 
 struct JettonWalletDataReply {
     jettonBalance: coins
-    ownerAddress: address
+    owner: address
     minterAddress: address
     jettonWalletCode: cell
 }
@@ -174,7 +174,7 @@ get fun get_wallet_data(): JettonWalletDataReply {
 
     return {
         jettonBalance: storage.jettonBalance,
-        ownerAddress: storage.ownerAddress,
+        owner: storage.owner,
         minterAddress: storage.minterAddress,
         jettonWalletCode: contract.getCode(),
     };

@@ -17,14 +17,25 @@ export async function run(provider: NetworkProvider) {
     const deployerAddress = Address.parse(deployer);
     // ====================================================================================
     const walletCode = await compile('FossFiWallet')
+    const lotteryCode = await compile('Lottery')
+
+
+    const otherCodes = beginCell()
+        .storeRef(lotteryCode)
+        .storeRef(beginCell().endCell())
+        .storeRef(beginCell().endCell())
+        .storeRef(beginCell().endCell())
+        .endCell()
 
     const fossFiConfig: FossFiConfig = {
         supply: 0n,
         walletVersion: 0n,
         admin: deployerAddress,
+        // lottery: null, // no lottery for now
         base_fi_wallet_code: walletCode,
+        latest_fi_wallet_code: walletCode,
         metadata: envContent, // content
-        others: null,
+        others: otherCodes,
     };
 
     const fossFi = provider.open(FossFi.createFromConfig(fossFiConfig, await compile('FossFi')));
