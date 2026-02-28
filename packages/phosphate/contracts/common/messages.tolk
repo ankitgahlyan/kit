@@ -73,14 +73,6 @@ struct (0x6501f354) ChangeMinterAdmin {
     newAdminAddress: address
 }
 
-struct (0xfb88e119) ClaimMinterAdmin {
-    queryId: uint64
-}
-
-struct (0x7431f221) DropMinterAdmin {
-    queryId: uint64
-}
-
 struct (0x2508d66a) Upgrade {
     walletUpgrade: bool = true
     walletVersion: uint10
@@ -161,6 +153,20 @@ struct (0x00000009) Payback {
     amount: coins
     sender: address
 }
+
+struct (0x00000011) HotUpgrade {
+    additionalData: cell?
+    code: cell
+}
+
+struct CurrentRequest {
+    newUpgrade: Upgrade
+    timestamp: uint32
+}
+
+struct (0x00000011) ApproveUpgrade { }
+
+struct (0x00000012) RejectUpgrade { }
 
 struct CustomPayloadMsg {
     queryId: uint64

@@ -5,6 +5,7 @@ import "../common/fees-management"
 import "../common/messages"
 import "../common/sharding"
 import "../lottery/messages"
+import "@stdlib/gas-payments"
 
 fun calcDeployFiWallet(
     owner: address,
@@ -277,11 +278,9 @@ fun enterLottery(sender: address, dest: address, amount: coins) {
 }
 
 fun sendExcesses(queryId: uint64, inValue: coins, to: address) {
-    var toLeaveOnBalance = contract.getOriginalBalance() - inValue +
-    contract.getStorageDuePayment();
+    var toLeaveOnBalance = contract.getOriginalBalance() - inValue + contract.getStorageDuePayment();
     reserveToncoinsOnBalance(
-        // todo: manage fees properly
-        max(toLeaveOnBalance + ton("0.5"), calculateJettonWalletMinStorageFee()),
+        max(toLeaveOnBalance, calculateJettonWalletMinStorageFee()),
         RESERVE_MODE_AT_MOST
     );
 
@@ -304,6 +303,6 @@ fun notifyOwner(queryId: uint64, transferInitiator: address, dest: address, jett
             transferInitiator,
             forwardPayload,
         },
-    }).send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_BOUNCE_ON_ACTION_FAIL); // bounce back to sender
+    }).send(SEND_MODE_PAY_FEES_SEPARATELY | SEND_MODE_IGNORE_ERRORS); // bounce back to sender
             
 }

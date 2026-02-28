@@ -21,13 +21,17 @@ export type FossFiContent = {
 	uri: string;
 };
 
+export type CurrentRequest = {
+    newUpgrade: Upgrade;
+    timestamp: bigint;
+}
+
 export type FossFiConfig = {
 	supply: bigint;
     walletVersion: bigint;
     admin: Address;
-    // lottery: Address | null;
+    currentRequest: CurrentRequest | null;
 	base_fi_wallet_code: Cell;
-    latest_fi_wallet_code: Cell,
 	metadata: Cell | FossFiContent;
     others: Cell;
 };
@@ -44,9 +48,11 @@ export function fossFiConfigCellToConfig(config: Cell): FossFiConfig {
         supply: sc.loadCoins(),
         walletVersion: sc.loadUintBig(10),
         admin: sc.loadAddress(),
-        // lottery: sc.loadMaybeAddress(),
+        currentRequest: sc.loadBit() ? {
+            newUpgrade: loadUpgrade(sc.loadRef().beginParse()),
+            timestamp: sc.loadUintBig(64),
+        } : null,
         base_fi_wallet_code: sc.loadRef(),
-        latest_fi_wallet_code: sc.loadRef(),
         metadata: sc.loadRef(),
         others: sc.loadRef(),
     };
@@ -63,9 +69,8 @@ export function fossFiConfigToCell(config: FossFiConfig): Cell {
 		.storeCoins(config.supply)
 		.storeUint(config.walletVersion, 10)
 		.storeAddress(config.admin)
-        // .storeAddress(config.lottery)
+        .storeBit(false) // initial currentRequest is null
 		.storeRef(config.base_fi_wallet_code)
-        .storeRef(config.latest_fi_wallet_code)
 		.storeRef(content)
         .storeRef(config.others)
 		.endCell();

@@ -55,10 +55,12 @@ fun onInternalMessage(in: InMessage) {
             // Send prize to winner
             val prizeMsg = createMessage({
                 bounce: BounceMode.NoBounce,
-                dest: winner, // todo: implement receiver in fiJetton
+                dest: storage.owner,
                 value: 0,
                 body: LotteryWin {
+                    entryAmount: storage.entryAmount,
                     amt: storage.prizePool,
+                    winner,
                 }
             });
             prizeMsg.send(SEND_MODE_REGULAR | SEND_MODE_IGNORE_ERRORS); // todo:

@@ -1,4 +1,4 @@
-import { toNano, Address, SendMode, beginCell } from '@ton/core';
+import { toNano, Address, SendMode, beginCell, Cell } from '@ton/core';
 import { envContent } from '../utils/jetton-helpers';
 import { FossFiConfig, storeTopUp, TopUp } from '../wrappers/fi/FossFi';
 import { getJettonHttpLink, getNetworkFromEnv } from '../utils/utils';
@@ -7,6 +7,8 @@ import { printSeparator } from '../utils/print';
 
 import { FossFi } from '../wrappers/fi/FossFi';
 import { compile, NetworkProvider } from '@ton/blueprint';
+import * as fs from 'node:fs';
+import path from 'node:path';
 
 export async function run(provider: NetworkProvider) {
     const deployer = process.env.DEPLOYER;
@@ -16,29 +18,26 @@ export async function run(provider: NetworkProvider) {
     }
     const deployerAddress = Address.parse(deployer);
     // ====================================================================================
-    const walletCode = await compile('FossFiWallet')
-    const lotteryCode = await compile('Lottery')
-
-
-    const otherCodes = beginCell()
-        .storeRef(lotteryCode)
-        .storeRef(beginCell().endCell())
-        .storeRef(beginCell().endCell())
-        .storeRef(beginCell().endCell())
-        .endCell()
+    const fiCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../build/', 'FossFi.compiled.json'), 'utf8'));
+    const fiWalletCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../build/', 'FossFiWallet.compiled.json'), 'utf8'));
+    const lotteryCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../build/', 'Lottery.compiled.json'), 'utf8'));
 
     const fossFiConfig: FossFiConfig = {
         supply: 0n,
         walletVersion: 0n,
         admin: deployerAddress,
-        // lottery: null, // no lottery for now
-        base_fi_wallet_code: walletCode,
-        latest_fi_wallet_code: walletCode,
+        currentRequest: null,
+        base_fi_wallet_code: Cell.fromHex(fiWalletCodeFile.hex),
         metadata: envContent, // content
-        others: otherCodes,
+        others: beginCell()
+        .storeRef(Cell.fromHex(lotteryCodeFile.hex)) // lottery code
+        .storeRef(Cell.fromHex(fiWalletCodeFile.hex)) // latestFiWalletCode
+        .storeRef(beginCell().endCell())
+        .storeRef(beginCell().endCell())
+        .endCell(),
     };
 
-    const fossFi = provider.open(FossFi.createFromConfig(fossFiConfig, await compile('FossFi')));
+    const fossFi = provider.open(FossFi.createFromConfig(fossFiConfig, Cell.fromHex(fiCodeFile.hex)));
 
     await fossFi.sendDeploy(provider.sender(), toNano('0.5'));
     // const mint: TopUp = {

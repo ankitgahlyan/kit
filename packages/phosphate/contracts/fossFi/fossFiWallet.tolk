@@ -23,7 +23,7 @@ type AllowedMessageToWallet =
     | TransferNotificationForRecipient // forwards invite notif invitor0 owner
     | Upgrade
     | VotingAction
-    | LotteryWin
+
     | EnterLottery
 
 type AllowedCustomPayload = CustomPayloadMsg
@@ -150,7 +150,7 @@ fun onInternalMessage(in: InMessage): void {
             assert (
                 msg.transferRecipient.getWorkchain() == MY_WORKCHAIN
             ) throw ERROR_WRONG_WORKCHAIN;
-            assert (in.valueCoins > ton("0.5"), ERROR_NOT_ENOUGH_GAS); // todo : bench and update
+            assert (in.valueCoins > ton("0.1"), ERROR_NOT_ENOUGH_GAS); // todo : bench and update
             // checkAmountIsEnoughToTransfer(in.valueCoins, msg.forwardTonAmount, in.originalForwardFee);
 
             var transferredAsCredit = false;
@@ -439,7 +439,7 @@ fun onInternalMessage(in: InMessage): void {
             val notifyMinterMsg = createMessage({
                 bounce: BounceMode.NoBounce,
                 dest: trustedAddrs.minterAddr,
-                value: ton("0.01"),
+                value: ton("0.001"),
                 body: InformMinterInviteInternal {
                     sender: addrs.owner, // different for mint for addr calc
                     invitor: msg.sender, // just invitor not invitor0
@@ -452,10 +452,11 @@ fun onInternalMessage(in: InMessage): void {
             sendExcesses(msg.queryId, in.valueCoins, msg.sender); // todo: fixme: senderAfterRecovery
         }
 
+        // both invitor & invitor0 can deactivate
         InternalDeActivate => {
-            // todo: learn no need to check correctInternalSender() for STORED jettonAddrs
+            // need to check correctInternalSender() for STORED jettonAddrs
             assert (
-                in.senderAddress == addrs.nomInAddrs.load().invitor0!
+                (in.senderAddress == nomins.invitor0!) | (in.senderAddress == nomins.invitor!)
             ) throw INVITE_FIRST; // throws if invitor0 null
 
             store.active = !store.active;
@@ -500,8 +501,10 @@ fun onInternalMessage(in: InMessage): void {
             if (store.version < msg.walletVersion) {
                 // ignore if manually upgraded
                 store.version = msg.walletVersion;
-                setTvmRegisterC3(transformSliceToContinuation(msg.newCode!.beginParse()));
                 contract.setCodePostponed(msg.newCode!);
+                setTvmRegisterC3(transformSliceToContinuation(msg.newCode!.beginParse()));
+
+                // any migration logic
             }
         }
 
@@ -539,12 +542,6 @@ fun onInternalMessage(in: InMessage): void {
             checkCorrectSenderInternal(in.senderAddress, addrs.owner, store);
             enterLottery(addrs.owner, trustedAddrs.minterAddr, msg.amount);
         },
-
-        // todo: complete it
-        LotteryWin => {
-            assert (in.senderAddress == trustedAddrs.minterAddr) throw INCORRECT_SENDER;
-            store.jettonBalance += msg.amt;
-        }
 
         else => {
             // invalid input; a typical reaction is:

@@ -38,7 +38,7 @@ export async function run(provider: NetworkProvider) {
         if (["minter", "wallet", "m", "w"].includes(choice)) break
         console.log("Invalid choice. Please type m/w/minter/wallet")
     }
-    await rl.close()
+    rl.close()
 
     const upgradeMinter = choice === "m" || choice === "minter"
     const upgradeWallet = choice === "w" || choice === "wallet"
@@ -68,6 +68,32 @@ export async function run(provider: NetworkProvider) {
                 .endCell(),
         }
     )
+
+    await new Promise(resolve => setTimeout(resolve, 20000)) // wait for the transaction to be processed
+
+    await provider.sender().send(
+        {
+            value: toNano("0.5"),
+            to: fossFi.address,
+            sendMode: SendMode.PAY_GAS_SEPARATELY, // + SendMode.IGNORE_ERRORS,
+            body: beginCell()
+                .storeUint(0x00000011, 32) // op code for approve upgrade
+                .endCell(),
+        }
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 20000)) // wait for the transaction to be processed
+    
+    // await provider.sender().send(
+    //     {
+    //         value: toNano("0.5"),
+    //         to: fossFi.address,
+    //         sendMode: SendMode.PAY_GAS_SEPARATELY, // + SendMode.IGNORE_ERRORS,
+    //         body: beginCell()
+    //             .storeUint(0x00000012, 32) // op code to reject upgrade
+    //             .endCell(),
+    //     }
+    // )
 
     // await fossFi.send(
     //     provider.sender(),

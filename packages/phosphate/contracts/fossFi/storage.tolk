@@ -1,3 +1,5 @@
+import "../common/messages"
+
 struct NomInAddrs {
     nominee: address? = null
     invitor: address? = null
@@ -80,13 +82,24 @@ struct FiWalletStore { // todo: nft like store migration after activate/upgrade/
     readonly baseFiWalletCode: cell
 }
 
+// struct FiStore {
+//     totalSupply: coins
+//     walletVersion: uint10
+//     adminAddress: address // todo: implement: use dao address
+//     readonly baseFiWalletCode: cell // for address calculation
+//     latestFiWalletCode: cell // for upgrades
+//     metadataUri: cell // Cell<SnakeString>
+//     others: Cell<Codes>
+// }
+
 struct FiStore {
-    totalSupply: coins
+    supply: coins
     walletVersion: uint10
-    adminAddress: address // todo: implement: use dao address
+    admin: address // todo: implement: use dao address
+    CurrentRequest: CurrentRequest?
     readonly baseFiWalletCode: cell // for address calculation
-    latestFiWalletCode: cell // for upgrades
-    metadataUri: cell // Cell<SnakeString>
+    // latestFiWalletCode: cell // for upgrades
+    metadata: cell // Cell<SnakeString>
     others: Cell<Codes>
 }
 
