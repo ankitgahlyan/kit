@@ -434,7 +434,7 @@ fun onInternalMessage(in: InMessage): void {
             nomins.invitor = in.senderAddress; // contract addr
             nomins.invitor0 = msg.invitor; // todo: null, can deactivate acc
 
-            notifyOwner(msg.queryId, msg.sender, msg.invitor, ton("0.1"), msg.forwardPayload);
+            // notifyOwner(msg.queryId, msg.sender, msg.invitor, ton("0.1"), msg.forwardPayload);
 
             val notifyMinterMsg = createMessage({
                 bounce: BounceMode.NoBounce,

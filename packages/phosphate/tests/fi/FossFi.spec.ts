@@ -10,89 +10,117 @@ import { findTransaction, flattenTransaction } from '@ton/test-utils';
 import fs from 'fs';
 import path from 'path';
 
-describe('FossFi', () => {
-    const fiCodefile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../build/', 'FossFi.compiled.json'), 'utf8'));
-    const fiWalletCodefile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../build/', 'FossFiWallet.compiled.json'), 'utf8'));
-    const fiCodeHex: string = fiCodefile.hex;
-    const fiWalletCodeHex: string = fiWalletCodefile.hex;
-
-    // compiled code cells
-    const fiCode = Cell.fromHex(fiCodeHex);
-    const fiWalletCode = Cell.fromHex(fiWalletCodeHex);
-
-    // beforeAll(async () => {
-    //     fiCode = await compile('FossFi');
-    //     fiWalletCode = await compile('FossFiWallet');
-    // }, 20000);
-
-    let blockchain: Blockchain;
-    let deployer: SandboxContract<TreasuryContract>;
-    let user: SandboxContract<TreasuryContract>;
-    let fi: SandboxContract<FossFi>;
-    let deployerJetton: SandboxContract<FossFiWallet>;
-    let userJetton: SandboxContract<FossFiWallet>;
-
+const setup = async () => {
     const newCode = beginCell().storeStringTail('new code').endCell();
     const newData = beginCell().storeStringTail('new data').endCell();
+    const fiCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../build/', 'FossFi.compiled.json'), 'utf8'));
+    const fiWalletCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../build/', 'FossFiWallet.compiled.json'), 'utf8'));
+    const lotteryCodeFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../build/', 'Lottery.compiled.json'), 'utf8'));
 
-    beforeEach(async () => {
-        // blockchain = await Blockchain.create({webUI: true});
-        blockchain = await Blockchain.create();
-        // blockchain.verbosity.vmLogs = "vm_logs";
-        deployer = await blockchain.treasury('deployer');
-        user = await blockchain.treasury('user');
-        fi = blockchain.openContract(FossFi.createFromConfig({
+    // compiled code cells
+    const fiCode = Cell.fromHex(fiCodeFile.hex);
+    const fiWalletCode = Cell.fromHex(fiWalletCodeFile.hex);
+    const lotteryCode = Cell.fromHex(lotteryCodeFile.hex);
+
+    const blockchain = await Blockchain.create();
+    // const blockchain = await Blockchain.create({webUI: true});
+    // blockchain.verbosity.vmLogs = "vm_logs";
+    const deployer = await blockchain.treasury('deployer');
+    const user = await blockchain.treasury('user');
+    const fi = blockchain.openContract(
+        FossFi.createFromConfig({
             supply: 0n,
             walletVersion: 0n,
             admin: deployer.address,
+            currentRequest: null,
             base_fi_wallet_code: fiWalletCode,
             metadata: envContent,
-            others: null,
-        }, fiCode));
+            others: beginCell()
+                    .storeRef(lotteryCode)
+                    .storeRef(fiWalletCode)
+                    .storeRef(beginCell().endCell())
+                    .storeRef(beginCell().endCell())
+                    .endCell(),
+        }, fiCode)
+    );
 
-        const deployResult = await fi.sendDeploy(deployer.getSender(), toNano('1'));
+    const deployResult = await fi.sendDeploy(deployer.getSender(), toNano('1'));
 
-        // expect(deployResult.transactions).toHaveTransaction({
-        //     from: deployer.address,
-        //     to: fi.address,
-        //     deploy: true,
-        //     success: true,
-        // });
+    expect(deployResult.transactions).toHaveTransaction({
+        from: deployer.address,
+        to: fi.address,
+        deploy: true,
+        success: true,
+    });
 
-        // deployerJetton = blockchain.openContract(FossFiWallet.createFromAddress(await fi.getWalletAddress(deployer.address)));
-        // userJetton = blockchain.openContract(FossFiWallet.createFromAddress(await fi.getWalletAddress(user.address)));
-        
-        // expect(deployResult.transactions).toHaveTransaction({
-        //     from: fi.address,
-        //     to: deployerJetton.address,
-        //     deploy: true,
-        //     success: true,
-        // });
+    const deployerJetton = blockchain.openContract(FossFiWallet.createFromAddress(await fi.getWalletAddress(deployer.address)));
+    const userJetton = blockchain.openContract(FossFiWallet.createFromAddress(await fi.getWalletAddress(user.address)));
 
-        const txToInspect = findTransaction(
-            deployResult.transactions,
-            {
-                from: deployer.address,
-                to: fi.address,
-                deploy: true,
-                success: true,
-            },
-        );
-        if (txToInspect === undefined) {
-            throw new Error('Requested tx was not found.');
-        }
-        // User-friendly output
-        console.log(flattenTransaction(txToInspect));
+    expect(deployResult.transactions).toHaveTransaction({
+        from: fi.address,
+        to: deployerJetton.address,
+        deploy: true,
+        success: true,
+    });
 
-        // for (const tx of result.transactions) {
-        //     console.log(flattenTransaction(tx));
-        // }
+    const txToInspect = findTransaction(
+        deployResult.transactions,
+        {
+            from: deployer.address,
+            to: fi.address,
+            deploy: true,
+            success: true,
+        },
+    );
+    if (txToInspect === undefined) {
+        throw new Error('Requested tx was not found.');
+    }
+    // User-friendly output
+    console.log(flattenTransaction(txToInspect));
+
+    // for (const tx of result.transactions) {
+    //     console.log(flattenTransaction(tx));
+    // }
+
+    return { blockchain, deployer, user, fiCode, fiWalletCode, fi, deployResult, deployerJetton, userJetton };
+};
+
+it('should deploy correctly', async () => {
+    const { fi, deployResult } = await setup();
+
+    const txToInspect = findTransaction(
+        deployResult.transactions,
+        {
+            to: fi.address,
+            deploy: true,
+        },
+    );
+    if (txToInspect === undefined) {
+        throw new Error('Requested tx was not found.');
+    }
+    // User-friendly output
+    console.log(flattenTransaction(txToInspect));
+    // Verbose output
+    console.log(txToInspect);
+});
+
+describe('FossFi', () => {
+
+
+
+
+
+
+
+
+    beforeEach(async () => {
+
+
 
     });
 
-    it('should deploy', async () => {
-        // the check is done inside beforeEach
-        // blockchain and fi and fiJetton are ready to use
+    it('upgrade', async () => {
+        const { blockchain, fi, deployResult } = await setup();
 
         // const upgradeResult = await fi.sendUpgrade(deployer.getSender(), true, deployer.address, newCode, null, toNano(1)); // true for wallet, false for minter
 

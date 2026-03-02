@@ -69,7 +69,7 @@ export async function run(provider: NetworkProvider) {
         }
     )
 
-    await new Promise(resolve => setTimeout(resolve, 20000)) // wait for the transaction to be processed
+    await new Promise(resolve => setTimeout(resolve, 10000)) // wait for the transaction to be processed
 
     await provider.sender().send(
         {
@@ -82,7 +82,7 @@ export async function run(provider: NetworkProvider) {
         }
     )
 
-    await new Promise(resolve => setTimeout(resolve, 20000)) // wait for the transaction to be processed
+    // await new Promise(resolve => setTimeout(resolve, 10000)) // wait for the transaction to be processed
     
     // await provider.sender().send(
     //     {

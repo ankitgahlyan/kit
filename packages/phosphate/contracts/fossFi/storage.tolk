@@ -82,23 +82,12 @@ struct FiWalletStore { // todo: nft like store migration after activate/upgrade/
     readonly baseFiWalletCode: cell
 }
 
-// struct FiStore {
-//     totalSupply: coins
-//     walletVersion: uint10
-//     adminAddress: address // todo: implement: use dao address
-//     readonly baseFiWalletCode: cell // for address calculation
-//     latestFiWalletCode: cell // for upgrades
-//     metadataUri: cell // Cell<SnakeString>
-//     others: Cell<Codes>
-// }
-
 struct FiStore {
     supply: coins
     walletVersion: uint10
     admin: address // todo: implement: use dao address
     CurrentRequest: CurrentRequest?
     readonly baseFiWalletCode: cell // for address calculation
-    // latestFiWalletCode: cell // for upgrades
     metadata: cell // Cell<SnakeString>
     others: Cell<Codes>
 }
