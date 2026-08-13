@@ -24,6 +24,11 @@ import { SendTransaction } from '@/features/send';
 import { SetupPasswordScreen, UnlockScreen } from '@/features/auth';
 import { LedgerScreen } from '@/features/ledger';
 import { WelcomeScreen, CreateWalletScreen, ImportWalletScreen } from '@/features/wallet-setup';
+import { BrotherhoodScreen } from '@/features/brotherhood';
+import { PersonalJettonScreen } from '@/features/personal-jetton';
+import { DaoScreen } from '@/features/dao';
+import { LotteryScreen } from '@/features/lottery';
+import { CityNetworkScreen } from '@/features/city-network';
 import { useWalletDataUpdater } from '@/core/hooks/use-wallet-data-updater';
 import { useReceivedToasts } from '@/features/notifications';
 import { Button } from '@/core/components/ui/button';
@@ -176,6 +181,46 @@ export const AppRouter: React.FC = () => {
                     element={
                         <ProtectedRoute requiresWallet>
                             <TonConnectRoute />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/brotherhood"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <BrotherhoodScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/personal-jetton"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <PersonalJettonScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dao"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <DaoScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lottery"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <LotteryScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/city-network"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <CityNetworkScreen />
                         </ProtectedRoute>
                     }
                 />

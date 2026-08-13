@@ -26,6 +26,9 @@ import {
 import { isExtension } from '@/core/lib/is-extension';
 import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } from '@/core/lib/extensionPopup';
 
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/brotherhood/ton';
+
 import './App.css';
 import './storePatch';
 
@@ -80,10 +83,12 @@ const walletKitConfig: WalletKitConfig = {
 
 function App() {
     return (
-        <WalletProvider storage={localStorage} walletKitConfig={walletKitConfig} enableDevtools={false}>
-            <AppRouter />
-            <Toaster />
-        </WalletProvider>
+        <QueryClientProvider client={queryClient}>
+            <WalletProvider storage={localStorage} walletKitConfig={walletKitConfig} enableDevtools={false}>
+                <AppRouter />
+                <Toaster />
+            </WalletProvider>
+        </QueryClientProvider>
     );
 }
 
