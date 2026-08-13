@@ -34,6 +34,7 @@ export interface CreateWalletAdapterParams {
     network: NetworkType;
     walletKit: ITonWalletKit;
     version: 'v5r1' | 'v4r2';
+    walletId?: number;
     /**
      * Factory function to create Ledger transport.
      * Required when useWalletInterfaceType is 'ledger'.
@@ -55,6 +56,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
         network,
         walletKit,
         version = 'v5r1',
+        walletId,
         createLedgerTransport,
     } = params;
 
