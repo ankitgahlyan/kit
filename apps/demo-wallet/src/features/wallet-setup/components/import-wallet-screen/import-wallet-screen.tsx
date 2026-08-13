@@ -8,7 +8,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@demo/wallet-core';
+import { useAuth, useWalletKit } from '@demo/wallet-core';
 import type { NetworkType } from '@demo/wallet-core';
 
 import { CenteredScreen } from '@/core/components/shared/centered-screen';
@@ -22,6 +22,8 @@ import {
     evaluateBip39Slots,
     extractMnemonicWordsFromPaste,
     isImportableBip39,
+    scanMnemonicWallets,
+    type DiscoveredWalletVersion,
 } from '@/features/wallets';
 
 type WalletVersion = 'v5r1' | 'v4r2';
@@ -40,6 +42,7 @@ const INTERFACES: SegmentedOption<WalletInterface>[] = [
 /** Dedicated "Recovery phrase" screen for importing an existing wallet via mnemonic. */
 export const ImportWalletScreen: React.FC = () => {
     const navigate = useNavigate();
+    const walletKit = useWalletKit();
     const { importWallet } = useTonWallet();
     const { setUseWalletInterfaceType } = useAuth();
 
@@ -47,14 +50,18 @@ export const ImportWalletScreen: React.FC = () => {
     const [activeInput, setActiveInput] = useState(0);
     const [version, setVersion] = useState<WalletVersion>('v5r1');
     const [interfaceType, setInterfaceType] = useState<WalletInterface>('mnemonic');
-    const [network, setNetwork] = useState<NetworkType>('mainnet');
+    const [network, setNetwork] = useState<NetworkType>('testnet');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [discoveredWallets, setDiscoveredWallets] = useState<DiscoveredWalletVersion[] | null>(null);
+    const [selectedWalletIds, setSelectedWalletIds] = useState<Set<string>>(new Set());
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-        inputRefs.current[0]?.focus();
-    }, []);
+        if (!discoveredWallets) {
+            inputRefs.current[0]?.focus();
+        }
+    }, [discoveredWallets]);
 
     const focusCell = (index: number) => {
         setTimeout(() => inputRefs.current[index]?.focus(), 0);
@@ -72,19 +79,78 @@ export const ImportWalletScreen: React.FC = () => {
     const validation = useMemo(() => evaluateBip39Slots(words), [words]);
     const isValid = isImportableBip39(validation);
 
-    const handleSubmit = async () => {
+    const handleScanAndDiscover = async () => {
         if (!isValid) return;
         setError('');
         setIsLoading(true);
         try {
             setUseWalletInterfaceType(interfaceType);
-            await importWallet(validation.nonEmptyWords, version, network);
+            const found = await scanMnemonicWallets({
+                mnemonic: validation.nonEmptyWords,
+                network,
+                walletKit,
+            });
+
+            setDiscoveredWallets(found);
+
+            // Pre-select all versions that have activity or non-zero balance
+            const activeSet = new Set<string>();
+            for (const w of found) {
+                if (w.hasActivity || w.balanceNano > 0n) {
+                    activeSet.add(w.id);
+                }
+            }
+            if (activeSet.size === 0) {
+                const defaultMatch =
+                    found.find(
+                        (w) =>
+                            w.version === version &&
+                            (network === 'testnet' ? w.subwalletId === 2147483645 : w.subwalletId === 2147483409),
+                    ) ?? found[0];
+                if (defaultMatch) {
+                    activeSet.add(defaultMatch.id);
+                }
+            }
+            setSelectedWalletIds(activeSet);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to scan on-chain wallets');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleImportSelected = async () => {
+        if (selectedWalletIds.size === 0) {
+            setError('Please select at least one wallet version to import');
+            return;
+        }
+        setError('');
+        setIsLoading(true);
+        try {
+            for (const id of Array.from(selectedWalletIds)) {
+                const target = discoveredWallets?.find((w) => w.id === id);
+                if (target) {
+                    await importWallet(validation.nonEmptyWords, target.version, network, target.subwalletId);
+                }
+            }
             navigate('/wallet');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to import wallet');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const toggleWalletId = (id: string) => {
+        setSelectedWalletIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                if (next.size > 1) next.delete(id); // Keep at least one selected
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
     };
 
     const handleKeyDown = (index: number, event: React.KeyboardEvent) => {
@@ -105,7 +171,7 @@ export const ImportWalletScreen: React.FC = () => {
                 return;
             case 'Enter':
                 event.preventDefault();
-                if (isLast) void handleSubmit();
+                if (isLast) void handleScanAndDiscover();
                 else inputRefs.current[index + 1]?.focus();
                 return;
             case 'ArrowLeft':
@@ -168,8 +234,111 @@ export const ImportWalletScreen: React.FC = () => {
         return 'border-gray-300 bg-white';
     };
 
+    // If wallets discovered, render discovery selection view
+    if (discoveredWallets) {
+        const footer = (
+            <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setDiscoveredWallets(null)} disabled={isLoading}>
+                    Back
+                </Button>
+                <Button
+                    fullWidth
+                    onClick={handleImportSelected}
+                    disabled={selectedWalletIds.size === 0 || isLoading}
+                    loading={isLoading}
+                    data-testid="confirm-import-selected-wallets"
+                >
+                    Import Selected ({selectedWalletIds.size})
+                </Button>
+            </div>
+        );
+
+        return (
+            <CenteredScreen onBack={() => setDiscoveredWallets(null)} footer={footer}>
+                <div className="px-6 space-y-4">
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-gray-900">Select Wallet(s)</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Discovered on-chain contracts derived from your recovery phrase:
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        {discoveredWallets.map((w) => {
+                            const isSelected = selectedWalletIds.has(w.id);
+                            return (
+                                <div
+                                    key={w.id}
+                                    onClick={() => toggleWalletId(w.id)}
+                                    className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
+                                        isSelected
+                                            ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500'
+                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                    }`}
+                                    data-testid={`discovered-wallet-${w.id}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleWalletId(w.id)}
+                                                className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                                            />
+                                            <span className="font-semibold text-sm text-gray-900">
+                                                {w.versionLabel}
+                                            </span>
+                                        </div>
+                                        {w.hasActivity ? (
+                                            <span className="px-2 py-0.5 text-[10px] font-semibold text-green-700 bg-green-100 rounded-full">
+                                                Active ({w.eventCount} Txs)
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded-full">
+                                                Uninitialized
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-2.5 text-xs space-y-1 pl-6">
+                                        <div className="flex justify-between items-center text-gray-600">
+                                            <span>Address:</span>
+                                            <span className="font-mono text-[11px] text-gray-800 truncate max-w-[200px]">
+                                                {w.address}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center font-medium pt-0.5">
+                                            <span className="text-gray-600">Balance:</span>
+                                            <span
+                                                className={
+                                                    w.balanceNano > 0n
+                                                        ? 'text-green-600 font-bold text-sm'
+                                                        : 'text-gray-900'
+                                                }
+                                            >
+                                                {w.balanceFormatted} TON
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {error && <p className="text-center text-sm text-red-500">{error}</p>}
+                </div>
+            </CenteredScreen>
+        );
+    }
+
     const footer = (
-        <Button fullWidth onClick={handleSubmit} disabled={!isValid || isLoading} data-testid="import-wallet-process">
+        <Button
+            fullWidth
+            onClick={handleScanAndDiscover}
+            disabled={!isValid || isLoading}
+            loading={isLoading}
+            data-testid="import-wallet-process"
+        >
             Continue
         </Button>
     );

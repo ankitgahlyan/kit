@@ -34,6 +34,7 @@ export interface CreateWalletAdapterParams {
     network: NetworkType;
     walletKit: ITonWalletKit;
     version: 'v5r1' | 'v4r2';
+    walletId?: number;
     /**
      * Factory function to create Ledger transport.
      * Required when useWalletInterfaceType is 'ledger'.
@@ -55,6 +56,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
         network,
         walletKit,
         version = 'v5r1',
+        walletId,
         createLedgerTransport,
     } = params;
 
@@ -66,6 +68,9 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
                   globalId: 662387,
               }
             : undefined;
+
+    const isTestnet = chainNetwork.chainId === Network.testnet().chainId;
+    const w5WalletId = walletId ?? (isTestnet ? 2147483645 : 2147483409);
 
     switch (useWalletInterfaceType) {
         case 'signer': {
@@ -88,6 +93,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
                 return await WalletV5R1Adapter.create(customSigner, {
                     client: walletKit.getApiClient(chainNetwork),
                     network: chainNetwork,
+                    walletId: w5WalletId,
                 });
             } else {
                 return await WalletV4R2Adapter.create(customSigner, {
@@ -108,6 +114,7 @@ export async function createWalletAdapter(params: CreateWalletAdapterParams): Pr
                     client: walletKit.getApiClient(chainNetwork),
                     network: chainNetwork,
                     domain: domain,
+                    walletId: w5WalletId,
                 });
             } else {
                 return await WalletV4R2Adapter.create(signer, {

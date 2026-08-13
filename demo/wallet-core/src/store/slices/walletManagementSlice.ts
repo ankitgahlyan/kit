@@ -82,7 +82,13 @@ export const createWalletManagementSlice =
         },
 
         // Create a new wallet
-        createWallet: async (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2', network?: NetworkType) => {
+        createWallet: async (
+            mnemonic: string[],
+            name?: string,
+            version?: 'v5r1' | 'v4r2',
+            network?: NetworkType,
+            subwalletId?: number,
+        ) => {
             const state = get();
             if (!state.auth.currentPassword) {
                 throw new Error('User not authenticated');
@@ -117,6 +123,7 @@ export const createWalletManagementSlice =
                     network: walletNetwork,
                     walletKit: state.walletCore.walletKit,
                     version: walletVersion,
+                    walletId: subwalletId,
                 });
 
                 const wallet = await state.walletCore.walletKit.addWallet(walletAdapter);
@@ -163,8 +170,14 @@ export const createWalletManagementSlice =
             }
         },
 
-        importWallet: async (mnemonic: string[], name?: string, version?: 'v5r1' | 'v4r2', network?: NetworkType) => {
-            return get().createWallet(mnemonic, name, version, network);
+        importWallet: async (
+            mnemonic: string[],
+            name?: string,
+            version?: 'v5r1' | 'v4r2',
+            network?: NetworkType,
+            subwalletId?: number,
+        ) => {
+            return get().createWallet(mnemonic, name, version, network, subwalletId);
         },
 
         createLedgerWallet: async (name?: string, network?: NetworkType) => {
