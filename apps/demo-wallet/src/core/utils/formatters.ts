@@ -11,7 +11,7 @@ import { Base64ToHex } from '@ton/walletkit';
 
 export function normalizeAddress(address: string, bounceable = false): string | null {
     try {
-        return Address.parse(address).toString({ bounceable });
+        return Address.parse(address).toString({ bounceable, testOnly: true });
     } catch {
         return null;
     }

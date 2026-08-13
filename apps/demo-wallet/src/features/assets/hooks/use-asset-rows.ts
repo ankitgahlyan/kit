@@ -24,6 +24,7 @@ export const imageSources = (urls: string[] | undefined, dataBase64?: string): s
 
 interface AssetRows {
     tonRow: AssetRowData | null;
+    // todo: fiRow: AssetRowData | null;
     /** All held jettons as rows, sorted by fiat value desc (verified first as a tiebreaker). */
     jettonRows: AssetRowData[];
     assetsReady: boolean;

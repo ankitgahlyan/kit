@@ -57,7 +57,7 @@ export const useWalletDataUpdater = () => {
 
         let cancelled = false;
         let timeout: ReturnType<typeof setTimeout>;
-        const refreshInterval = 30_000;
+        const refreshInterval = 300_000; // 5 minutes
 
         const tick = async () => {
             await updateBalance().catch(() => {});

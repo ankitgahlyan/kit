@@ -161,6 +161,22 @@ export const AppRouter: React.FC = () => {
                     }
                 />
                 <Route
+                    path="/invite"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <Swap />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/vote"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <Swap />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/swap"
                     element={
                         <ProtectedRoute requiresWallet>
