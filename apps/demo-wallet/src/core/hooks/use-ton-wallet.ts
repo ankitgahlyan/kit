@@ -28,7 +28,12 @@ interface UseTonWalletReturn {
     initializeWallet: () => Promise<void>;
     createNewWallet: () => Promise<string[]>;
     createLedgerWallet: (network?: NetworkType) => Promise<void>;
-    importWallet: (mnemonic: string[], version?: 'v5r1' | 'v4r2', network?: NetworkType) => Promise<void>;
+    importWallet: (
+        mnemonic: string[],
+        version?: 'v5r1' | 'v4r2',
+        network?: NetworkType,
+        subwalletId?: number,
+    ) => Promise<void>;
 }
 
 export const useTonWallet = (): UseTonWalletReturn => {
@@ -100,7 +105,12 @@ export const useTonWallet = (): UseTonWalletReturn => {
     );
 
     const importWallet = useCallback(
-        async (mnemonic: string[], version?: 'v5r1' | 'v4r2', network?: NetworkType): Promise<void> => {
+        async (
+            mnemonic: string[],
+            version?: 'v5r1' | 'v4r2',
+            network?: NetworkType,
+            subwalletId?: number,
+        ): Promise<void> => {
             if (!tonKit) throw new Error('TON Kit not initialized');
 
             try {
@@ -114,7 +124,7 @@ export const useTonWallet = (): UseTonWalletReturn => {
                 }
 
                 // Import wallet
-                await walletStore.importWallet(mnemonic, undefined, version, network);
+                await walletStore.importWallet(mnemonic, undefined, version, network, subwalletId);
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Failed to import wallet';
                 setError(errorMessage);
