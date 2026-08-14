@@ -107,14 +107,12 @@ export interface WalletManagementSlice {
         name?: string,
         version?: 'v5r1' | 'v4r2',
         network?: NetworkType,
-        subwalletId?: number,
     ) => Promise<string>;
     importWallet: (
         mnemonic: string[],
         name?: string,
         version?: 'v5r1' | 'v4r2',
         network?: NetworkType,
-        subwalletId?: number,
     ) => Promise<string>;
     createLedgerWallet: (name?: string, network?: NetworkType) => Promise<string>;
     switchWallet: (walletId: string) => Promise<void>;
