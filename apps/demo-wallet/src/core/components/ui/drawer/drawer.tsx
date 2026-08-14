@@ -11,7 +11,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '@/core/lib/utils';
 
-const Drawer = ({ shouldScaleBackground = false, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
+const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
     <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
 );
 Drawer.displayName = 'Drawer';
@@ -33,21 +33,11 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
     React.ElementRef<typeof DrawerPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, onCloseAutoFocus, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
     <DrawerPortal>
         <DrawerOverlay />
         <DrawerPrimitive.Content
             ref={ref}
-            onCloseAutoFocus={(e) => {
-                if (onCloseAutoFocus) {
-                    onCloseAutoFocus(e);
-                } else {
-                    e.preventDefault();
-                    if (document.activeElement instanceof HTMLElement) {
-                        document.activeElement.blur();
-                    }
-                }
-            }}
             className={cn(
                 'fixed inset-x-0 bottom-0 z-50 mt-24 pt-4 flex h-auto flex-col rounded-t-[10px] border bg-background',
                 className,

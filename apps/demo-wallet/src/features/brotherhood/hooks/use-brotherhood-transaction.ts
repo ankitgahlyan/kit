@@ -74,22 +74,23 @@ export function useBrotherhoodTransaction(
     return { send, isSending, error };
 }
 
+// todo:
 /** Default gas amounts for various operations */
 export const GAS = {
-    TRANSFER: toNano('0.05'),
-    BURN: toNano('0.05'),
-    CLAIM: toNano('0.05'),
-    INVITE: toNano('0.1'),
-    VOTE: toNano('0.05'),
-    CREDIT: toNano('0.1'),
-    REPAY: toNano('0.05'),
-    ALLOWANCE: toNano('0.05'),
-    GOLD: toNano('0.05'),
-    PROFILE: toNano('0.05'),
-    AUTHORITY: toNano('0.1'),
+    TRANSFER: toNano('0.5'),
+    BURN: toNano('0.5'),
+    CLAIM: toNano('0.5'),
+    INVITE: toNano('0.5'),
+    VOTE: toNano('0.5'),
+    CREDIT: toNano('0.5'),
+    REPAY: toNano('0.5'),
+    ALLOWANCE: toNano('0.5'),
+    GOLD: toNano('0.5'),
+    PROFILE: toNano('0.5'),
+    AUTHORITY: toNano('0.5'),
     LOTTERY: toNano('0.5'),
-    DAO: toNano('0.1'),
+    DAO: toNano('0.5'),
     DEPLOY: toNano('0.5'),
-    MINT: toNano('0.1'),
-    TOP_UP: toNano('0.1'),
+    MINT: toNano('0.5'),
+    TOP_UP: toNano('0.5'),
 } as const;
