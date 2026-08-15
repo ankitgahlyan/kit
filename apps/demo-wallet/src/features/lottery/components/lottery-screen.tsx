@@ -12,6 +12,7 @@ import { useWallet, useWalletKit } from '@demo/wallet-core';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { ScreenHeader } from '@/core/components/shared/screen-header';
 import { Button } from '@/core/components/ui/button';
+import { InputScan } from '@/core/components/ui/input-scan';
 
 import { useLotteryState } from '../hooks/use-lottery-state';
 import { useEnterLottery } from '../hooks/use-enter-lottery';
@@ -43,12 +44,10 @@ export const LotteryScreen: React.FC = () => {
                 {/* Contract Input */}
                 <div className="bg-white p-3 border rounded-xl shadow-sm text-xs space-y-1">
                     <label className="font-semibold text-gray-700">Lottery Contract Address</label>
-                    <input
-                        type="text"
+                    <InputScan
                         value={lotteryAddressInput}
-                        onChange={(e) => setLotteryAddressInput(e.target.value)}
-                        placeholder="Lottery Contract Address (EQ...)"
-                        className="w-full p-2 border rounded-lg text-xs"
+                        onChange={setLotteryAddressInput}
+                        placeholder="Lottery Contract Address (0Q...)"
                         data-testid="lottery-address-input"
                     />
                 </div>

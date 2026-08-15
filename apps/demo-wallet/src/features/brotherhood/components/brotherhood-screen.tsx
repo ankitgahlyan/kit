@@ -12,6 +12,7 @@ import { useWallet, useWalletKit } from '@demo/wallet-core';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { ScreenHeader } from '@/core/components/shared/screen-header';
 import { Button } from '@/core/components/ui/button';
+import { InputScan } from '@/core/components/ui/input-scan';
 
 import { useFiAccount } from '../hooks/use-fi-account';
 import { useFiTransfer } from '../hooks/use-fi-transfer';
@@ -207,12 +208,10 @@ export const BrotherhoodScreen: React.FC = () => {
                         <h3 className="font-semibold text-base mb-1">Transfer FI Tokens</h3>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-700">Recipient Address</label>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={recipient}
-                                onChange={(e) => setRecipient(e.target.value)}
-                                placeholder="EQ..."
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setRecipient}
+                                placeholder="0Q..."
                                 data-testid="brotherhood-transfer-recipient"
                             />
                         </div>
@@ -291,12 +290,10 @@ export const BrotherhoodScreen: React.FC = () => {
                         <h3 className="font-semibold text-base mb-1">Invite New Member</h3>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-700">Invitee Wallet Address</label>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={invitee}
-                                onChange={(e) => setInvitee(e.target.value)}
-                                placeholder="EQ..."
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setInvitee}
+                                placeholder="0Q..."
                                 data-testid="brotherhood-invite-recipient"
                             />
                         </div>
@@ -340,12 +337,10 @@ export const BrotherhoodScreen: React.FC = () => {
                         <h3 className="font-semibold text-base mb-1">Trust Graph Voting</h3>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-700">Target Member Address</label>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={targetAddress}
-                                onChange={(e) => setTargetAddress(e.target.value)}
-                                placeholder="EQ..."
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setTargetAddress}
+                                placeholder="0Q..."
                                 data-testid="brotherhood-vote-target"
                             />
                         </div>
@@ -375,12 +370,10 @@ export const BrotherhoodScreen: React.FC = () => {
                     <div className="space-y-4 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <div className="space-y-2">
                             <h3 className="font-semibold text-base">Buy Credit</h3>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={recipient}
-                                onChange={(e) => setRecipient(e.target.value)}
+                                onChange={setRecipient}
                                 placeholder="Borrower Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
                                 data-testid="brotherhood-credit-recipient"
                             />
                             <input
@@ -432,12 +425,10 @@ export const BrotherhoodScreen: React.FC = () => {
                     <div className="space-y-4 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <div className="space-y-2">
                             <h3 className="font-semibold text-base">Grant Allowance</h3>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={grantee}
-                                onChange={(e) => setGrantee(e.target.value)}
-                                placeholder="Grantee Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setGrantee}
+                                placeholder="Grantee Address (0Q...)"
                                 data-testid="brotherhood-grantee-address"
                             />
                             <input
@@ -463,20 +454,16 @@ export const BrotherhoodScreen: React.FC = () => {
 
                         <div className="space-y-2">
                             <h3 className="font-semibold text-base">Spend Allowance</h3>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={granter}
-                                onChange={(e) => setGranter(e.target.value)}
-                                placeholder="Granter Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setGranter}
+                                placeholder="Granter Address (0Q...)"
                                 data-testid="brotherhood-granter-address"
                             />
-                            <input
-                                type="text"
+                            <InputScan
                                 value={recipient}
-                                onChange={(e) => setRecipient(e.target.value)}
-                                placeholder="Receiver Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setRecipient}
+                                placeholder="Receiver Address (0Q...)"
                                 data-testid="brotherhood-spend-receiver"
                             />
                             <input
@@ -506,12 +493,10 @@ export const BrotherhoodScreen: React.FC = () => {
                         <h3 className="font-semibold text-base mb-1">Transfer Gold Coins</h3>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-700">Recipient Address</label>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={goldRecipient}
-                                onChange={(e) => setGoldRecipient(e.target.value)}
-                                placeholder="EQ..."
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setGoldRecipient}
+                                placeholder="0Q..."
                                 data-testid="brotherhood-gold-recipient"
                             />
                         </div>
@@ -618,12 +603,10 @@ export const BrotherhoodScreen: React.FC = () => {
 
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-700">Close Member Account</label>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={authTarget}
-                                onChange={(e) => setAuthTarget(e.target.value)}
-                                placeholder="Target Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setAuthTarget}
+                                placeholder="Target Address (0Q...)"
                                 data-testid="brotherhood-authority-target"
                             />
                             <Button

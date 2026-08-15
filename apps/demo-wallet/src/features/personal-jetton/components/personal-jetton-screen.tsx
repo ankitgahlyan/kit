@@ -12,6 +12,7 @@ import { useWallet, useWalletKit } from '@demo/wallet-core';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { ScreenHeader } from '@/core/components/shared/screen-header';
 import { Button } from '@/core/components/ui/button';
+import { InputScan } from '@/core/components/ui/input-scan';
 
 import { useDeployPersonalJetton } from '../hooks/use-deploy-personal-jetton';
 import { useMintPersonal } from '../hooks/use-mint-personal';
@@ -201,20 +202,16 @@ export const PersonalJettonScreen: React.FC = () => {
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">Mint Personal Tokens</h3>
                         <div className="space-y-2">
-                            <input
-                                type="text"
+                            <InputScan
                                 value={customMinterAddr}
-                                onChange={(e) => setCustomMinterAddr(e.target.value)}
+                                onChange={setCustomMinterAddr}
                                 placeholder={`Minter Address (Default: ${activeMinter || 'None'})`}
-                                className="w-full p-2 border rounded-lg text-xs"
                                 data-testid="personal-mint-minter"
                             />
-                            <input
-                                type="text"
+                            <InputScan
                                 value={recipient}
-                                onChange={(e) => setRecipient(e.target.value)}
-                                placeholder="Recipient Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setRecipient}
+                                placeholder="Recipient Address (0Q...)"
                                 data-testid="personal-mint-recipient"
                             />
                             <input
@@ -243,12 +240,10 @@ export const PersonalJettonScreen: React.FC = () => {
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">Burn Personal Tokens</h3>
                         <div className="space-y-2">
-                            <input
-                                type="text"
+                            <InputScan
                                 value={customPersonalWalletAddr}
-                                onChange={(e) => setCustomPersonalWalletAddr(e.target.value)}
+                                onChange={setCustomPersonalWalletAddr}
                                 placeholder={`Personal Wallet Address (Default: ${activePersonalWallet || 'None'})`}
-                                className="w-full p-2 border rounded-lg text-xs"
                                 data-testid="personal-burn-wallet-addr"
                             />
                             <input
@@ -277,12 +272,10 @@ export const PersonalJettonScreen: React.FC = () => {
                     <div className="space-y-4 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <div className="space-y-2">
                             <h3 className="font-semibold text-base">Transfer Minter Admin</h3>
-                            <input
-                                type="text"
+                            <InputScan
                                 value={newAdmin}
-                                onChange={(e) => setNewAdmin(e.target.value)}
-                                placeholder="New Admin Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setNewAdmin}
+                                placeholder="New Admin Address (0Q...)"
                                 data-testid="personal-admin-new-admin"
                             />
                             <Button
@@ -334,12 +327,10 @@ export const PersonalJettonScreen: React.FC = () => {
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">Top Up Contract TON Balance</h3>
                         <div className="space-y-2">
-                            <input
-                                type="text"
+                            <InputScan
                                 value={topUpTarget}
-                                onChange={(e) => setTopUpTarget(e.target.value)}
+                                onChange={setTopUpTarget}
                                 placeholder={`Target Contract Address (Default: ${activeMinter || 'None'})`}
-                                className="w-full p-2 border rounded-lg text-xs"
                                 data-testid="personal-topup-target"
                             />
                         </div>

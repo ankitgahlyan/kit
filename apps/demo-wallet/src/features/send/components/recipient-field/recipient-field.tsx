@@ -6,9 +6,11 @@
  *
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { QrCode } from 'lucide-react';
 
 import { Input } from '@/core/components/ui/input';
+import { QrScanner } from '@/core/components/ui/qr-scanner/qr-scanner';
 
 interface RecipientFieldProps {
     value: string;
@@ -19,29 +21,50 @@ interface RecipientFieldProps {
 }
 
 /** Recipient address field with an optional "Use my address" shortcut and inline validation. */
-export const RecipientField: React.FC<RecipientFieldProps> = ({ value, onChange, error, onUseMyAddress }) => (
-    <Input.Container error={Boolean(error)}>
-        <Input.Header>
-            <Input.Title>Recipient</Input.Title>
-            {onUseMyAddress && (
+export const RecipientField: React.FC<RecipientFieldProps> = ({ value, onChange, error, onUseMyAddress }) => {
+    const [isScannerVisible, setIsScannerVisible] = useState(false);
+
+    return (
+        <Input.Container error={Boolean(error)}>
+            <Input.Header>
+                <Input.Title>Recipient</Input.Title>
+                {onUseMyAddress && (
+                    <button
+                        type="button"
+                        onClick={onUseMyAddress}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                        data-testid="use-my-address"
+                    >
+                        Use my address
+                    </button>
+                )}
+            </Input.Header>
+            <Input.Field className="flex items-center gap-2 pr-2">
+                <Input.Input
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="EQ…"
+                    data-testid="recipient-input"
+                />
                 <button
                     type="button"
-                    onClick={onUseMyAddress}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                    data-testid="use-my-address"
+                    onClick={() => setIsScannerVisible(true)}
+                    aria-label="Scan QR code"
+                    title="Scan QR code"
+                    className="shrink-0 p-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                 >
-                    Use my address
+                    <QrCode className="w-4 h-4 text-blue-600" />
                 </button>
-            )}
-        </Input.Header>
-        <Input.Field>
-            <Input.Input
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder="EQ…"
-                data-testid="recipient-input"
+            </Input.Field>
+            {error && <Input.Caption>{error}</Input.Caption>}
+            <QrScanner
+                isVisible={isScannerVisible}
+                onClose={() => setIsScannerVisible(false)}
+                onScan={(scanned) => {
+                    onChange(scanned);
+                    setIsScannerVisible(false);
+                }}
             />
-        </Input.Field>
-        {error && <Input.Caption>{error}</Input.Caption>}
-    </Input.Container>
-);
+        </Input.Container>
+    );
+};

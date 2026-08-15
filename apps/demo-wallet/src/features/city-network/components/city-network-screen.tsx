@@ -12,6 +12,7 @@ import { useWallet, useWalletKit } from '@demo/wallet-core';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { ScreenHeader } from '@/core/components/shared/screen-header';
 import { Button } from '@/core/components/ui/button';
+import { InputScan } from '@/core/components/ui/input-scan';
 
 import { useCities } from '../hooks/use-cities';
 import { useCityMembers } from '../hooks/use-city-members';
@@ -75,12 +76,11 @@ export const CityNetworkScreen: React.FC = () => {
                 {activeTab === 'cities' && (
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">Regional Location Hub</h3>
-                        <input
-                            type="text"
+                        <InputScan
                             value={locationAddrInput}
-                            onChange={(e) => setLocationAddrInput(e.target.value)}
-                            placeholder="Location Hub Address (EQ...)"
-                            className="w-full p-2 border rounded-lg text-xs mb-2"
+                            onChange={setLocationAddrInput}
+                            placeholder="Location Hub Address (0Q...)"
+                            className="mb-2"
                             data-testid="city-location-input"
                         />
 
@@ -114,12 +114,11 @@ export const CityNetworkScreen: React.FC = () => {
                 {activeTab === 'city-detail' && (
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">CityMap Members</h3>
-                        <input
-                            type="text"
+                        <InputScan
                             value={cityMapAddrInput}
-                            onChange={(e) => setCityMapAddrInput(e.target.value)}
-                            placeholder="CityMap Contract Address (EQ...)"
-                            className="w-full p-2 border rounded-lg text-xs mb-2"
+                            onChange={setCityMapAddrInput}
+                            placeholder="CityMap Contract Address (0Q...)"
+                            className="mb-2"
                             data-testid="city-citymap-input"
                         />
 
@@ -156,12 +155,10 @@ export const CityNetworkScreen: React.FC = () => {
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">Register New City</h3>
                         <div className="space-y-2">
-                            <input
-                                type="text"
+                            <InputScan
                                 value={locationAddrInput}
-                                onChange={(e) => setLocationAddrInput(e.target.value)}
-                                placeholder="Location Hub Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setLocationAddrInput}
+                                placeholder="Location Hub Address (0Q...)"
                                 data-testid="city-register-location-addr"
                             />
                             <input
@@ -190,12 +187,10 @@ export const CityNetworkScreen: React.FC = () => {
                     <div className="space-y-3 bg-white p-4 border rounded-xl shadow-sm text-sm">
                         <h3 className="font-semibold text-base mb-1">City Member Management</h3>
                         <div className="space-y-2">
-                            <input
-                                type="text"
+                            <InputScan
                                 value={cityMapAddrInput}
-                                onChange={(e) => setCityMapAddrInput(e.target.value)}
-                                placeholder="CityMap Contract Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setCityMapAddrInput}
+                                placeholder="CityMap Contract Address (0Q...)"
                                 data-testid="city-manage-citymap-addr"
                             />
                             <input
@@ -206,12 +201,10 @@ export const CityNetworkScreen: React.FC = () => {
                                 className="w-full p-2 border rounded-lg text-xs"
                                 data-testid="city-manage-city-name"
                             />
-                            <input
-                                type="text"
+                            <InputScan
                                 value={targetMember}
-                                onChange={(e) => setTargetMember(e.target.value)}
-                                placeholder="Target Member Address (EQ...)"
-                                className="w-full p-2 border rounded-lg text-xs"
+                                onChange={setTargetMember}
+                                placeholder="Target Member Address (0Q...)"
                                 data-testid="city-manage-target-member"
                             />
                         </div>

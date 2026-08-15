@@ -12,6 +12,7 @@ import { useWallet, useWalletKit } from '@demo/wallet-core';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { ScreenHeader } from '@/core/components/shared/screen-header';
 import { Button } from '@/core/components/ui/button';
+import { InputScan } from '@/core/components/ui/input-scan';
 
 import { useProposals } from '../hooks/use-proposals';
 import { useSubmitProposal } from '../hooks/use-submit-proposal';
@@ -57,12 +58,10 @@ export const DaoScreen: React.FC = () => {
                 {/* Global DAO Contract Address Input */}
                 <div className="bg-white p-3 border rounded-xl shadow-sm text-xs space-y-1">
                     <label className="font-semibold text-gray-700">Target DAO Contract Address</label>
-                    <input
-                        type="text"
+                    <InputScan
                         value={daoAddrInput}
-                        onChange={(e) => setDaoAddrInput(e.target.value)}
-                        placeholder="DAO Address (EQ...)"
-                        className="w-full p-2 border rounded-lg text-xs"
+                        onChange={setDaoAddrInput}
+                        placeholder="DAO Address (0Q...)"
                         data-testid="dao-address-input"
                     />
                 </div>
